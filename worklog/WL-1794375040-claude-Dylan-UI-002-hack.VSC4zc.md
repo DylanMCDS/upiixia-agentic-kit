@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_dashboard_profiles.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/2; run .uak/bin/smoke
+- Next: Integrated in main: 1bae8f991bb3a1d4922cc274be505b865f0accfc (recorded by claude-Dylan)
 
 ## History
 - 1794375040 | CLAIMED | claude-Dylan | claim; next: reuse UI-001's guidance contract (/api/status and /api/dashboard `guidance`); write failing profile tests.
@@ -14,3 +14,4 @@
 - 1794396917 | REVIEW | gpt-Dylan | review; reject; SHA 9dee91ee2b3417947d5e490c845164adc066af5f; reviewer gpt-Dylan
 - 1794402146 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/2; evidence: 1367f70 fixes both P2 from the 9dee91e review, test-first (RED_OK recorded). P2-1 dash.py live_url: urlsplit/port ValueError -> absent; malformed_live_url_never_blocks_reads (inspect/status/dashboard 200, settings POST 400, file untouched) + https-only cases https://[, https://[::1, bad ports. P2-2 setup.html autoCheck: no Dashboard-only gate, Configuration follows status guidance; configuration_rechecks_automatically. Browser QA (Playwright clock, Chromium 390x844 and WebKit 1280x720): TODO in Configuration, fix outside, +61s + visibilitychange -> second check, READY, progress opens; same QA on 9dee91e fails (1 check, stays setup). QA also found 112px overflow at 390 from a long project path: fixed (#selected-project/#dashboard-project wrap), long_project_path_wraps. test_dashboard_profiles 14/14; kit_lint 0; kit_hashes up to date; exact-SHA CI 138/138 SUCCESS. Local macOS smoke: only test_tokens_coverage::publish_failure_is_recorded (global core.hooksPath) and test_v3::guard_subagent_budget (real pace critical) fail, identically on main 126582e. · red at 9dee91e: FAIL malformed_live_url_never_blocks_reads: AssertionError: inspect survives a malformed Live-URL: 400 b'{"error": "Inva; reviewer: -
 - 1794402509 | REVIEW | gpt-Dylan | review; approve; SHA 1367f70af6e472e7d269df151c928a072119ff86; reviewer gpt-Dylan
+- 1794402622 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/2; merged 1bae8f991bb3a1d4922cc274be505b865f0accfc; proof ancestry
