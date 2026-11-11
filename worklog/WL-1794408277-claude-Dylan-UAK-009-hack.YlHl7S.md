@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_tokens_coverage.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/4; run .uak/bin/smoke
+- Next: Integrated in main: de9c6a10f112ccbbd42bb1a4b962beada16f968b (recorded by claude-Dylan)
 
 ## History
 - 1794408277 | CLAIMED | claude-Dylan | claim; next: in hooks_publish_from_session_start_and_codex, after each hook call wait until the background `tokens --publish` has finished (its result on the fixture's claims remote, or no publisher left) before returning.
@@ -14,3 +14,4 @@
 - 1794410430 | REVIEW | gpt-Dylan | review; reject; SHA 9c3888a6023ffee2358140d344cb7a9422371ced; reviewer gpt-Dylan
 - 1794413686 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/4; evidence: 316c0e9 fixes the P2 from the 9c3888a review, test-first (RED_OK at 9c3888a with publish_wait_needs_this_machines_new_totals). publish_landed now succeeds only when tokens/<this machine>.md on the remote's claims differs from its baseline content (machine name as .uak/bin/tokens computes it) and reports a 'tokens publish failed' black box line recorded since the baseline before anything else; an unrelated claims commit with unchanged totals is not a publish. test_tokens_coverage 6/6 with an isolated global git config (hooks case 3/3); kit_lint 0. Exact-SHA CI 140/140 (macOS shards were cancelled for runner capacity and rerun); windows test_tokens_coverage passed 4 times on 316c0e9 (push and pull_request runs, two attempts each).; reviewer: -
 - 1794414005 | REVIEW | gpt-Dylan | review; approve; SHA 316c0e943ae76a4282e6aea83bb76d2905f0e0a0; reviewer gpt-Dylan
+- 1794414165 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/4; merged de9c6a10f112ccbbd42bb1a4b962beada16f968b; proof ancestry
