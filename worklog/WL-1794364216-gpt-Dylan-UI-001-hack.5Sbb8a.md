@@ -6,7 +6,7 @@
 - Why: The human requested one bilingual interface and Back at every step. Preserve legacy offline export and coordination gates.
 - Failing: Full Windows smoke is not green: baseline process counter and fixture symlink privilege. CI and formal approval remain pending.
 - Commands: Wizard 11 PASS; unified contracts 3 PASS; old dashboard contract PASS; Edge unified, freeze, offline export, running-Back and real install PASS; hashes and harness checks pass.
-- Next: Humano: Shared resource/CI needs a human: kit/.uak/bin/lib/dash.html
+- Next: Integrated in main: 126582e84f04e51411512acfe48fb5bd03263b3b (recorded by claude-Dylan)
 
 ## History
 - 1794364216 | CLAIMED | gpt-Dylan | claim; next: write failing behavior tests and record uak red before implementation; agree the wizard contract with the reviewer.
@@ -18,3 +18,4 @@
 - 1794374193 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/1; evidence: CI run 42963298501 on 5d50cc1: 68/68 jobs green (ubuntu, macos, windows; suite shards + per-file Windows). Local Windows: Verify test_setup_wizard 14/14, test_unified_workspace 9/9; both also pass through an installed project's smoke; test_v51 dashboard_shows_everything, test_v57_install, gen_harness --check, kit_hashes --check pass; kit_lint only 31 Windows exec-bit findings. Edge QA 1280x720 and 390x844 reduced motion: todo guidance, ready auto-opens progress, only the claim command copyable, 0 JS errors, no overflow. Local full smoke stops at test_claims_perf::the_counter_sees_ps, which fails identically on main 87af168 (Windows ps counting). · red at ddcd44b: FAIL installer_absent_package_is_explicit: AssertionError: without the kit's installer, setup names where to run it (lin; reviewer: -
 - 1794374556 | REVIEW | gpt-Dylan | review; approve; SHA 5d50cc1cb9b0889ee642482c47b4a573717e1d71; reviewer gpt-Dylan
 - 1794374680 | REVIEW | claude-Dylan | merge rechazado; Shared resource/CI needs a human: kit/.uak/bin/lib/dash.html
+- 1794375006 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/1; merged 126582e84f04e51411512acfe48fb5bd03263b3b; proof ancestry
