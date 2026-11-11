@@ -6,9 +6,10 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_dashboard_journey.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/5; run .uak/bin/smoke
+- Next: Integrated in main: b2e3fcfb20c81f5a3800bc6797cf2aa27a26ab9a (recorded by claude-Dylan)
 
 ## History
 - 1794411354 | CLAIMED | claude-Dylan | claim; next: review the dependent task evidence and implement end-to-end tests before declaring the journey complete.
 - 1794414365 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/5; evidence: 0bdf5e9. test_dashboard_journey.py 3/3 (~9 s; also in installed-project mode): new_project_visual_setup_journey, interrupted_install_can_recover, missing_prerequisites_remain_actionable. Browser evidence in docs/specs/dashboard-onboarding/evidence/ (Chromium, 1280x720 and 390x844, reduced motion 0 ms, keyboard focus visible, no overflow, no page errors; report.json). Docs: docs/DASHBOARD.md, journey spec, README quick-start block, CHANGELOG Unreleased, WHY.md usability row. kit_lint 0, gen_harness current, kit_hashes up to date, tests/test_mcp_tools.py 14/14; package smoke green except test_v3::guard_subagent_budget (machine pace, identical on main). Exact-SHA CI: 140 pass; 2 macOS shards were cancelled for runner capacity and are rerunning. Found: a failed install leaves engine files on disk and a fresh setup server reports it installed; tracked as UAK-010. · no red: integration task: the named tests exercise behavior already integrated by UI-001, UI-002 and UI-004 (uak red: RED_PASSED); their power was shown by five mutations of setup.py that each make the suite fail; reviewer: -
 - 1794415129 | REVIEW | gpt-Dylan | review; approve; SHA 0bdf5e9f6017388919d811dbd9381d12289cdee0; reviewer gpt-Dylan
+- 1794415228 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/5; merged b2e3fcfb20c81f5a3800bc6797cf2aa27a26ab9a; proof ancestry
