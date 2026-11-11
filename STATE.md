@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1794365594
+Updated: 1794365948
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-002 UI-003 
 CLAIMED: UI-001 
 BLOCKED: -
@@ -10,7 +10,7 @@ INTEGRATED: -
 CANCELLED: -
 
 Claims (first 24; status --task ID shows detail):
-UI-001 | CLAIMED | gpt-Dylan | until 1794379994
+UI-001 | CLAIMED | gpt-Dylan | until 1794380348
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
@@ -18,6 +18,7 @@ Current decisions (last 5):
 - 1794364205 | plan --amend | Dylan/gpt-Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794364668 | UI-001 | Keep --wizard opt-in and delegate to the existing installer and readiness gate. | Why: Preserve scripted installs and prevent installation success from impl
 - 1794365594 | UI-001 | Do not open a PR or declare green while baseline Windows validation failures are unresolved. | Why: The package smoke hit the_counter_sees_ps; it reproduces
+- 1794365948 | UI-001 | Keep this exact SHA stable for claude-Dylan pre-review; no PR and no formal approval while validation is incomplete. | Why: Independent review must refer to
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
