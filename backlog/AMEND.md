@@ -75,3 +75,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** beginner_profile_persists, advanced_profile_preserves_details, next_action_matches_real_state, hostile_content_is_text, static_dashboard_remains_offline, beginner_shows_one_action, copy_command_is_exact, ready_opens_progress, live_url_is_https_only, live_url_link_is_shown_when_set
 - **Verify:** `python kit/.uak/tests/test_dashboard_profiles.py`
 - **Next step:** reuse UI-001's guidance contract (/api/status and /api/dashboard `guidance`); write failing profile tests.
+## UI-003 · Verify the full visual setup journey and document it
+
+- **Type:** integration
+- **Priority:** P1
+- **Estimate:** 1 day
+- **Depends on:** UI-001, UI-002, UI-004
+- **Paths:** kit/.uak/tests/test_dashboard_journey.py, docs/specs/dashboard-onboarding/, docs/DASHBOARD.md, README.md, CHANGELOG.md, kit/.uak/docs/WHY.md, kit/.uak/settings/known-files.txt
+- **Acceptance:** Exercise clean setup, existing installation, interrupted/failed installation, missing prerequisites, and readiness blockers using disposable local Git fixtures., Capture real browser evidence at 1280x720 and 390x844 for welcome, wizard, beginner dashboard, advanced dashboard, and an error state; include keyboard and reduced-motion checks., Document the visual entry point, prerequisites, terminal fallback, Beginner versus Advanced, the difference between Installed and Ready, and planning the project in the interface (UI-004: idea, planner run, review, typed approval)., Record the user's usability problem as evidence in WHY.md and add a changelog entry. Regenerate known-file hashes after payload changes., Run kit lint, generation checks, the complete package smoke, and relevant MCP regression tests. Report platform verification honestly; CI verifies other operating systems., gpt-Dylan independently runs Verify and records a verdict on the exact pushed SHA (claude-Dylan implements; amended by Dylan, Nov 2026). A later code change requires review of the new SHA. Dylan retains the final merge decision.
+- **Tests:** new_project_visual_setup_journey, interrupted_install_can_recover, missing_prerequisites_remain_actionable
+- **Verify:** `python kit/.uak/tests/test_dashboard_journey.py`
+- **Next step:** review the dependent task evidence and implement end-to-end tests before declaring the journey complete.
