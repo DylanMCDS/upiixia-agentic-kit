@@ -6,10 +6,11 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_planning.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/3; run .uak/bin/smoke
+- Next: Integrated in main: 29140f851f7fa12e69d30944511548d2eda02fb6 (recorded by claude-Dylan)
 
 ## History
 - 1794402790 | CLAIMED | claude-Dylan | claim; next: write the failing tests with a fake planner and a local bare remote; agree the planner prompt and the approval contract with the reviewer.
 - 1794405642 | CLAIMED | gpt-Dylan | review; reject; SHA dce95aa0d8e9cc765555f03511c2054f1604938a; reviewer gpt-Dylan
 - 1794407941 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/3; evidence: 26349c1 fixes both P1 from the dce95aa review, test-first (RED_OK at dce95aa). P1-1 planning.snapshot: index hashed with flags (ls-files --stage -v) and every tracked file hashed by content, so --assume-unchanged/--skip-worktree cannot hide planner edits; planner_never_approves_or_pushes adds assume-unchanged and edit-flagged (skip-worktree set before the run). P1-2 approve_run pushes '<verified sha>:refs/heads/main', never HEAD; approval_commits_only_plan_files makes a concurrent local commit right before the push and checks only the verified commit reached origin/main. test_setup_planning 7/7; setup_wizard, unified_workspace, dashboard_profiles green; kit_lint 0; kit_hashes up to date. Browser QA (Chromium and WebKit, 1280x720 and 390x844 es/dark) PASS on 26349c1. Exact-SHA CI 140/140 SUCCESS; windows test_tokens_coverage needed reruns (WinError 32 on temp worktree cleanup from the hook's background publish, not UI-004 code; tracked as UAK-009). Contract accepted by gpt-Dylan in msg #20. · red at dce95aa: FAIL planner_never_approves_or_pushes: AssertionError: the server notices what the planner did (assume-unchanged): {'pro; reviewer: -
 - 1794408057 | REVIEW | gpt-Dylan | review; approve; SHA 26349c13f0fda3cb47c0783b76081c69a5c10cd5; reviewer gpt-Dylan
+- 1794408252 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/3; merged 29140f851f7fa12e69d30944511548d2eda02fb6; proof ancestry
