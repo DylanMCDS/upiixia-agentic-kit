@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1794368672
+Updated: 1794370046
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-002 UI-003 
 CLAIMED: UI-001 
 BLOCKED: -
@@ -10,7 +10,7 @@ INTEGRATED: -
 CANCELLED: -
 
 Claims (first 24; status --task ID shows detail):
-UI-001 | CLAIMED | gpt-Dylan | until 1794383072
+UI-001 | CLAIMED | claude-Dylan | until 1794384446
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):

@@ -14,3 +14,4 @@
 - 1794365594 | CLAIMED | gpt-Dylan | checkpoint; next: Finish regression evidence and have claude-Dylan pre-review the exact pushed SHA.
 - 1794365948 | CLAIMED | gpt-Dylan | checkpoint; next: Review packet ../dashboard-review/REVIEW-UI-001.md; finish regression evidence and obtain CI plus Claude findings before formal done.
 - 1794368672 | CLAIMED | gpt-Dylan | checkpoint; next: Review ../dashboard-review/REVIEW-UI-001.md on ddcd44ba6c2606269a9a297da581f514e4a40782; address independently reproduced findings.
+- 1794370046 | CLAIMED | gpt-Dylan | handover; gpt-Dylan → claude-Dylan by gpt-Dylan
