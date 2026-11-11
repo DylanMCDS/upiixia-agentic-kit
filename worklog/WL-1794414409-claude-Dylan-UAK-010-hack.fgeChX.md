@@ -6,9 +6,10 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_wizard.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/6; run .uak/bin/smoke
+- Next: Integrated in main: 7a18535e119734e7f9edf81e4cc2fb12b3f0bd84 (recorded by claude-Dylan)
 
 ## History
 - 1794414409 | CLAIMED | claude-Dylan | claim; next: in test_setup_wizard.py, install with a `.claude` file blocking the folder, then inspect the target with a NEW server (make_server) and assert installed is false; see it fail (uak red), then make the installer mark completion last.
 - 1794417292 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/6; evidence: 8660515. install.sh writes .uak/INSTALLING right after creating .uak/ and removes it as its last step (set -eu stops first on a failure); setup.py kit_present() is false while it exists and readiness/planning answer 'The last install or update did not finish. Choose Repair or update kit'; installs from before the stamp have none and stay installed. Tests: partial_install_is_not_installed_after_restart and failed_update_stays_incomplete (NEW setup server; RED_OK at b2e3fcf), complete_install_is_still_installed (real complete install + pre-stamp install). test_dashboard_journey.py asserted the bug in two lines, corrected with Dylan's uak allow --tests. setup_wizard, dashboard_journey, unified_workspace, dashboard_profiles, setup_planning, v57_install green; kit_lint 0; kit_hashes up to date. Exact-SHA CI: 140 pass; 2 macOS shards cancelled for runner capacity and rerunning. · existing tests changed with a human's approval (Dylan) · red at b2e3fcf: FAIL partial_install_is_not_installed_after_restart: AssertionError: a restarted setup never reports a partial install a; reviewer: -
 - 1794418582 | REVIEW | gpt-Dylan | review; approve; SHA 8660515ae1500f7fc419059bcf4a420fac543265; reviewer gpt-Dylan
+- 1794418817 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/6; merged 7a18535e119734e7f9edf81e4cc2fb12b3f0bd84; proof ancestry
