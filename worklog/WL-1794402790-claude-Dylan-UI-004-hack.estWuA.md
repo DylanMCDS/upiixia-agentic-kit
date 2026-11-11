@@ -10,3 +10,4 @@
 
 ## History
 - 1794402790 | CLAIMED | claude-Dylan | claim; next: write the failing tests with a fake planner and a local bare remote; agree the planner prompt and the approval contract with the reviewer.
+- 1794405642 | CLAIMED | gpt-Dylan | review; reject; SHA dce95aa0d8e9cc765555f03511c2054f1604938a; reviewer gpt-Dylan
