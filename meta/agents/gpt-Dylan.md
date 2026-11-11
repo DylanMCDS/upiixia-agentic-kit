@@ -1,11 +1,11 @@
 # gpt-Dylan
 Agent: gpt-Dylan
 Started: 1794364216
-Events: 1
-Events-Since-Checkpoint: 1
-Checkpoints: 0
+Events: 2
+Events-Since-Checkpoint: 0
+Checkpoints: 1
 Sessions: 1
-Last-Checkpoint: 0
+Last-Checkpoint: 1794364668
 Human: Dylan
 Last-Session: gpt-Dylan-1794364215
-Updated: 1794364216
+Updated: 1794364668
