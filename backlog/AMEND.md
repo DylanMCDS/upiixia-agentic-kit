@@ -110,3 +110,16 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** partial_install_is_not_installed_after_restart, failed_update_stays_incomplete, complete_install_is_still_installed
 - **Verify:** `python kit/.uak/tests/test_setup_wizard.py`
 - **Next step:** in test_setup_wizard.py, install with a `.claude` file blocking the folder, then inspect the target with a NEW server (make_server) and assert installed is false; see it fail (uak red), then make the installer mark completion last.
+## UAK-006 · Proof of no change, and the targets turned on
+
+- **Type:** integration
+- **Priority:** P0
+- **Estimate:** 4 h
+- **Depends on:** UAK-003, UAK-004, UAK-005, UAK-008, UI-002, UI-004, UAK-010, UI-005, UI-006, UI-007
+- **Paths:** scripts/claims_diff.py, kit/.uak/tests/test_claims_perf.py, kit/.uak/bin/lib/, kit/.uak/bin/uak, kit/.uak/bin/uak-coordination, docs/perf-windows.md
+- **Acceptance:** the protocol suites run the old and the new engine side by side on the same fixtures: every command's stdout and the resulting claims tree are identical, the XFAIL set of test_claims_perf.py is empty: next ≤ 40, status ≤ 30, heartbeat ≤ 20 processes, docs/perf-windows.md has the before and after times from `scripts/perf_claims.sh` on Windows
+- **Tests:** old_and_new_engines_print_the_same_and_write_the_same_tree
+- **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
+- **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
+
+

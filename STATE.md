@@ -1,8 +1,8 @@
 # STATE
 
 Phase: execution
-Updated: 1794426182
-AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 
+Updated: 1794426214
+AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-005 UI-006 UI-007 
 CLAIMED: -
 BLOCKED: -
 REVIEW: -
@@ -13,11 +13,11 @@ Claims (first 24; status --task ID shows detail):
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1794413259 | plan | Dylan/Dylan | tasks added: UAK-010 | Why: backlog without PR (Plan-Channel: claims)
 - 1794413325 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794415926 | plan --amend | Dylan/Dylan | amended: UAK-010 Paths: install.sh, kit/.uak/bin/lib/setup.py, kit/.uak/tests/test_setup_wizard.py → install.sh, kit/.uak/bin/lib/setu
 - 1794415983 | allow | Dylan | test change: UAK-010 | Why: test_dashboard_journey asserted the UAK-010 bug (a failed install looked installed); it now asserts the files are on disk
 - 1794426182 | plan | Dylan/Dylan | tasks added: UI-005 UI-006 UI-007 | Why: backlog without PR (Plan-Channel: claims)
+- 1794426214 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
