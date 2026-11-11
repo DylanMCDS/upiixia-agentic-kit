@@ -69,3 +69,38 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** partial_install_is_not_installed_after_restart, failed_update_stays_incomplete, complete_install_is_still_installed
 - **Verify:** `python kit/.uak/tests/test_setup_wizard.py`
 - **Next step:** in test_setup_wizard.py, install with a `.claude` file blocking the folder, then inspect the target with a NEW server (make_server) and assert installed is false; see it fail (uak red), then make the installer mark completion last.
+## UI-005 · Prepare the project from the page, never only in a terminal
+
+- **Type:** feature
+- **Priority:** P0
+- **Estimate:** 1 day
+- **Depends on:** UI-004
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/planning.py, kit/.uak/tests/test_setup_prepare.py, kit/.uak/docs/WHY.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (hackathon simulation, 2026-11-11, notes/handoff:PENDING-IMPROVEMENTS.md #5, #6 and #8 to #10, plus #12): the next action lived only in Technical details, the person thought the page was still loading, and the gate's own push command would have published the unapproved plan files., An "Event schedule" form (start, end, time zone, with sensible defaults) writes Freeze-Epoch exactly as `uak clock START DEADLINE ZONE --write` does, and shows the computed freeze and the first-claim time., "Publish the kit to main" is a human act in the page with a confirmation that lists the files: it commits the installed kit and configuration WITHOUT IDEA.md, .uak/TASKS.md and .uak/OWNERS.md, as the local Git identity, on a branch equal to origin/main (or an empty remote), and pushes the verified commit; it refuses with the exact recovery otherwise. It keeps every UI-001 protection., Any step that can only happen outside the browser is shown as a clear "Do this in a terminal" box: which terminal, the `cd` into the project, the exact command with Copy, and "come back and press Check again". The next action is never only in Technical details., Planning is offered only once the kit is on main; before that, the planning section says why and points to the publish step., When lint fails for a reason that is not a `LINT:` line (GIT_ERROR, missing main, network), the page shows that reason in plain words with how to fix it., "Check the plan again" reruns the server's verification and lint on the current files without running the planner., The page asks once for the human's name and uses it for every human act that needs one (UAK_HUMAN); it is never typed into a command., WHY.md records the new human acts (publishing the kit from the page) with the simulation as evidence; docs/DASHBOARD.md is updated.
+- **Tests:** schedule_form_writes_freeze_epoch, publish_kit_excludes_unapproved_plan_files, publish_kit_pushes_only_the_verified_commit, terminal_step_is_shown_with_its_command, planning_waits_for_the_kit_on_main, lint_failure_reason_reaches_the_page, plan_can_be_rechecked_without_the_planner, human_name_is_asked_once
+- **Verify:** `python kit/.uak/tests/test_setup_prepare.py`
+- **Next step:** write the named tests with a local bare remote (empty, then with main) and the real `uak clock` and `uak lint`; see them fail (uak red); then add the schedule and publish endpoints to setup.py.
+
+## UI-006 · Start the team from the page
+
+- **Type:** feature
+- **Priority:** P0
+- **Estimate:** 4 h
+- **Depends on:** UI-005
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_team.py, kit/.uak/docs/WHY.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (hackathon simulation, notes/handoff:PENDING-IMPROVEMENTS.md #11 and #14 to #16): the person asked which terminal runs Claude or Codex, and needed the worktree `cd`, the MCP approval, the first prompt, the reviewer env vars and `$uak-review` explained., After Ready, a "Start your team" step in the page: (a) "Register the reviewer" is one button (a human act using the name from UI-005; it runs `uak register-reviewer NAME-r`), (b) one Copy command per agent that claims, enters the worktree and starts the tool with its first prompt (Claude Code implements; Codex reviews as NAME-r with `$uak-review`), each labelled with the terminal it goes in, (c) a line saying setup steps need no agent., Commands are exact and literal: only allowlisted task IDs and names validated by the server; no user text is interpolated unchecked., The Advanced view also shows the next step and its Copy button., Choosing coding tools explains the roles (one implements, one reviews as a second identity) and recommends Claude Code + Codex; "I'm the only human on this repository" says in plain words what it changes., WHY.md records the reviewer registration from the page; docs/DASHBOARD.md is updated.
+- **Tests:** reviewer_is_registered_from_the_page, agent_launch_commands_are_exact, advanced_view_shows_the_next_step, tool_roles_are_explained
+- **Verify:** `python kit/.uak/tests/test_setup_team.py`
+- **Next step:** write the named tests against a ready fixture project; see them fail; then add the team step.
+
+## UI-007 · A guided journey a new user can follow without the README
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 4 h
+- **Depends on:** UI-006
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/tests/test_setup_guide.py, docs/DASHBOARD.md, CHANGELOG.md
+- **Acceptance:** Evidence (hackathon simulation and PR chat, notes/handoff:PENDING-IMPROVEMENTS.md #2, #7, #13 and #17 to #20)., The welcome screen shows the whole journey and keeps it visible: Install → Prepare → Plan → Start the team → Follow progress, each marked "in this page", "in a terminal" or "your agents do it", with the current one highlighted. It says the page installs the kit INTO the project and that the kit itself is only downloaded once., The typed approval shows the exact folder name as a placeholder and, under the disabled button, "Type NAME to enable publishing"., When a step completes, the page moves the person to where the next one happens (for example, to "Plan your project")., In Spanish, the readiness gate's lines are translated (or a translated summary is shown above them), and the Advanced dashboard has no English labels left; the notice under the title no longer repeats the heading., The page warns when the logged-in Git/GitHub identity will sign the commits and PRs (another person's machine)., Keyboard, visible focus, reduced motion and 390px layouts keep working; docs/DASHBOARD.md and CHANGELOG.md are updated.
+- **Tests:** journey_is_visible_from_welcome, approval_field_says_what_to_type, gate_lines_are_translated, advanced_dashboard_is_translated, shared_identity_is_warned
+- **Verify:** `python kit/.uak/tests/test_setup_guide.py`
+- **Next step:** write the named tests (markup and catalog contracts plus HTTP checks); see them fail; then build the journey stepper.
