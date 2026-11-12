@@ -46,3 +46,24 @@ Other AVAILABLE upstream tasks (UAK-001…) are not ours; do not claim them.
 HANDOFF.md, UI-002-design.md, UI-004-design.md, ui004-headless-research.md, qa/ (Playwright QA scripts used for
 browser evidence: run them from a venv outside the repo), shots/ (evidence screenshots), plan/ (the review packets,
 PLAN, amendments and PR bodies from ../dashboard-review).
+
+## claude-Dylan · end of turn 2026-11-11 (late evening) → gpt-Dylan's turn
+
+Method now (Dylan): turns; the agent on turn does BOTH development and review. Implement as your identity, review
+as a separate reviewer identity (claude-Dylan-r / gpt-Dylan-r, registered) with a fresh-context reviewer session.
+Quality standard unchanged: test-first (uak red), exact-SHA CI complete and green before `uak done`, never change an
+existing test without Dylan's `uak allow --tests`, findings outside Paths go to PENDING-IMPROVEMENTS.md.
+
+### State of record (claims)
+| Task | State | Where | Next exact step |
+|---|---|---|---|
+| UAK-013 session-start < 3 s | CLAIMED by gpt-Dylan (handed over) | branch feat/uak-013, worktree ~/Documents/Repositorios/Hackathon/upiixia-agentic-kit-dylan-wt/uak-013 (.uak-env set to gpt-Dylan), PR #11, SHA 126d377 | Wait for PR #11 CI (complete + green), then `uak done UAK-013 --pr <#11> --to gpt-Dylan-r`, review it as gpt-Dylan-r (fresh context). Earlier CI found: 3 s budget tight on CI runners (default wait now 1.0 s), Windows cold start, and Windows cleanup (tests now wait with the rename probe). |
+| UI-005 prepare from the page | REVIEW, owner claude-Dylan; last verdict reject on 57ef048 (claude-Dylan-r) | branch feat/ui-005, worktree .../upiixia-agentic-kit-dylan-wt/ui-005, PR #9, fix SHA 8326fa8 | Fixes for the 57ef048 review are pushed (red at 57ef048 for publish_ignores_personal_files_present_before_install, failed_commit_leaves_index_and_refs_as_before, human_name strict). After UAK-013 leaves CLAIMED: Dylan runs `UAK_HUMAN=Dylan bash .uak/bin/uak handover UI-005 --to gpt-Dylan` (claude-Dylan is paused), set that worktree's .uak-env to gpt-Dylan/UI-005, wait for PR #9 CI on 8326fa8, `uak done UI-005 --pr <#9> --to gpt-Dylan-r`, review as gpt-Dylan-r. |
+| UI-006, UI-007 | AVAILABLE after UI-005 | — | UI-006 contract already agreed (inbox #47/#53): explicit human click, validated NAME/ID, fixed argv, distinct identities, the real wt path. |
+| UAK-012 tests independent of the machine | AVAILABLE | — | Take it when free. |
+| Sync PR #12 (upstream UAK-062..066) | open | branch sync/upstream-2 | Dylan merges; then merge main into in-flight branches and rerun Verify. |
+
+### Faster local verification (pulled from the real repo, UAK-054)
+- The kit's smoke runs parallel shards only when it reads `Smoke-Jobs` from the root .uak/PROJECT.md; `cd kit && bash .uak/bin/smoke --package-only` did NOT (serial). Use `cd kit && bash .uak/bin/smoke --package-only --jobs auto` (10 cores here).
+- On this Mac, run tests with an isolated global Git config (GIT_CONFIG_GLOBAL=<file with user.name/email>) and a `python`→python3 shim on PATH for Verify lines that say `python`.
+- Use `uak wait ... --for message|approve|integrated` and `gh pr checks <N> --watch` to wait; never poll.
