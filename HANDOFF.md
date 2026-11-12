@@ -198,3 +198,30 @@ exception was used. All our local CI watches are stopped; GitHub CI was left run
 - Then UI-006 (contract inbox47/53), UI-007, UAK-012. One live task per identity. No code outside task Paths;
   findings go to PENDING-IMPROVEMENTS.md. No existing-test edits without audited allow. Never use UAK_HUMAN
   without a specific new authorization; the previous chat exception covered UAK-013 test permission only.
+
+## claude-Dylan · turn 2026-11-12 (afternoon) → next session (gpt-Dylan unavailable this week)
+
+State of record is claims; this is the map. Talk to Dylan in Spanish. Opus 5.5 works; Fable 5.2 only as mentor for hard
+problems. claude-Dylan-r reviews as a fresh clean-context subagent (SHA, diff, tests, CI only).
+
+| Task | State | Next |
+|---|---|---|
+| UAK-013 | INTEGRATED (main a5f38f1) | — |
+| UAK-068 (session start 41→15 processes; Windows count) | APPROVED at c083475, PR #14 | Dylan merges PR #14; then `uak integrate UAK-068` (owner claude-Dylan-2, worktree upiixia-agentic-kit-dylan-wt/uak-068) |
+| UAK-012 (machine-independent tests) | CLAIMED by claude-Dylan, PR #13 at 2a8f99f; local unisolated smoke 507 PASS | after UAK-068 is on main: merge main, push, CI, `uak done --to claude-Dylan-r`, clean review |
+| UI-005 (prepare from the page) | REVIEW, PR #9 at bf0995f (fixes the f8d5d84 reject: refused push undone and says so; notices wrap at 390) | same as UAK-012: merge main after UAK-068, CI, ship, clean review |
+| UAK-067 (CI once per SHA) | AVAILABLE; UAK-006 now depends on it (Dylan's amend); claim refused while UI-005 holds WHY.md | claim after UI-005 is integrated (use identity claude-Dylan-3, never claude-Dylan-r) |
+| UI-006 + UI-007 | AVAILABLE, wait for UI-005 (shared files) | Dylan agreed to ship them as ONE delivery. Contract draft: notes/handoff:UI-006-contract.md (Fable pass + reviewer agreement before code) |
+
+Rules adopted today (Dylan): one complete all-SUCCESS run per SHA is enough when the other run only has runner-capacity
+cancellations (0 steps); real failures never ship (UAK-012/UI-005 currently show the Windows session-start flake that
+UAK-068 fixes). Pre-review adversarial probes + browser QA before every done. Cancel obsolete runs of old SHAs.
+Tools: CI shepherd script and Playwright venv lived in the session scratchpad (recreate if gone; venv outside the repo).
+Mac quirks: no `python` (shim python→python3 on PATH for Verify), global core.hooksPath and real Codex pace (UAK-012 fixes
+the tests; isolate with GIT_CONFIG_GLOBAL + CODEX_HOME until it lands). Windows check by a separate Claude found the Git
+Bash launcher PATH issue; use that machine only for one-off verification passes.
+Upstream: JoahanMorales/upiixia-agentic-kit PR #2 (head DylanMCDS:main) must be complete (all 12 tasks + UAK-068
+integrated, main green, PR body updated) before Dylan asks his friend to review; its fork workflows need the owner's
+"approve and run". Task IDs collide with upstream (UAK-009..013, UAK-067/068): Dylan to agree a prefix with the owner.
+Pending improvements: notes/handoff:PENDING-IMPROVEMENTS.md up to #32 (#25 installer vs global hooksPath and #32
+Windows wait are product decisions for Dylan).
