@@ -10,3 +10,4 @@
 
 ## History
 - 1794449548 | CLAIMED | claude-Dylan | claim; next: measure `hook session-start` on a fixture, find the synchronous slow steps, write the timing test (budget 3 s) and see it fail.
+- 1794453716 | CLAIMED | claude-Dylan | handover; claude-Dylan → gpt-Dylan by claude-Dylan
