@@ -10,3 +10,4 @@
 
 ## History
 - 1794503935 | CLAIMED | claude-Dylan-r | claim; next: add the counting shims to the test and assert the halved bound on startup and resume; see both fail on main; then remove repeated git/awk calls on the foreground path (batch git reads, use builtins, fewer polling sleeps) until they pass.
+- 1794503977 | CLAIMED | claude-Dylan-r | handover; claude-Dylan-r → claude-Dylan-2 by claude-Dylan-r
