@@ -20,3 +20,4 @@ Coordination decisions on the claims branch.
 - 1794415983 | allow | Dylan | test change: UAK-010 | Why: test_dashboard_journey asserted the UAK-010 bug (a failed install looked installed); it now asserts the files are on disk but not installed, and that readiness asks for Repair
 - 1794426182 | plan | Dylan/Dylan | tasks added: UI-005 UI-006 UI-007 | Why: backlog without PR (Plan-Channel: claims)
 - 1794426214 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1794443979 | deadline lease/UI-005/1794440637 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
