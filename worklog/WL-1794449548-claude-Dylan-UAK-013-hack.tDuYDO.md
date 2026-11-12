@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_hook_session_start_speed.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/11; run .uak/bin/smoke
+- Next: Integrated in main: a5f38f1cc4191dc3813856bb68c4fd61adfc94eb (recorded by claude-Dylan)
 
 ## History
 - 1794449548 | CLAIMED | claude-Dylan | claim; next: measure `hook session-start` on a fixture, find the synchronous slow steps, write the timing test (budget 3 s) and see it fail.
@@ -22,3 +22,4 @@
 - 1794493121 | REVIEW | gpt-Dylan | handover; gpt-Dylan → claude-Dylan by gpt-Dylan
 - 1794500128 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/11; evidence: 7cfd519 addresses the f281ab9 reject (stale-refresh overlap): each refresh owns a private output file and marker; stale workers cannot publish or remove another worker's marker. Local (claude-Dylan, Mac, exact HEAD): test_hook_session_start_speed all PASS, test_hook_claims 3/3 PASS, kit_lint 0, kit_hashes current; earlier full smoke 76/76 isolated (gpt-Dylan). CI: pull_request run 43228669067 86/86 SUCCESS at 7cfd519; push run 43228658522 85/86 SUCCESS, the remaining macOS suite1 job was cancelled 6 times by GitHub runner capacity (0 steps, 'not acquired by Runner'), the same job passed in the PR run. Shipped with one complete green run per SHA under Dylan's explicit chat authorization (2026-11-12). · red at f281ab9: FAIL session_start_coalesces_aged_live_refreshes (assertion failed: new-first started a second live refresh: ['OLD', 'NE; reviewer: -
 - 1794500526 | REVIEW | claude-Dylan-r | review; approve; SHA 7cfd519ba754da066edcdcd882b1a43a9babe286; reviewer claude-Dylan-r
+- 1794500619 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/11; merged a5f38f1cc4191dc3813856bb68c4fd61adfc94eb; proof ancestry
