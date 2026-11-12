@@ -47,3 +47,9 @@ the agents, and why the page "looked like it was loading" while nothing ran. Eac
 
 Start with 5, 6, 7 and 11: together they remove every terminal moment of setup except launching the agents, and turn
 that one into a single Copy per agent. Then 8 to 10 (planning reliability), then the P1 rows.
+
+### Found while building UI-005
+
+| # | Improvement | Evidence |
+|---|---|---|
+| 21 | A fresh install with only Claude Code makes `doctor` fail with ".agents/skills is a stale copy of .claude/skills" (install.sh creates .agents/skills, doctor compares it); with Claude Code + Codex it passes. A new user picking only Claude Code is blocked at preflight until `bash .uak/bin/doctor --fix`. | Reproduced on main 2026-11-11 (`install.sh --mode sprint --harness claude .` then `bash .uak/bin/doctor`). UI-005's terminal box shows the fix meanwhile. |
