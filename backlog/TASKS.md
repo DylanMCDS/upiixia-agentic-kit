@@ -104,3 +104,38 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** journey_is_visible_from_welcome, approval_field_says_what_to_type, gate_lines_are_translated, advanced_dashboard_is_translated, shared_identity_is_warned
 - **Verify:** `python kit/.uak/tests/test_setup_guide.py`
 - **Next step:** write the named tests (markup and catalog contracts plus HTTP checks); see them fail; then build the journey stepper.
+## UAK-011 · A Claude-only install passes doctor
+
+- **Type:** bug
+- **Priority:** P1
+- **Estimate:** 1 h
+- **Depends on:** None
+- **Paths:** install.sh, kit/.uak/bin/doctor, kit/.uak/tests/test_install_claude_only.py
+- **Acceptance:** Reproduction (notes/handoff:PENDING-IMPROVEMENTS.md #21, reproduced on main 2026-11-11): `install.sh --mode sprint --harness claude .` in a fresh repo, then `bash .uak/bin/doctor` fails with ".agents/skills is a stale copy of .claude/skills"; with `--harness claude,codex` it passes. A new user who picks only Claude Code is blocked at the readiness gate's preflight., After a Claude-only install, doctor reports no stale-skills failure (either .agents/skills is not created when no harness reads it, or it is a faithful copy; doctor and install.sh agree on which)., A multi-harness install (claude,codex and claude,cursor) still keeps .agents/skills in sync, and doctor still reports a copy that is really stale., `bash .uak/bin/smoke --package-only` exits 0.
+- **Tests:** claude_only_install_passes_doctor_skills_check, multi_harness_install_keeps_agents_skills_in_sync, really_stale_copy_is_still_reported
+- **Verify:** `python kit/.uak/tests/test_install_claude_only.py`
+- **Next step:** reproduce in the test with install.sh into a temp repo with `--harness claude`, assert doctor has no stale-skills FAIL, see it fail (uak red).
+
+## UAK-012 · Two tests stop depending on the machine they run on
+
+- **Type:** bug
+- **Priority:** P2
+- **Estimate:** 1 h
+- **Depends on:** None
+- **Paths:** kit/.uak/tests/test_v3.py, kit/.uak/tests/test_tokens_coverage.py, kit/.uak/tests/test_hack.py
+- **Acceptance:** Evidence (notes/handoff:PENDING-IMPROVEMENTS.md #3 and #4, Dylan's Mac, 2026-11-11): `test_v3::guard_subagent_budget` reads the machine's real usage pace ("pace critical" lowers Max-Parallel-Subagents to 1) and fails on main; `test_tokens_coverage::publish_failure_is_recorded` fails when `~/.gitconfig` sets `core.hooksPath`, because the test remote's pre-receive hook is skipped., Both tests pass on a machine with a critical pace and a global core.hooksPath, without weakening any assertion: the fixtures pin the pace input and the hooks path (for example through the test runner's environment), they do not skip or relax the checks., The tests still fail when the guard or the publish-failure path is broken.
+- **Tests:** guard_budget_ignores_the_machine_pace, publish_failure_is_recorded_under_a_global_hooks_path
+- **Verify:** `python kit/.uak/tests/test_v3.py`
+- **Next step:** write each new test so it sets a critical pace / a global core.hooksPath for its own fixture and see it fail on main; then pin those inputs in the fixtures.
+
+## UAK-013 · The session-start hook answers within 3 seconds
+
+- **Type:** bug
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/hook, kit/.uak/tests/test_hook_session_start_speed.py
+- **Acceptance:** Evidence (Claude Code /doctor on Dylan's Mac, 22 sessions over 18 days, 2026-11-11): the kit's SessionStart hook took about 9.5 s typical on startup, 12.6 s typical on resume and up to 28 s, blocking the start of every session in a project with the kit., `hook session-start` returns within 3 s on a fixture with a local bare remote; network or slow work (publishing tokens, black box flush, map build, inbox reads) runs in the background or is skipped when fresh, as tick already does., What session-start shows the agent (identity, task, inbox summary) stays correct and complete., `bash .uak/bin/smoke --package-only` exits 0.
+- **Tests:** session_start_returns_within_budget, session_start_output_is_unchanged
+- **Verify:** `python kit/.uak/tests/test_hook_session_start_speed.py`
+- **Next step:** measure `hook session-start` on a fixture, find the synchronous slow steps, write the timing test (budget 3 s) and see it fail.
