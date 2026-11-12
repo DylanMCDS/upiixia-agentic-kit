@@ -164,3 +164,37 @@ after this snapshot. Do not deliver the old green SHA: its independent review re
 - After all current 172 checks are completeSUCCESS: reship UAK-013 at7cfd519 (or a newer required fix) with
   `uak done ... --to gpt-Dylan-r`, then NEW clean-context formal review. Last formal verdict remains reject on
   f281ab9; do not confuse mentor preflight or green tests with independent approval.
+
+
+## gpt-Dylan · end of turn 2026-11-12 08:23 CST
+
+Dylan switches the turn to claude-Dylan. UAK-013 was successfully handed over with the owner's normal
+`uak handover UAK-013 --to claude-Dylan`; lease renewed, `.uak-env` is claude-Dylan/UAK-013. No new UAK_HUMAN
+exception was used. All our local CI watches are stopped; GitHub CI was left running. No merge was performed.
+
+- Current code: clean `feat/uak-013` at **7cfd519ba754da066edcdcd882b1a43a9babe286**, PR #11, worktree
+  `/Users/dylanmartinezcastillo/Documents/Repositorios/Hackathon/upiixia-agentic-kit-dylan-wt/uak-013`.
+- Last observed CI: **171/172 pass**, only replacement macOS suite1 job131233222771 pending in push43228658522.
+  PR43228669067 completedSUCCESS. The cancelled original Mac job had no steps; one --failed retry was requested.
+  Both Windows15-case suites passed. This is the last watcher output, not a fresh assertion about current CI.
+- Local final evidence: targeted18/18, isolated full package smoke76/76, lint0, hashes472 current. Mentor actual-diff
+  development preflight passed; it is NOT formal independent approval. Last formal reject is still f281ab9.
+- **Immediate next step:** read inbox/status, resume `gh pr checks 11 -R DylanMCDS/upiixia-agentic-kit --watch
+  --interval 60`, then audit exact HEAD and both run/check-suite latest results (86 each, no pending/non-success).
+  Aggregate jobs API returned502 during rerun; use run metadata + check-suite API. CLI watch exit0 alone is insufficient.
+- Only after full current CI is green: `uak done UAK-013 --pr https://github.com/DylanMCDS/upiixia-agentic-kit/pull/11
+  --to claude-Dylan-r --evidence "..."`, then a NEW clean-context claude-Dylan-r reviewer. Give reviewer only exact
+  SHA/diff/tests/CI, not this handoff or implementation reasoning. Rerun Verify15 + hook_claims3, inspect assertion
+  reds and audited test permission, portability/security. Code/records English; talk to Dylan Spanish.
+- Evidence: `/tmp/uak-013-smoke-reap-path.log`, `/tmp/uak-013-verify-reap-path.log`,
+  `/tmp/uak-013-pr-checks-watch-mac-retry.log`, `/tmp/uak-013-reap-path-pr-run.json`,
+  `/tmp/uak-013-reap-path-mac-job.json`. Four durable assertion-red proofs are in the Git directory's `uak-red/`
+  (c8a449c,1d6aed1,61e13a3,f281ab9), listed in earlier checkpoint. UAK-013 existing-test permission already audited.
+- On independent approval, final merge is Dylan's; give him the exact command. Integrate after human merge and
+  merge main into in-flight branches, rerunning Verify/lint before delivery. Main45cef16 is already included here.
+- UI-005 remains owned by claude-Dylan (PR #9, last known fix8326fa8); no handover to gpt happened. After UAK-013,
+  continue it in its own worktree, merge current main and revalidate. Review manifest exclusion of personal files
+  present before installation and failed-commit restoration of index/refs. Browser1280x720 and390x844 required.
+- Then UI-006 (contract inbox47/53), UI-007, UAK-012. One live task per identity. No code outside task Paths;
+  findings go to PENDING-IMPROVEMENTS.md. No existing-test edits without audited allow. Never use UAK_HUMAN
+  without a specific new authorization; the previous chat exception covered UAK-013 test permission only.
