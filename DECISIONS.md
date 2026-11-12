@@ -27,3 +27,4 @@ Coordination decisions on the claims branch.
 - 1794455184 | allow | Dylan | test change: UAK-013 | Why: Dylan explicitly authorized this command in chat; add synchronization and Windows cleanup waits in test_hook_claims without changing assertions
 - 1794503845 | plan | Dylan/Dylan | tasks added: UAK-067 UAK-068 | Why: backlog without PR (Plan-Channel: claims)
 - 1794515078 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1794517434 | deadline lease/UAK-012/1794509559 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.

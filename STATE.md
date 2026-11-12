@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1794517395
+Updated: 1794517434
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-006 UI-007 UAK-067 
 CLAIMED: UAK-012 
 BLOCKED: -
@@ -16,11 +16,11 @@ UI-005 | REVIEW | claude-Dylan | until 1794586710
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1794447400 | plan --amend | Dylan/Dylan | amended: UI-005 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/planning.
 - 1794452196 | plan --amend | Dylan/Dylan | amended: UAK-013 Paths: kit/.uak/bin/hook, kit/.uak/tests/test_hook_session_start_speed.py → kit/.uak/bin/hook, kit/.uak/tests/test_ho
 - 1794455184 | allow | Dylan | test change: UAK-013 | Why: Dylan explicitly authorized this command in chat; add synchronization and Windows cleanup waits in test_hook_claims witho
 - 1794503845 | plan | Dylan/Dylan | tasks added: UAK-067 UAK-068 | Why: backlog without PR (Plan-Channel: claims)
 - 1794515078 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1794517434 | deadline lease/UAK-012/1794509559 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
