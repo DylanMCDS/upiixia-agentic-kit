@@ -53,3 +53,10 @@ that one into a single Copy per agent. Then 8 to 10 (planning reliability), then
 | # | Improvement | Evidence |
 |---|---|---|
 | 21 | A fresh install with only Claude Code makes `doctor` fail with ".agents/skills is a stale copy of .claude/skills" (install.sh creates .agents/skills, doctor compares it); with Claude Code + Codex it passes. A new user picking only Claude Code is blocked at preflight until `bash .uak/bin/doctor --fix`. | Reproduced on main 2026-11-11 (`install.sh --mode sprint --harness claude .` then `bash .uak/bin/doctor`). UI-005's terminal box shows the fix meanwhile. |
+
+### Found during package verification
+
+| # | Improvement | Evidence |
+|---|---|---|
+| 22 | Include installer/scanner and retry-hook fixtures when making tests independent of the machine's global `core.hooksPath` (related to #4 and UAK-012). | During UAK-011, `test_v51::a_smaller_root` and `test_v54::a_retry_reuses_the_base` failed unchanged on baseline a90e820 as well as the task branch. The global hook path bypassed fixture hooks. Both passed unchanged in the complete smoke with a command-scoped isolated global Git configuration. Evidence: `/tmp/uak-011-v51-baseline.log`, `/tmp/uak-011-v54-baseline.log`, `/tmp/uak-011-smoke-isolated.log`. No out-of-scope test edits were made. |
+| 23 | Add actionable diagnostics for an intermittent Windows `test_v592::guard_runs_on_builtins` failure; establish its cause before choosing a fix. | UAK-013 SHA 61e13a33cd41c13b671ac33f2f602228db57c837: [PR Windows job 130966060868](https://github.com/DylanMCDS/upiixia-agentic-kit/actions/runs/43150579787/job/130966060868) failed the forced-push assertion with `still blocked:` and empty stderr; the same file passed in the matching push run. Guard and test_v592 are byte-identical to main45cef16 and the failing call does not source the changed hook. The cause is unproven, rather than a confirmed baseline defect. Preserve return code/stdout/stderr on failure in a separately authorized task. Initial evidence: `/tmp/uak-013-ci-windows-v592-failure.log`; 171 of 172 checks passed before a single unchanged failed-job retry. |
