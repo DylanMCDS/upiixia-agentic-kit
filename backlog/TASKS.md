@@ -139,3 +139,26 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** session_start_returns_within_budget, session_start_output_is_unchanged
 - **Verify:** `python kit/.uak/tests/test_hook_session_start_speed.py`
 - **Next step:** measure `hook session-start` on a fixture, find the synchronous slow steps, write the timing test (budget 3 s) and see it fail.
+## UAK-067 · CI validates each SHA once and cancels obsolete runs
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 1.5 h
+- **Depends on:** None
+- **Paths:** .github/workflows/test.yml, scripts/kit_lint.py, kit/.uak/tests/test_ci_once.py, kit/.uak/docs/WHY.md
+- **Acceptance:** Evidence (notes/handoff:PENDING-IMPROVEMENTS.md #24; 2026-11-12): every feature SHA ran the full 86-check matrix twice (push and pull_request, 172 checks, 8 macOS jobs); with GitHub's macOS arm64 capacity short, UAK-013's last macOS job was cancelled about 7 times with 0 steps and a ready task waited ~2 h, and UI-005's PR run the same., The full matrix (discover, the Linux and macOS shards, every Windows file) runs once per feature SHA, on pull_request; pushes to main still run it in full after every merge, and workflow_dispatch can run it on demand. No check is dropped and the matrix is unchanged., A newer push to the same pull request cancels its older in-progress runs (concurrency by pull request number); runs on main are never cancelled., `kit_lint.py` fails when test.yml runs the full suite on both push to any branch and pull_request, or when pull_request runs lack cancel-in-progress concurrency, so the duplication cannot come back unnoticed., WHY.md records the rule and Dylan's decision of 2026-11-12: a SHA whose one complete run is all SUCCESS may be shipped when the other run's only non-success jobs are runner-capacity cancellations (cancelled, 0 steps, "not acquired by Runner"); real failures never ship., `bash .uak/bin/smoke --package-only` exits 0.
+- **Tests:** ci_runs_the_matrix_once_per_sha, obsolete_pull_request_runs_are_cancelled, main_keeps_its_full_run
+- **Verify:** `python kit/.uak/tests/test_ci_once.py`
+- **Next step:** write test_ci_once.py so it reads ../.github/workflows/test.yml (skip when absent, as in an installed project) and calls kit_lint's new check; see it fail on main; then change the triggers and add the concurrency block.
+
+## UAK-068 · Session start launches half as many processes, so Windows stays under 3 seconds
+
+- **Type:** bug
+- **Priority:** P0
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/hook, kit/.uak/tests/test_hook_session_start_speed.py
+- **Acceptance:** Evidence (notes/handoff:PENDING-IMPROVEMENTS.md #29, 2026-11-12): `session_start_returns_within_budget` failed on GitHub's Windows runners at 3.1-3.2 s against the 3 s budget (main a5f38f1 push run 43258148086; UAK-012 2a8f99f push run) while the same SHAs passed in their pull_request runs; it decides by luck whether a SHA is green. Counted on the test's fixture (slow 3 s remote, one claimed task) with counting shims on PATH, `hook session-start` launched 206 external processes on startup and 139 on resume (45-74 git, 15-33 awk, 11-12 sleep), and a Git Bash process costs 20-50 ms on Windows., The processes launched before `hook session-start` returns are counted deterministically by the test (shims on PATH, independent of runner speed) and are at most half of today's count on both startup and resume; background refreshes still run and still finish., The 3 s wall-clock budget is unchanged, and what session-start shows (identity, task, inbox summary, refresh notes) is unchanged: every existing case of test_hook_session_start_speed and test_hook_claims passes as is., No existing assertion changes; only new tests are added., `bash .uak/bin/smoke --package-only` exits 0.
+- **Tests:** session_start_launches_half_the_processes_on_startup, session_start_launches_half_the_processes_on_resume
+- **Verify:** `python kit/.uak/tests/test_hook_session_start_speed.py`
+- **Next step:** add the counting shims to the test and assert the halved bound on startup and resume; see both fail on main; then remove repeated git/awk calls on the foreground path (batch git reads, use builtins, fewer polling sleeps) until they pass.
