@@ -126,3 +126,24 @@ after this snapshot. Do not deliver the old green SHA: its independent review re
   and failed-commit index/ref restoration. UI-006, UI-007 and UAK-012 follow; none was taken during this checkpoint.
 - Out-of-scope findings are recorded in PENDING-IMPROVEMENTS.md #22–24. The old61 Windows guard failure was retried
   once unchanged and passed; its cause remains unproven. f281ab9's own CI passed all checks on attempt1.
+
+### Checkpoint update · c41641a published · turn remains active
+
+- The ownership implementation is now committed and pushed as `c41641a6cf270118ad5f33b17c3464835b150f0d` on
+  `feat/uak-013`, PR #11. It supersedes the dirty-worktree snapshot above. Inspect HEAD/status before resuming.
+- The read-only Astra mentor completed actual-diff development preflight. Final focused checks pass: 15
+  session-start/ownership cases plus three hook_claims cases (18 total), lint0, hashes472 current. Existing
+  assertions and the three-second budget remain intact. The mentor did not provide independent PR approval.
+- Full 76-file smoke and exact-head CI are running. Next: wait with
+  `gh pr checks 11 -R DylanMCDS/upiixia-agentic-kit --watch --interval 60`; verify that both current runs and all
+  newly created matrix checks are complete and green. Do not deliver merely because initial discover checks pass.
+- Only after full smoke and exact-head CI pass: reship UAK-013 with `uak done ... --to gpt-Dylan-r`, then start a
+  NEW clean-context reviewer on c41641a (or the newer verified HEAD if a fix was needed). Prepared detached snapshot:
+  `/Users/dylanmartinezcastillo/Documents/Repositorios/Hackathon/review-gpt-uak013-c41641a`.
+- Final mentoring regressions cover live coalescing, dead recovery, orphan next/inbox descriptors, delayed old
+  `mv`, failed/interrupted REAP, corrupt-record/path confinement, hook exclusion, concurrent acquisition, abandoned
+  parent handoff and inbox failure status. Publication uses private same-filesystem files and fenced recovery.
+- Current log paths: `/tmp/uak-013-verify-owner.log`; full smoke/CI final log paths are reported by the running
+  implementer. The durable f281 ownership red is in `gitdir/uak-red/UAK-013-worker-ownership-f281ab9.txt`.
+- No other task was taken, no UAK_HUMAN permission beyond the specific UAK-013 test authorization was used, and no
+  merge was performed. UI-005 handover and final human merges remain pending.
