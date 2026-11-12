@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_hook_session_start_speed.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/14; run .uak/bin/smoke
+- Next: Integrated in main: bfc493ef7bc9fe9a39ec31180a04cf4eb16047ce (recorded by claude-Dylan-2)
 
 ## History
 - 1794503935 | CLAIMED | claude-Dylan-r | claim; next: add the counting shims to the test and assert the halved bound on startup and resume; see both fail on main; then remove repeated git/awk calls on the foreground path (batch git reads, use builtins, fewer polling sleeps) until they pass.
@@ -15,3 +15,4 @@
 - 1794517777 | REVIEW | claude-Dylan-r | review; reject; SHA cdbb93420eba7145321f8b55577c0dd10fa233f0; reviewer claude-Dylan-r
 - 1794523563 | REVIEW | claude-Dylan-2 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/14; evidence: c083475 fixes the cdbb934 reject (claude-Dylan-r, 2 P2 + 3 P3). P2 pace: when session start prints no fresh reading, the background reading leaves a surge/conserve/critical line in uak-pace.note for the first tick (test session_start_keeps_reporting_the_pace_level, red at cdbb934). P2 Windows count: Git's bin/bash.exe is a launcher that puts /ucrt64/bin first on PATH; the bash shim now runs the real Bash (type -P bash, cygpath -m) and the shim folder is put first inside bash -c, and a count without the hook's own git call fails (diagnosed and verified on Dylan's Windows machine: 12/12 processes). Gate opened in finally (WinError 32). P3: pace subshell ignores HUP; harness name bounded at 256. Local Mac: test_hook_session_start_speed 18/18, hook_claims 3/3, kit_lint 0, kit_hashes current. CI: push run 43313836206 and pull_request run 43313846192 both 86/86 SUCCESS at c083475; their Windows job counts 12 processes (limit 20/21) and the 3 s budget passes. Open note for Dylan, not in scope: on his Windows machine the worktree startup measured 2.81-2.94 s (under 3 s by 60-190 ms); most of it is the deliberate 1 s wait. · red at cdbb934: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
 - 1794523879 | REVIEW | claude-Dylan-r | review; approve; SHA c083475fa25dbb851dc254fb317676a59797c04d; reviewer claude-Dylan-r
+- 1794527476 | INTEGRATED | claude-Dylan-2 | integrate; recorded by claude-Dylan-2; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/14; merged bfc493ef7bc9fe9a39ec31180a04cf4eb16047ce; proof ancestry
