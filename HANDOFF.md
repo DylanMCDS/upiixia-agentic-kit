@@ -67,3 +67,62 @@ existing test without Dylan's `uak allow --tests`, findings outside Paths go to 
 - The kit's smoke runs parallel shards only when it reads `Smoke-Jobs` from the root .uak/PROJECT.md; `cd kit && bash .uak/bin/smoke --package-only` did NOT (serial). Use `cd kit && bash .uak/bin/smoke --package-only --jobs auto` (10 cores here).
 - On this Mac, run tests with an isolated global Git config (GIT_CONFIG_GLOBAL=<file with user.name/email>) and a `python`→python3 shim on PATH for Verify lines that say `python`.
 - Use `uak wait ... --for message|approve|integrated` and `gh pr checks <N> --watch` to wait; never poll.
+
+## gpt-Dylan · checkpoint 2026-11-12 07:05 CST · turn still active
+
+This is a recovery checkpoint, not a completed turn. Inspect the live worktree before acting; work may advance
+after this snapshot. Do not deliver the old green SHA: its independent review rejected it.
+
+### Current task: UAK-013, same owner and branch
+
+- Owner: gpt-Dylan. State: REVIEW while fixing the rejection; `uak log --state CLAIMED` cannot move a task out of
+  REVIEW. Use a normal `uak log` and reship with `uak done` after new complete green CI.
+- Worktree: `/Users/dylanmartinezcastillo/Documents/Repositorios/Hackathon/upiixia-agentic-kit-dylan-wt/uak-013`;
+  branch `feat/uak-013`; PR #11. Main45cef16 (PR #12 and UAK-011) is already merged into this branch.
+- HEAD at this snapshot: `f281ab9c5171940caac607b948232377f133cf74`. Only
+  `kit/.uak/tests/test_hook_session_start_speed.py` was dirty at 07:05; new ownership regressions were being added
+  before engine changes. Preserve this work; do not reset or check out over it.
+- f281ab9 passed 172/172 CI checks without retries and all 76 local smoke files, but fresh gpt-Dylan-r rejected
+  it: after the two-minute stale-marker retry, overlapping workers can share `.new` and an older worker can corrupt
+  the newer committed cache. Repro: `/tmp/uak013-r3-overlap-probe.sh` and `proof.txt`.
+- Earlier rejected61e13a3 had an unseen-inbox delivery race; the one-snapshot fix is retained. Its deterministic
+  regression passes current code and still fails against detached old61 after the Windows fixture correction.
+- Four assertion-red records are durable in the implementation worktree's Git directory, under `uak-red/`:
+  `UAK-013-original-c8a449c.txt`, `UAK-013-synchronization-1d6aed1.txt`,
+  `UAK-013-inbox-snapshot-61e13a3.txt`, and `UAK-013-worker-ownership-f281ab9.txt`.
+
+### Next exact work
+
+1. `cd` into the UAK-013 worktree and inspect `git status --short`. Finish the ownership fix and the new tests,
+   preserving all existing assertions and the three-second budget. The aged-live regression already has RED_OK
+   on f281ab9; do not spend time running every unimplemented case to accumulate more reds.
+2. Chosen development design: local per-worktree Git CAS ownership, immutable PID/generation records, actual child
+   PID from `$!`, no age-only takeover of a live worker, and a CAS-owned REAP phase before replacing a dead owner.
+   Interrupted recovery retains the same old generation until cleanup succeeds. All publication sources must be
+   private, beneath the physical Git directory and on the cache's filesystem; delayed old rename sources must be
+   revoked before replacement work starts. Cleanup failure prevents replacement. Validate record schema/PIDs/tokens
+   before cleanup. Disable reference-transaction hooks on internal ref mutations. Every inbox writer, including
+   tick's inline path, needs a private temporary file too.
+3. Regression set being added: live-worker coalescing, dead-owner recovery, orphan output descriptors, a paused
+   orphan `mv`, interrupted/failed REAP, corrupt-record confinement, hook exclusion, simultaneous CAS acquisition,
+   and abandoned parent-to-child handoff. Use the existing POSIX-in-Bash/LF fixture setup on Windows.
+4. Sol is the primary implementer; Astra is the read-only design mentor. After targeted tests are green, have the
+   mentor inspect the actual diff before push/full CI. The eventual formal reviewer must be a NEW clean-context
+   gpt-Dylan-r session that sees SHA/diff/tests/CI, not this handoff or implementation reasoning.
+5. Run Verify, related hook_claims tests, lint/hashes and full isolated smoke with `--jobs auto`; push a NEW SHA;
+   wait for its complete green CI before `uak done ... --to gpt-Dylan-r`, then independent review. Keep main current.
+   Existing test changes need Dylan's audited permission; no assertions or timeouts may be weakened.
+
+### Human permissions and following tasks
+
+- Dylan explicitly authorized the assistant in chat to execute `UAK_HUMAN=Dylan ... uak allow UAK-013 --tests`;
+  it was executed and audited for synchronization/Windows cleanup waits without assertion changes. This was a
+  specific exception, not blanket permission for future UAK_HUMAN commands or merges.
+- Ask for future human commands explicitly, with the exact command and a short authorization phrase Dylan can
+  paste in chat if delegation is wanted. Final merges remain Dylan's.
+- UI-005 remains with claude-Dylan, PR #9, fix8326fa8, awaiting handover when appropriate. Do not edit its worktree
+  before Dylan's `UAK_HUMAN=Dylan bash .uak/bin/uak handover UI-005 --to gpt-Dylan`; then update its `.uak-env`, merge
+  current main, run Verify/CI and deliver to a fresh gpt-Dylan-r reviewer. Check personal-file manifest exclusion
+  and failed-commit index/ref restoration. UI-006, UI-007 and UAK-012 follow; none was taken during this checkpoint.
+- Out-of-scope findings are recorded in PENDING-IMPROVEMENTS.md #22–24. The old61 Windows guard failure was retried
+  once unchanged and passed; its cause remains unproven. f281ab9's own CI passed all checks on attempt1.
