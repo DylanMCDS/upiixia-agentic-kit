@@ -147,3 +147,20 @@ after this snapshot. Do not deliver the old green SHA: its independent review re
   implementer. The durable f281 ownership red is in `gitdir/uak-red/UAK-013-worker-ownership-f281ab9.txt`.
 - No other task was taken, no UAK_HUMAN permission beyond the specific UAK-013 test authorization was used, and no
   merge was performed. UI-005 handover and final human merges remain pending.
+
+### Checkpoint update · 7cfd519 validation · turn remains active
+
+- Current published HEAD is `7cfd519ba754da066edcdcd882b1a43a9babe286`. c41641a's Windows suites passed 14/15 cases;
+  the remaining fault-injection precondition missed its target because native and POSIX paths differed. 7cfd519
+  compares them physically inside Bash; engine code, assertions and budgets are unchanged in that correction.
+- Full isolated local smoke passed all76 files; all18 targeted cases, lint and hashes pass. Both current Windows
+  15-case suites passed. Prepared detached review worktree: `../review-gpt-uak013-7cfd519` in the review clone.
+- CI runs: push43228658522 and PR43228669067. PR completedSUCCESS; push had a macOS suite1 cancelled before any
+  step (job131218592643, logs unavailable). The authorized `gh run rerun 43228658522 --failed` was requested once.
+  Wait for that attempt to finish and independently audit its latest run/check-suite results before delivery.
+- `gh pr checks --watch` returned0 while a cancelled check remained, and aggregate jobs API returned502 during
+  rerun monitoring. Neither is proof of green CI. The implementer switched to the blocking checks watcher and
+  run metadata/check-suite audit. No second rerun or source change was made at this checkpoint.
+- After all current 172 checks are completeSUCCESS: reship UAK-013 at7cfd519 (or a newer required fix) with
+  `uak done ... --to gpt-Dylan-r`, then NEW clean-context formal review. Last formal verdict remains reject on
+  f281ab9; do not confuse mentor preflight or green tests with independent approval.
