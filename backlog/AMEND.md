@@ -134,3 +134,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** schedule_form_writes_freeze_epoch, publish_kit_excludes_unapproved_plan_files, publish_kit_pushes_only_the_verified_commit, terminal_step_is_shown_with_its_command, planning_waits_for_the_kit_on_main, lint_failure_reason_reaches_the_page, plan_can_be_rechecked_without_the_planner, human_name_is_asked_once
 - **Verify:** `python kit/.uak/tests/test_setup_prepare.py`
 - **Next step:** write the named tests with a local bare remote (empty, then with main) and the real `uak clock` and `uak lint`; see them fail (uak red); then add the schedule and publish endpoints to setup.py.
+## UAK-013 · The session-start hook answers within 3 seconds
+
+- **Type:** bug
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/hook, kit/.uak/tests/test_hook_session_start_speed.py, kit/.uak/tests/test_hook_claims.py
+- **Acceptance:** Evidence (Claude Code /doctor on Dylan's Mac, 22 sessions over 18 days, 2026-11-11): the kit's SessionStart hook took about 9.5 s typical on startup, 12.6 s typical on resume and up to 28 s, blocking the start of every session in a project with the kit., `hook session-start` returns within 3 s on a fixture with a local bare remote; network or slow work (publishing tokens, black box flush, map build, inbox reads) runs in the background or is skipped when fresh, as tick already does., What session-start shows the agent (identity, task, inbox summary) stays correct and complete., Background refreshes outlive the hook by design (like tokens --publish): tests that end right after a session start wait for them before cleaning up, so Windows can remove the worktree (CI on PR #11: test_hook_claims WinError 32). Only waits are added; no assertion changes., `bash .uak/bin/smoke --package-only` exits 0.
+- **Tests:** session_start_returns_within_budget, session_start_output_is_unchanged
+- **Verify:** `python kit/.uak/tests/test_hook_session_start_speed.py`
+- **Next step:** measure `hook session-start` on a fixture, find the synchronous slow steps, write the timing test (budget 3 s) and see it fail.
