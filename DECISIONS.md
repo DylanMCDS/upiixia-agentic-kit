@@ -31,3 +31,4 @@ Coordination decisions on the claims branch.
 - 1794533962 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794548368 | plan --amend | Dylan/Dylan | amended: UI-007 Paths: kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/tests/test_setup_guide.py, docs/DASHBOARD.md, CHANGELOG.md → kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/tests/test_setup_guide.py, docs/DASHBOARD.md, CHANGELOG.md, kit/.uak/bin/lib/setup.py; | Why: scope or criteria fixed before review
 - 1794581664 | plan | Dylan/Dylan | tasks added: UI-008 UI-009 UI-010 UI-011 UI-012 UI-013 | Why: backlog without PR (Plan-Channel: claims)
+- 1794581671 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
