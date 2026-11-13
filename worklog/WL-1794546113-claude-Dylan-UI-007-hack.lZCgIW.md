@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_guide.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/17; run .uak/bin/smoke
+- Next: Integrated in main: 6f3168940954c5a2e6d4ef750b0ce5eb1a5cfcec (recorded by claude-Dylan)
 
 ## History
 - 1794546113 | CLAIMED | claude-Dylan | claim; next: write the named tests (markup and catalog contracts plus HTTP checks); see them fail; then build the journey stepper.
@@ -14,3 +14,4 @@
 - 1794548679 | REVIEW | claude-Dylan-r | review; reject; SHA 949eca1cb6eadb5e0bafbcc4e5ea7034c935a7ec; reviewer claude-Dylan-r
 - 1794550869 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/17; evidence: python kit/.uak/tests/test_setup_guide.py exit 0 (5 PASS); 8 setup suites green; kit_lint PASS; smoke PACKAGE_PASS (bdea14c; dab9f76 changes only setup.py read_identity + its test, covered by CI); CI 90/90 on dab9f76; browser QA in .uak-shots/UI-007 (dash-es-*.png: rendered Spanish dashboard) · red at e923f7d: FAIL journey_is_visible_from_welcome (AssertionError: the page has #journey); reviewer: -
 - 1794551126 | REVIEW | claude-Dylan-r | review; approve; SHA dab9f764b087d6c37793a045cfb32d4f51499d76; reviewer claude-Dylan-r
+- 1794551159 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/17; merged 6f3168940954c5a2e6d4ef750b0ce5eb1a5cfcec; proof ancestry
