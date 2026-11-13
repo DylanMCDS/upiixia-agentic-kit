@@ -276,3 +276,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-013 · No English left in the Spanish journey, and small honesty fixes
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/bin/lib/setup.py, kit/.uak/tests/test_setup_guide.py
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #10)., In Spanish the status heading, the doctor sub-lines, the schedule weekday, the claim progress line ("N commit(s) since the claim · last: …") and "No technical output yet" are translated, and the status heading has no ✓ while TODOs remain., A human never seen shows "never", not "20770 d"; the Agents tab lists the registered reviewer., The plan's Approved-By and the kit's Published-By use the same human name.
+- **Tests:** spanish_journey_has_no_english, never_seen_human_is_named
+- **Verify:** `python kit/.uak/tests/test_setup_guide.py`
+- **Next step:** write the named tests (rendered Spanish page text); see them fail; then translate and fix.
+
