@@ -281,3 +281,16 @@ continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): n
 - r2 findings (high): README never says to open claude once and accept workspace trust (headless /uak-plan ignores permissions);
   terminal setup registered example reviewers (ana/leo from HACKATHON.md) instead of the person's identities; sprint order (uak clock)
   not in README. Treat as backlog candidates, product decisions for Dylan.
+- r4 (adversarial) DONE, 1 P1 + 5 P2 (its REPORT.md write was blocked; summary here):
+  P1 setup.py state["reviewer"] is server-wide: never cleared on /api/inspect, /api/human, /api/check or a retire → page says
+     "X-r is registered" and hides Register for another project/name (repro in r4/frames/0002.png). Key it by (root, name) or read claims.
+  P2 network git (kit_on_main fetch, publish ls-remote/fetch, reviewer_on_claims) under server.lock → /api/status blocked 19 s+.
+  P2 offline team step says "Publish the kit" (kit_on_main False on fetch failure) = PENDING #40.
+  P2 after the first claim, re-check is not READY ("uak next offers none", APP-002 waits) → journey back to Prepare, team commands vanish.
+  P2 origin created with .gitignore on GitHub: "git pull origin main" advice fails (untracked .gitignore) → dead end.
+  P2 sharedIdentity: one word match suppresses the warning (git "Luis…" but gh @DylanMCDS → no warning); check git and gh separately.
+  P3s: 253-char folder → wt "File name too long"; push-reject reason truncated from the front; --unset-all for multi-valued uak.agent;
+  linked worktree publish advice; reviewer status not re-translated on language switch; codex-only install still shows Claude; Copy buttons
+  share one accessible name; Content-Type with charset → 415. Held: CSRF/Host/token, hostile folder names, registration guards, rollback,
+  390px, keyboard. r4's wizard server may still run on port 58057 (stop it).
+  These are follow-up tasks (uak plan, Dylan's call); none blocks the integrated program, but P1/P2s should precede the upstream announcement.
