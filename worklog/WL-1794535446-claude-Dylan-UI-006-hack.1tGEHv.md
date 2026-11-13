@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_team.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/16; run .uak/bin/smoke
+- Next: Integrated in main: e923f7d63a7dd78f031121bcc1e214c390e1676f (recorded by claude-Dylan)
 
 ## History
 - 1794535446 | CLAIMED | claude-Dylan | claim; next: write the named tests against a ready fixture project; see them fail; then add the team step.
@@ -15,3 +15,4 @@
 - 1794539797 | REVIEW | claude-Dylan-r | review; reject; SHA 98507da454e3b2cd486a24814496a4a31bf64fe1; reviewer claude-Dylan-r
 - 1794541181 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/16; evidence: python kit/.uak/tests/test_setup_team.py exit 0 (11 PASS, also with an accented TMPDIR); kit_lint PASS; CI 89/89 on 57b397d; browser QA 1280/390 en/es; real Claude/Codex runs on macOS and Windows Git Bash (.uak-shots/UI-006/real-runs.md, windows-git-bash.md) · red at 0798117: FAIL reviewer_is_registered_from_the_page (AssertionError: not READY yet: refused); reviewer: -
 - 1794541416 | REVIEW | claude-Dylan-r | review; approve; SHA 57b397dba9becad6990071714db5cf2af06cfdb8; reviewer claude-Dylan-r
+- 1794541489 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/16; merged e923f7d63a7dd78f031121bcc1e214c390e1676f; proof ancestry
