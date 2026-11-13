@@ -357,3 +357,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** reviewer_state_follows_project_and_name, codex_command_can_write_git, team_step_survives_the_first_claim, status_answers_during_network_git, offline_team_step_says_offline, unrelated_remote_history_has_a_way_out, roles_follow_the_tools_you_have, one_tool_does_both_roles, any_tool_can_review, unavailable_tool_is_not_offered
 - **Verify:** `python kit/.uak/tests/test_setup_team.py && python kit/.uak/tests/test_setup_prepare.py && python kit/.uak/tests/test_setup_roles.py`
 - **Next step:** contract first (a Fable mentor pass and the reviewer's agreement), then the named tests, red, and the implementation.
+## UI-013 · No English left in the Spanish journey, and small honesty fixes
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** None
+- **Paths:** kit/.uak/tests/test_setup_guide.py
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #10)., In Spanish the status heading, the doctor sub-lines, the schedule weekday, the claim progress line ("N commit(s) since the claim · last: …") and "No technical output yet" are translated, and the status heading has no ✓ while TODOs remain., A human never seen shows "never", not "20770 d"; the Agents tab lists the registered reviewer., The plan's Approved-By and the kit's Published-By use the same human name.
+- **Tests:** spanish_journey_has_no_english, never_seen_human_is_named
+- **Verify:** `python kit/.uak/tests/test_setup_guide.py`
+- **Next step:** write the named tests (rendered Spanish page text); see them fail; then translate and fix.
+
