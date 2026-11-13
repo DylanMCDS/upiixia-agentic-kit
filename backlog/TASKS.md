@@ -244,3 +244,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** roles_follow_the_tools_you_have, one_tool_does_both_roles, any_tool_can_review, unavailable_tool_is_not_offered
 - **Verify:** `python kit/.uak/tests/test_setup_roles.py`
 - **Next step:** write the named tests with fake tools (only claude, only codex, both); see them fail; then add the role choice to the team step.
+## UAK-069 · uak next never offers implementation work to a reviewer identity
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/status.sh, kit/.uak/tests/test_next_reviewer.py, kit/.uak/docs/WHY.md, CHANGELOG.md
+- **Acceptance:** Evidence (test rounds 2026-11-13, notes/handoff:qa/rounds-2026-11-13/r3-REPORT.md P3-6): `UAK_AGENT=luis-r uak next` offered HACK-001 for implementation to the registered reviewer identity., Run as an identity registered on claims roles/reviewers (and not retired), `uak next` offers only tasks waiting for review (or says there is nothing to review and how to wait), never AVAILABLE tasks to claim., An identity that is not a reviewer sees exactly the output it saw before (the protocol suites stay green)., WHY.md records the incident.
+- **Tests:** reviewer_is_not_offered_implementation, implementer_output_is_unchanged
+- **Verify:** `python kit/.uak/tests/test_next_reviewer.py`
+- **Next step:** write the tests with a real Git fixture and bare remote (a registered NAME-r, one AVAILABLE task); see them fail; then filter next by role.
