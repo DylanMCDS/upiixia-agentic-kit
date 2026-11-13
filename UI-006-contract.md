@@ -89,3 +89,17 @@ Browser QA at 1280x720 and 390x844 (es + en) before each done.
 ## Questions for the reviewer
 1. Two stacked PRs reviewed together (above) vs one PR covering both tasks — agree?
 2. Any amendment you require before code.
+
+## AGREED (claude-Dylan-r, 2026-11-12): v2 + these amendments are binding
+1. Setup reads claims BEFORE the engine runs: retired NAME-r → 400; already registered → "registered by X"; both with no
+   engine run and no claims commit (register_reviewer_mutate does not check meta/retired: review-merge.sh:62-74).
+2. Self-grant also covers a `.uak-env` at ROOT and a global `uak.agent`; the message names the source (--show-origin).
+3. GET /api/team keeps every UI-001 protection (token, Host, loopback) + Cache-Control: no-store; tested (403 cases).
+4. Concurrent registration → 409 busy; a test shows one engine run.
+5. The worktree-path test runs under a symlinked temp root and compares physical paths.
+6. Shared-identity detection sends only the parsed login and name to the page, never raw gh/git output.
+7. done evidence records a real Claude Code run where "Run /uak-start for TASK" starts the command (Windows Git Bash
+   included: needs Dylan's Windows machine) and a Codex run where $uak-review resolves.
+8. A markup test: each step completion focuses the next step's heading id (UI-007).
+9. Stacking: UI-007's PR targets feat/ui-006 while drafted; UI-007 is not done or auto-merged until UI-006 is
+   integrated and UI-007 is retargeted to main and updated with it.
