@@ -255,3 +255,15 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** reviewer_is_not_offered_implementation, implementer_output_is_unchanged
 - **Verify:** `python kit/.uak/tests/test_next_reviewer.py`
 - **Next step:** write the tests with a real Git fixture and bare remote (a registered NAME-r, one AVAILABLE task); see them fail; then filter next by role.
+
+## UI-015 · Windows: one 10 s grace for both pipe readers; tests read git output as UTF-8 and skip the symlink case without symlink privilege (notes/handoff:qa/windows/UI-010-1401.md) (follow-up of UI-010)
+
+- **Type:** follow-up
+- **Priority:** P1
+- **Depends on:** UI-010
+- **Follow-up of:** UI-010
+- **Paths:** kit/.uak/bin/lib/planning.py, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_planning.py, kit/.uak/tests/test_setup_prepare.py
+- **Freeze-Allowed:** no
+- **Acceptance:**
+  - Windows: one 10 s grace for both pipe readers; tests read git output as UTF-8 and skip the symlink case without symlink privilege (notes/handoff:qa/windows/UI-010-1401.md)
+- **Verify:** `python kit/.uak/tests/test_setup_planning.py && python kit/.uak/tests/test_setup_prepare.py`

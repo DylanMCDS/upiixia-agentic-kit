@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1794599179
+Updated: 1794601802
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-012 
 CLAIMED: UI-009 
 BLOCKED: -
@@ -14,11 +14,11 @@ UI-009 | CLAIMED | claude-Dylan-2 | until 1794607471
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1794588797 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794588800 | plan --amend | Dylan/Dylan | amended: UI-012 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_guide.py → kit/.uak/bin/lib/s
 - 1794589480 | allow | Dylan | test change: UI-009 | Why: the Codex reviewer command gains --sandbox/--add-dir (acceptance of UI-009); agent_launch_commands_are_exact pinned the ol
 - 1794589512 | plan --amend | Dylan/Dylan | amended: UI-009 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_team.py, docs/DASHBOARD.md, kit
 - 1794593048 | plan --amend | Dylan/Dylan | amended: UI-009 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_team.py, docs/DASHBOARD.md, kit
+- 1794601802 | UI-015 | follow-up of UI-010 by claude-Dylan: Windows: one 10 s grace for both pipe readers; tests read git output as UTF-8 and skip the symlink case without symlink
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
