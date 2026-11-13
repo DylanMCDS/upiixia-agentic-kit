@@ -381,3 +381,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-012 · Identity warning per account, and no English left in the Spanish journey (absorbs UI-013)
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 4 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_guide.py, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html
+- **Acceptance:** Dylan merged UI-013 into this task (one delivery, one review, one CI) on 2026-11-13. From UI-012: Evidence (test rounds 2026-11-13, SUMMARY.md #8; PENDING-IMPROVEMENTS.md #44): one matching word suppressed the warning when Git matched the person but GitHub was someone else (r4); accented names did not match their unaccented form., The warning checks the Git name/email and the GitHub login each against the person's name and says which one belongs to someone else., Names match ignoring case and accents (José = jose). From UI-013: Evidence (test rounds 2026-11-13, SUMMARY.md #10)., In Spanish the status heading, the doctor sub-lines, the schedule weekday, the claim progress line ("N commit(s) since the claim · last: …") and "No technical output yet" are translated, and the status heading has no ✓ while TODOs remain., A human never seen shows "never", not "20770 d"; the Agents tab lists the registered reviewer., The plan's Approved-By and the kit's Published-By use the same human name.
+- **Tests:** github_login_is_checked_on_its_own, accents_do_not_break_the_match, spanish_journey_has_no_english, never_seen_human_is_named
+- **Verify:** `python kit/.uak/tests/test_setup_guide.py`
+- **Next step:** write the named tests (fake identity: Git = person, gh = other; rendered Spanish page text); see them fail; then split the identity check and translate.
