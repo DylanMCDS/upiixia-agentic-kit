@@ -103,3 +103,9 @@ Browser QA at 1280x720 and 390x844 (es + en) before each done.
 8. A markup test: each step completion focuses the next step's heading id (UI-007).
 9. Stacking: UI-007's PR targets feat/ui-006 while drafted; UI-007 is not done or auto-merged until UI-006 is
    integrated and UI-007 is retargeted to main and updated with it.
+
+## Note (claude-Dylan, implementation)
+Amendment 9's stacking is not possible: `wt new UI-007` refuses ("UI-007 depends on UI-006; claim it after
+INTEGRATED"). UI-006 ships first (PR #16), UI-007 right after its integration, both in the same session and announced
+together. Deviation from v2 (agreed in code review): CLAIM_COMMAND keeps `[0-9]+` because test_dashboard_profiles
+pins APP-7; the team step uses a separate TEAM_TASK `{3,}` check, so a task wt would refuse gets no command.
