@@ -1,7 +1,7 @@
 # worklog/WL-1794588576-claude-Dylan-3-UI-010-hack.o4ytk4.md · UI-010
 
 ## Live summary
-- Done: new test run_command_stops_a_descendant_holding_the_pipe (red without the fix, green with); all setup suites, dashboard suites, kit_lint, kit_hashes green; QA as before · red at ed45668: FAIL missing_tasks_file_is_a_failed_plan: AssertionError: no plan file is a failed run, not 'planned': 'planned'
+- Done: windows (test_setup_planning) green on 10c95c0 incl. run_command_stops_a_descendant_holding_the_pipe; local setup suites, kit_lint, kit_hashes green · red at ed45668: FAIL missing_tasks_file_is_a_failed_plan: AssertionError: no plan file is a failed run, not 'planned': 'planned'
 - Decision: Own branch and worktree
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
@@ -14,3 +14,4 @@
 - 1794590650 | REVIEW | claude-Dylan-r | review; reject; SHA 31b9a2d734ab0d9d7289c310557ddc102a05db35; reviewer claude-Dylan-r
 - 1794591005 | REVIEW | claude-Dylan-3 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/21; evidence: new test run_command_stops_a_descendant_holding_the_pipe (red without the fix, green with); all setup suites, dashboard suites, kit_lint, kit_hashes green; QA as before · red at ed45668: FAIL missing_tasks_file_is_a_failed_plan: AssertionError: no plan file is a failed run, not 'planned': 'planned'; reviewer: -
 - 1794591851 | REVIEW | claude-Dylan-r | review; reject; SHA 020049e9cc92d6addf28fb402f25a519483d2b6e; reviewer claude-Dylan-r
+- 1794592548 | REVIEW | claude-Dylan-3 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/21; evidence: windows (test_setup_planning) green on 10c95c0 incl. run_command_stops_a_descendant_holding_the_pipe; local setup suites, kit_lint, kit_hashes green · red at ed45668: FAIL missing_tasks_file_is_a_failed_plan: AssertionError: no plan file is a failed run, not 'planned': 'planned'; reviewer: -
