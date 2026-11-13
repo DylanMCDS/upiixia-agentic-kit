@@ -53,3 +53,4 @@ Coordination decisions on the claims branch.
 - 1794602090 | allow | Dylan | test change: UI-015 | Why: Windows test robustness: git() helper decodes UTF-8; schedule_never_follows_links skips when the OS cannot create a symlink (qa/windows/UI-010-1401.md)
 - 1794603474 | plan | Dylan/Dylan | tasks added: UAK-090 | Why: backlog without PR (Plan-Channel: claims)
 - 1794603485 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1794612963 | plan | Sebastian/Sebastian | tasks added: UI-016 | Why: backlog without PR (Plan-Channel: claims)

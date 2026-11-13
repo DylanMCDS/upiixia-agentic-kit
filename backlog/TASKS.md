@@ -278,3 +278,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** pull_requests_skip_macos, main_runs_macos
 - **Verify:** `python kit/.uak/tests/test_ci_light.py`
 - **Next step:** write the tests over the workflow text; see them fail; add the event-based matrix exclusion.
+## UI-016 · A tutorial video under 90 seconds, from start to finish, in the README and the setup welcome (English and Spanish)
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 6 h
+- **Depends on:** UI-012, UI-015
+- **Paths:** docs/media/tutorial-en.mp4, docs/media/tutorial-es.mp4, docs/media/tutorial-en.srt, docs/media/tutorial-es.srt, docs/media/tutorial-poster.png, docs/video/, README.md, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/media/, kit/.uak/tests/test_setup_tutorial.py, kit/.uak/settings/known-files.txt, kit/.uak/docs/WHY.md, docs/DASHBOARD.md, CHANGELOG.md
+- **Acceptance:** Evidence (Sebastián, 2026-11-13; test rounds 2026-11-13, notes/handoff:qa/rounds-2026-11-13/SUMMARY.md: novices did not know which steps happen in the page, in a terminal or by the agents)., One tutorial, rendered twice (English and Spanish on-screen text), each under 90 seconds, shows the whole journey: install the kit into a project, prepare, plan, start the team (implementer and reviewer), follow progress, review and merge to the last task integrated., The video source lives in docs/video/ (Remotion or an equivalent scripted tool, pinned versions, reproducible with one documented command); the rendered MP4s (H.264, at most 2 MB each) are committed under docs/media/ with a poster image and .srt captions., The README shows the video near the top, with the poster as a fallback and a link to the Spanish version., The setup welcome screen offers the video in the page's language (English or Spanish), served by the local setup server from the kit with the existing protections (token, Host, loopback) and a correct video Content-Type; it never autoplays, has captions, and works by keyboard and with reduced motion., The installed video adds at most 4 MB to the kit, is listed in known-files.txt, and WHY.md records why it ships.
+- **Tests:** tutorial_is_short_enough, readme_shows_the_tutorial, welcome_offers_the_tutorial_in_its_language, tutorial_is_served_safely, tutorial_never_autoplays
+- **Verify:** `python kit/.uak/tests/test_setup_tutorial.py`
+- **Next step:** write the named tests (ffprobe duration < 90 s and size limits, README markup, welcome markup per language, served with the token/Host checks and a video Content-Type, no autoplay attribute); see them fail; then script and render the video and wire it in.
