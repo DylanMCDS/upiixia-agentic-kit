@@ -303,3 +303,18 @@ continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): n
   ~/Movies/uak-pruebas-2026-11-13/ (ronda1 136 s, ronda3 143 s, ronda4 28 s). Frames under the session scratchpad rounds/rN/frames.
 - Recommendation before announcing upstream: plan the P1/P2 items of SUMMARY.md as follow-up tasks (uak plan, Dylan) — the program is
   complete and green, but a novice on a fresh folder still hits the Claude Code trust prompt and the Codex sandbox.
+
+## 2026-11-13 afternoon · claude-Dylan (lead) · handoff to Sebastián's session
+
+Main: c145eeb. Integrated today: UI-008 (#19), UI-010 (#21), UAK-069 (#20), UAK-090 (#22, PRs run Ubuntu + Windows only; main keeps macOS).
+Backlog changes (UAK_HUMAN=Dylan, at Dylan's request): UI-011 and UI-014 merged into UI-009; UI-013 merged into UI-012 (cancelled ones are CANCELLED on claims); UAK-069 split out; UI-015 follow-up of UI-010 (Windows fixes; `uak allow UI-015 --tests` granted); UAK-006 Depends updated.
+CI policy (Dylan): macOS capacity-only failures accepted on main; PRs no longer run macOS.
+
+In flight:
+- UI-009 (claim claude-Dylan-2, worktree ../upiixia-agentic-kit-dylan-wt/ui-009, PR #23). Contract: UI-009-contract.md (Fable + 11 reviewer amendments; amendment 12 = Codex template with -c sandbox_workspace_write.network_access=true, confirmed by the reviewer from codex exec evidence; Codex in Windows Git Bash NOT verified).
+  Rejected at 993e112 (P2: git grep output broken by grep.lineNumber=true). Fix commits pushed: 86a282c (grep config, P3s) and a45e3fe (Windows QA: way-out over a tracked+modified .gitignore). Next: check `uak done` was re-run for a45e3fe (state REVIEW with a new Task-Tip), CI on the PR, then a fresh claude-Dylan-r review (model opus) with the Windows evidence qa/windows/UI-009-1549.md (Claude-only E2E PASS; uak next does not write claims: evidence is the tokens commit + .git/uak-seen.next).
+  `uak allow UI-009 --tests` covers only the two agent_launch_commands_are_exact assertions.
+- Then, in order (both touch setup.py): UI-012 (absorbs UI-013: identity per account + no English in Spanish journey, incl. engine weekday), UI-015 (diff in qa/windows/UI-010-1401.md).
+- Upstream PR #2 body updated (status lists UI-009, UI-012, UI-015, UAK-090 as landing). Update the table when they integrate; then send Dylan's friend the final message.
+
+Lessons: subagents must be launched with model "opus" (default was Sonnet); a QA shell step with `cd X; git commit` committed into the main checkout (tag junk/app-001-leak) — always `&&` and temp dirs.
