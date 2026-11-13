@@ -52,3 +52,4 @@ Coordination decisions on the claims branch.
 - 1794601802 | UI-015 | follow-up of UI-010 by claude-Dylan: Windows: one 10 s grace for both pipe readers; tests read git output as UTF-8 and skip the symlink case without symlink privilege (notes/handoff:qa/windows/UI-010-1401.md) | Why: same Paths, no scope change
 - 1794602090 | allow | Dylan | test change: UI-015 | Why: Windows test robustness: git() helper decodes UTF-8; schedule_never_follows_links skips when the OS cannot create a symlink (qa/windows/UI-010-1401.md)
 - 1794603474 | plan | Dylan/Dylan | tasks added: UAK-090 | Why: backlog without PR (Plan-Channel: claims)
+- 1794603485 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review

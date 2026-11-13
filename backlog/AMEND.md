@@ -414,3 +414,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** reviewer_state_follows_project_and_name, codex_command_can_write_git, team_step_survives_the_first_claim, status_answers_during_network_git, offline_team_step_says_offline, unrelated_remote_history_has_a_way_out, roles_follow_the_tools_you_have, one_tool_does_both_roles, any_tool_can_review, unavailable_tool_is_not_offered
 - **Verify:** `python kit/.uak/tests/test_setup_team.py && python kit/.uak/tests/test_setup_prepare.py && python kit/.uak/tests/test_setup_roles.py`
 - **Next step:** follow notes/handoff:UI-009-contract.md (Fable contract + the reviewer's 11 binding amendments); named tests, red, implement; a real Codex run as NAME-r on macOS and Windows Git Bash before done.
+## UAK-006 · Proof of no change, and the targets turned on
+
+- **Type:** integration
+- **Priority:** P0
+- **Estimate:** 4 h
+- **Depends on:** UAK-003, UAK-004, UAK-005, UAK-008, UI-002, UI-004, UAK-010, UI-005, UI-006, UI-007, UAK-067, UI-008, UI-009, UI-010, UI-012, UAK-069, UI-015, UAK-090
+- **Paths:** scripts/claims_diff.py, kit/.uak/tests/test_claims_perf.py, kit/.uak/bin/lib/, kit/.uak/bin/uak, kit/.uak/bin/uak-coordination, docs/perf-windows.md
+- **Acceptance:** the protocol suites run the old and the new engine side by side on the same fixtures: every command's stdout and the resulting claims tree are identical, the XFAIL set of test_claims_perf.py is empty: next ≤ 40, status ≤ 30, heartbeat ≤ 20 processes, docs/perf-windows.md has the before and after times from `scripts/perf_claims.sh` on Windows
+- **Tests:** old_and_new_engines_print_the_same_and_write_the_same_tree
+- **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
+- **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
+
