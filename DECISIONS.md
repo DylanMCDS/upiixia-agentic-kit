@@ -41,3 +41,4 @@ Coordination decisions on the claims branch.
 - 1794582434 | plan --amend | Dylan/Dylan | amended: UAK-069 Paths: kit/.uak/bin/lib/status.sh, kit/.uak/tests/test_next_reviewer.py, kit/.uak/docs/WHY.md, CHANGELOG.md → kit/.uak/bin/lib/status.sh, kit/.uak/tests/test_next_reviewer.py, CHANGELOG.md; | Why: scope or criteria fixed before review
 - 1794586192 | plan --amend | Dylan/Dylan | amended: UAK-069 Paths: kit/.uak/bin/lib/status.sh, kit/.uak/tests/test_next_reviewer.py, CHANGELOG.md → kit/.uak/bin/lib/status.sh, kit/.uak/tests/test_next_reviewer.py, scripts/claims_diff.py, CHANGELOG.md; | Why: scope or criteria fixed before review
 - 1794588479 | plan --amend | Dylan/Dylan | amended: UI-011 UI-014 | Why: scope or criteria fixed before review
+- 1794588536 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
