@@ -262,3 +262,5 @@ continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): n
 - Machine notes: Dylan's Mac has no `python` (shim python→python3 on PATH for Verify). Windows: `python` may be the
   Store stub; use `py`. Git Bash for every engine command on Windows.
 - Pending improvements up to #38 (#35, #36, #38 Windows CI flakes; #37 ci-once parser P3). Product decisions stay Dylan's.
+- UPDATE (same night): claude-Dylan-r APPROVED UI-006 at 57b397d (P3s → PENDING-IMPROVEMENTS #39-#41). Next: a human
+  merges PR #16 (`gh pr merge 16 --repo DylanMCDS/upiixia-agentic-kit --merge`), then `uak integrate UI-006`, then UI-007.
