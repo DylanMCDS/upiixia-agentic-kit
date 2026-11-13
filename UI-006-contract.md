@@ -1,51 +1,91 @@
-# UI-006 contract draft (claude-Dylan, 2026-11-12) · "Start your team" from the page
+# UI-006 + UI-007 contract v2 (claude-Dylan, 2026-11-12) · "Start your team" and the journey, one delivery
 
-Status: draft for a Fable mentor pass and the reviewer's agreement BEFORE code (security-sensitive: a human act
-from the browser, and commands the person copies into a terminal). Base: main after UI-005 is integrated.
+Status: v2 after a Fable mentor pass (v1 findings folded in, marked [F]). Needs the reviewer's (claude-Dylan-r)
+agreement BEFORE code. Base: main ba723d9 (UI-005 integrated). One task = one branch, so the single delivery is two
+stacked PRs: claude-Dylan claims UI-006 (feat/ui-006), claude-Dylan-2 claims UI-007 (feat/ui-007, based on
+feat/ui-006). Both are shipped and reviewed in one session and Dylan merges them in order (UI-006, then UI-007).
 
-## When the step shows
-Only when the last readiness check is READY (uak start) and the kit is on main. Before that, the page keeps the
-gate's next step (UI-002/UI-005). Shown in Beginner and in Advanced (Advanced: a box above the dashboard frame with
-the same next step and Copy button).
+## UI-006 · When the step shows
+Only when the last readiness check is READY (`uak start`) and the kit is on main. Before that the page keeps the
+gate's next step (UI-002/UI-005). Beginner: a "Start your team" section. Advanced: a box above the dashboard frame with
+the same next step and Copy button.
 
-## (a) Register the reviewer: POST /api/team/reviewer {confirm: "NAME-r"}
-- The human act. NAME is the human name saved in UI-005 (server-side value, `[a-z][a-z0-9-]{0,31}`), never taken
-  from this request; `confirm` must equal "NAME-r" exactly (the page shows it and asks to click "Register NAME-r";
-  the request carries the identity the person saw). Plain-words note before the click: "NAME-r reviews your
-  agents' work; in Hackathon mode an approved change can merge automatically after the checks pass."
-- Runs the engine shipped with setup: `[bash, <package>/bin/uak, register-reviewer, NAME-r]`, cwd = the project's
-  main checkout (git dir == common dir; refused from a linked worktree), env: UAK_HUMAN=NAME, UAK_AGENT empty,
-  sanitized environment, fixed argv, one operation at a time (worker lock), timeout 120 s.
-- Idempotent: an already registered NAME-r answers "already registered" (the engine skips it).
-- Keeps every UI-001 protection (loopback, Host, Origin, token, JSON schema, body limit). WHY.md: the second browser
-  act of human authority after the plan approval (UI-004) and the kit publication (UI-005), with the evidence.
+## (a) Register the reviewer: POST /api/team/reviewer {"confirm": "NAME-r"}
+- Schema: exactly the key set {confirm}, a string. [F]
+- NAME is `s.state["human"]` (UI-005's /api/human, `HUMAN_NAME` = `[a-z][a-z0-9_-]{0,31}\Z`, setup.py:234) [F]; it is
+  session memory only, so "no name yet" → 400 "Tell setup your name first". `confirm` must equal NAME + "-r" exactly,
+  compared under `server.lock`. One confirmed click (not typed): the act is reversible and the gate recommends it.
+- Note before the click (plain words): "NAME-r reviews your agents' work; in Hackathon mode an approved change can
+  merge automatically after the checks pass."
+- Runs `[bash, <package>/bin/uak, register-reviewer, NAME-r]`, cwd = the project's main checkout (physical
+  `git rev-parse --git-dir` == `--git-common-dir`; a linked worktree → 400). Env = `safe_environment()` plus exactly
+  `UAK_HUMAN=NAME` and `UAK_AGENT=` (empty); `UAK_REMOTE`/`UAK_BASE` are passed through from setup's own environment
+  when set, the same values publish_checks uses (setup.py:921). [F]
+- `git config uak.agent` equal to NAME or NAME-r makes the engine refuse a self-grant (review-merge.sh:69): mapped to
+  400 "This folder's Git config names an agent (uak.agent = X). Remove it: git config --unset uak.agent". [F]
+- A `registering` phase in BUSY, worker thread, `group=True`, timeout 180 s. [F]
+- The result is decided from claims, never the exit code alone [F]: after the run (also after a timeout or a non-zero
+  exit) setup fetches claims and reads `roles/reviewers/NAME-r.md` and `meta/retired/NAME-r.md`:
+  registered by NAME now → "NAME-r is registered"; already registered (by anyone) → "NAME-r was already registered by X";
+  retired → 400 "NAME-r was retired; choose another name or ask the human who retired it"; absent → error with the
+  engine's last line.
+- Keeps every UI-001 protection (loopback, Host, Origin, token, JSON, body limit). WHY.md row: the third browser act of
+  human authority (after plan approval UI-004 and kit publication UI-005).
 
-## (b) Agent launch commands (GET /api/team): copy only, the server never runs them
-- Inputs: the next task ID from the READY line (CLAIM_COMMAND regex, `[A-Z][A-Z0-9]*-[0-9]+`), NAME (UI-005),
-  the project root (validated by project_root). Nothing else; no free text from the browser.
-- Terminal 1 · Claude Code implements:
-  `cd 'ROOT' && bash .uak/bin/wt new TASK --agent claude-NAME && cd 'WORKTREE' && claude 'FIRST_IMPL_PROMPT'`
+## (b) Agent launch commands: GET /api/team (copy only; the server never runs them; Cache-Control: no-store)
+- Inputs, all server values: the task from the READY line (`CLAIM_COMMAND` aligned to wt: `[A-Z][A-Z0-9]*-[0-9]{3,}`)
+  [F], NAME, ROOT (project_root). No free text from the browser.
+- ROOT containing `'`, a newline or any control character → no command, a plain "rename the project folder" message. [F]
+- Terminal 1 · Claude Code implements (a new terminal window, any folder):
+  `cd 'ROOT' && UAK_HUMAN= bash .uak/bin/wt new TASK --agent claude-NAME --human NAME && cd 'WORKTREE' && UAK_HUMAN= claude 'IMPL_PROMPT'`
+  Resume line under it (worktree already exists, terminal closed): `cd 'WORKTREE' && UAK_HUMAN= claude` [F]
 - Terminal 2 · Codex reviews as NAME-r:
-  `cd 'ROOT' && UAK_AGENT=NAME-r codex 'FIRST_REVIEW_PROMPT'` (FIRST_REVIEW_PROMPT starts with `$uak-review`)
-- ROOT/WORKTREE are single-quoted for Bash with `'` → `'\''`. WORKTREE follows wt's own rule (wt_path, wt:83):
-  `<parent of ROOT>/<basename ROOT>-wt/<task lowercase>`; a test pins the two together so they cannot drift.
-- FIRST_IMPL_PROMPT uses the kit's `/uak-start` command (.claude/commands/uak-start.md).
-- Prompts are constants (like UI-004's PLANNER_PROMPT: no % ^ & | < > " or backticks).
-- Each block says which terminal it goes in ("a new terminal window, any folder"), and on Windows "Git Bash".
-- (c) One line: "Setup steps (install, publish, plan) need no agent; agents start only here."
+  `cd 'ROOT' && UAK_HUMAN= UAK_AGENT=NAME-r codex 'REVIEW_PROMPT'`
+- `UAK_HUMAN=` empties inherited human authority for agent sessions (WHY: uak:47-49). [F]
+- WORKTREE follows wt_path (wt:83): `<parent of ROOT>/<basename ROOT>-wt/<task lowercase>`, built from the same Git
+  output wt uses (forward slashes on Windows); a ROOT at a filesystem/drive root gets no command. A test runs wt and
+  compares, so they cannot drift. [F]
+- Prompts are constants (no % ^ & | < > " ` or '), written literally here [F]:
+  IMPL_PROMPT = `Run /uak-start for TASK. Work only in this worktree.` (starts with a word: Git Bash may rewrite a
+  leading `/` into a Windows path; verified on the Windows machine before done) — TASK is the validated ID.
+  REVIEW_PROMPT = `You are the reviewer NAME-r. Run bash .uak/bin/uak next; when it names a task to review, run $uak-review with that task ID. Never write code for a task.`
+- Each block names its terminal; on Windows: "Git Bash, not PowerShell" (no PowerShell variant). [F]
+- A failed claim (task taken since the check: CONFLICT) stops at `&&`; the page says "Check again" under the block. [F]
+- Copy explains: the MCP approval prompt Claude/Codex show on first start (approve the project's uak server), what
+  UAK_AGENT=NAME-r means (Codex acts as a second identity), and (c) "Setup steps (install, publish, plan) need no
+  agent; agents start only here." [F]
 
-## Copy on the tools step
-Choosing coding tools explains the roles (one implements, one reviews as a second identity) and recommends
-Claude Code + Codex; "I'm the only human on this repository" says in plain words what it changes.
+## Tools step copy (UI-006)
+Choosing coding tools explains the roles (one implements, one reviews as a second identity) and recommends Claude Code
++ Codex; "I'm the only human on this repository" says in plain words what it changes.
 
-## Tests (task names)
-reviewer_is_registered_from_the_page (fixture with a bare remote: the role file appears on claims with
-Registered-By: NAME; wrong/missing confirm, a linked worktree, no saved name, not READY → 400 and no record),
-agent_launch_commands_are_exact (paths with spaces and a quote are quoted; task ID and name only from server
-values; a hostile READY line or name never reaches the command), advanced_view_shows_the_next_step,
-tool_roles_are_explained.
+## UI-007 · the journey (second PR, same review) [F]
+- Welcome shows the whole journey and keeps it visible: Install → Prepare → Plan → Start the team → Follow progress,
+  each tagged "in this page" / "in a terminal" / "your agents do it", current one highlighted; says the page installs
+  the kit INTO the project and the kit itself is downloaded once.
+- Typed approval: placeholder = exact folder name; under the disabled button "Type NAME to enable publishing".
+- On step completion the page scrolls/focuses the next step's heading (Ready → "Start your team").
+- Spanish: gate lines get a translated summary above them (the engine output stays verbatim in Technical details);
+  the Advanced dashboard and the new team step have no English labels; the notice under the title no longer repeats
+  the heading.
+- Shared identity: when `git config user.name/email` (and `gh auth status` login if available, read-only, timeout 10 s)
+  differ from the NAME given, or NAME is unset, a warning says who will sign commits and PRs.
+- Keyboard, visible focus, reduced motion and 390px keep working; docs/DASHBOARD.md and CHANGELOG.md updated.
 
-## Open questions for the reviewer
-1. Is one confirmed click enough for registering a reviewer, or a typed confirmation like UI-004?
-2. Implementer identity name: `claude-NAME` (kit convention harness-human) — agree?
-3. Windows PowerShell users: show Git Bash only, or also a PowerShell variant?
+## Tests
+UI-006 (test_setup_team.py): reviewer_is_registered_from_the_page (bare-remote fixture: role file on claims with
+Registered-By: NAME; wrong/missing confirm, extra keys, linked worktree, no name, not READY → 400 and no record),
+agent_launch_commands_are_exact (run the emitted line in bash with stub claude/codex in a path with a space: argv,
+cwd and env exact; WORKTREE equals what wt created; hostile READY line/name never reaches it; unsafe ROOT → no
+command), advanced_view_shows_the_next_step, tool_roles_are_explained.
+Extra in the same file (Fable): registration_is_idempotent_and_honest (second POST, retired NAME-r, registered by
+another human: truthful message, no new claims commit), registration_env_is_exact (child env: UAK_HUMAN=NAME,
+UAK_AGENT empty, no other UAK_* except decided REMOTE/BASE), registration_self_grant_is_explained,
+registration_timeout_reports_remote_truth.
+UI-007 (test_setup_guide.py): journey_is_visible_from_welcome, approval_field_says_what_to_type,
+gate_lines_are_translated, advanced_dashboard_is_translated (incl. the team step), shared_identity_is_warned.
+Browser QA at 1280x720 and 390x844 (es + en) before each done.
+
+## Questions for the reviewer
+1. Two stacked PRs reviewed together (above) vs one PR covering both tasks — agree?
+2. Any amendment you require before code.
