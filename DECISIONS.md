@@ -54,3 +54,4 @@ Coordination decisions on the claims branch.
 - 1794603474 | plan | Dylan/Dylan | tasks added: UAK-090 | Why: backlog without PR (Plan-Channel: claims)
 - 1794603485 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794612963 | plan | Sebastian/Sebastian | tasks added: UI-016 | Why: backlog without PR (Plan-Channel: claims)
+- 1794613841 | plan --amend | Sebastian/Sebastian | amended: UAK-006 | Why: scope or criteria fixed before review
