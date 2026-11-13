@@ -28,3 +28,4 @@ Coordination decisions on the claims branch.
 - 1794503845 | plan | Dylan/Dylan | tasks added: UAK-067 UAK-068 | Why: backlog without PR (Plan-Channel: claims)
 - 1794515078 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794517434 | deadline lease/UAK-012/1794509559 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
+- 1794533962 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
