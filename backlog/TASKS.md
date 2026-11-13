@@ -267,3 +267,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Acceptance:**
   - Windows: one 10 s grace for both pipe readers; tests read git output as UTF-8 and skip the symlink case without symlink privilege (notes/handoff:qa/windows/UI-010-1401.md)
 - **Verify:** `python kit/.uak/tests/test_setup_planning.py && python kit/.uak/tests/test_setup_prepare.py`
+## UAK-090 · Pull requests run a light CI; main keeps the full matrix
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 1 h
+- **Depends on:** None
+- **Paths:** .github/workflows/test.yml, kit/.uak/tests/test_ci_light.py, CHANGELOG.md
+- **Acceptance:** Evidence (2026-11-13): approved PRs #19, #20 and #21 waited hours because GitHub had no macOS arm64 runners ("The job was not acquired by Runner of type hosted ... capacity constraints"), while Ubuntu and Windows had passed; Dylan accepted capacity-only macOS failures by hand each time., On pull_request the suite matrix runs Ubuntu only (macOS excluded); on push to main and on workflow_dispatch it still runs Ubuntu and macOS; the Windows per-file job is unchanged everywhere., The exclusion keeps the UAK-067 rules (once per SHA, PR runs cancel older runs) and the existing test_ci_once assertions unchanged., The reason is cited in a comment next to the exclusion and in CHANGELOG.md.
+- **Tests:** pull_requests_skip_macos, main_runs_macos
+- **Verify:** `python kit/.uak/tests/test_ci_light.py`
+- **Next step:** write the tests over the workflow text; see them fail; add the event-based matrix exclusion.
