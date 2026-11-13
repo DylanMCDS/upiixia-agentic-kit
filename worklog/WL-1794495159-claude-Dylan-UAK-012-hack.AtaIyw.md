@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_v3.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/13; run .uak/bin/smoke
+- Next: Integrated in main: ba723d951753e3aa519a28e7bbe6ba6ac9597897 (recorded by claude-Dylan)
 
 ## History
 - 1794495159 | CLAIMED | claude-Dylan | claim; next: write each new test so it sets a critical pace / a global core.hooksPath for its own fixture and see it fail on main; then pin those inputs in the fixtures.
@@ -14,3 +14,4 @@
 - 1794530256 | REVIEW | claude-Dylan-r | review; reject; SHA d53a0eb1355d96142b974a8d9968bdc6bca0da72; reviewer claude-Dylan-r
 - 1794532253 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/13; evidence: 99f5700 fixes the d53a0eb reject (claude-Dylan-r P2: a non-empty CODEX_HOME made fixtures look like Codex, hollowing test_v42::blackbox_dedupe_and_harness). The runner removes CODEX_HOME/CODEX_SANDBOX/CODEX_THREAD_ID and gives fixtures an empty HOME of their own, so pace finds no machine usage (${CODEX_HOME:-$HOME/.codex}) and the recorded harness is read again; test_v571 sets HOME per call. New test fixtures_are_not_taken_for_codex (RED_OK at d53a0eb). Reviewer's mutation (bb recorded-harness fallback broken): test_v42 fails again, as on main. Local Mac WITHOUT isolation at 99f5700: full smoke 511 PASS, 0 FAIL, PACKAGE_PASS; v3 13/13, v42, v571, tokens_coverage 7/7, v41, v51, hook_session_start_speed, git_identity_msg PASS. kit_lint 0, hashes current. CI at 99f5700: pull_request 86/86 SUCCESS; push 86/86 SUCCESS after one unchanged retry of windows test_v592 (guard_runs_on_builtins 'still blocked:' with empty stderr, the known intermittent of PENDING #23, unrelated to these files). · red at d53a0eb: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
 - 1794532568 | REVIEW | claude-Dylan-r | review; approve; SHA 99f57001e0ae9235fc69e93e26b2e69ddac42d7a; reviewer claude-Dylan-r
+- 1794532944 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/13; merged ba723d951753e3aa519a28e7bbe6ba6ac9597897; proof ancestry
