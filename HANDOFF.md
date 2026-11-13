@@ -266,3 +266,18 @@ continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): n
   merges PR #16 (`gh pr merge 16 --repo DylanMCDS/upiixia-agentic-kit --merge`), then `uak integrate UI-006`, then UI-007.
 - UPDATE: PR #16 merged (main e923f7d) and UI-006 INTEGRATED. 11 of 12 program tasks integrated. Next: UI-007
   (`bash .uak/bin/wt new UI-007 --agent claude-<you>`), then main CI green, then upstream PR #2 body.
+
+## claude-Dylan · 2026-11-13 (early) · usage limit reached mid-turn
+- ALL program tasks INTEGRATED (14: UI-001..007, UAK-009..013, UAK-067, UAK-068). main 6f31689, CI 90/90 green (run on 6f31689).
+- UI-007 merged as PR #17 after one reject (Spanish dashboard English left) + fix; P3s → PENDING #42-#47.
+- Upstream sync in flight: PR #18 (sync/upstream-3, 14 upstream commits, clean merge, lint/hashes/gen_harness OK). Its local smoke and CI were
+  still running. Next: if CI green → merge #18 (Dylan authorized merges) → update body of JoahanMorales/upiixia-agentic-kit#2 listing the
+  14 tasks with fork PRs #1-#6, #9-#11, #13-#17 → tell Dylan, with a message ready for the owner.
+- Test rounds (Dylan's request) on cafeteria copies with local bare remotes, kit at 6f31689, under /private/tmp/claude-501/-Users-dylanmartinezcastillo-Documents-Repositorios-Hackathon-upiixia-agentic-kit-dylan/5d490525-c357-4b1d-b5e7-ec67917ea0d2/scratchpad/rounds:
+  r1 novice browser es + frames for the video (rN/frames/*.png + captions.txt), r2 novice docs/terminal (DONE: rN/REPORT.md),
+  r3 with context verifying every improvement with real Claude/Codex, r4 adversarial. r1/r3/r4 were still running when the limit hit:
+  read their REPORT.md. Video: assemble r1 (and r3) frames with
+  ffmpeg -framerate 1 -pattern_type glob -i 'frames/*.png' -vf "scale=1280:-2,format=yuv420p" video.mp4 (not done yet).
+- r2 findings (high): README never says to open claude once and accept workspace trust (headless /uak-plan ignores permissions);
+  terminal setup registered example reviewers (ana/leo from HACKATHON.md) instead of the person's identities; sprint order (uak clock)
+  not in README. Treat as backlog candidates, product decisions for Dylan.
