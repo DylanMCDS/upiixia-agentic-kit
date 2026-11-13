@@ -236,3 +236,29 @@ Windows wait are product decisions for Dylan).
 - Fixture tests are now machine-independent (UAK-012): no isolation needed on Dylan's Mac except the python shim.
 - Pending improvements #22-#34 added today (product decisions for Dylan: #25 installer vs global hooksPath, #32 Windows
   session-start wait).
+
+## claude-Dylan · end of turn 2026-11-12 (night) → Seebaastiaan's session (Dylan hands over to a second human)
+
+State of record is claims; this is the map. A new human (GitHub Seebaastiaan, write access to DylanMCDS/upiixia-agentic-kit)
+continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): never claude-Dylan*.
+- INTEGRATED today: UAK-067 (main 0798117, CI once per SHA: feature SHAs now run CI only on pull_request).
+  11 of the 12 program tasks are integrated or in review; remaining: UI-006 (REVIEW) and UI-007 (AVAILABLE, depends on UI-006).
+- UI-006 · REVIEW at 57b397d, PR #16, branch feat/ui-006, worktree upiixia-agentic-kit-dylan-wt/ui-006 (Dylan's Mac).
+  CI 89/89 (run 43358179322; windows test_v592 flake passed on rerun, PENDING #38). Contract + 9 amendments + note:
+  notes/handoff:UI-006-contract.md. 98507da was rejected only for missing Windows evidence; now in
+  qa/UI-006-windows.md (PASS). A re-review by claude-Dylan-r at 57b397d was started at the end of this turn: read
+  its verdict with `uak status --task UI-006` (do not start a second review of the same SHA).
+  Approve → merge PR #16 (a human merges: Seebaastiaan or Dylan) → `uak integrate UI-006` (as the task owner or any
+  agent, AGENTS.md §3.8). Reject → `uak handover UI-006 --to <your identity>` (or ask Dylan) and fix it.
+- UI-007 · after UI-006 is INTEGRATED: `bash .uak/bin/wt new UI-007 --agent claude-<you>`. Spec: `uak status --task
+  UI-007`; contract section "UI-007" + amendments 8 (focus test) in UI-006-contract.md. Test first (uak red), browser
+  QA 1280x720 + 390x844 en/es before done, reviewer = a different identity with clean context.
+- Then closing: upstream PR JoahanMorales/upiixia-agentic-kit #2 (head DylanMCDS:main): when all 12 tasks are
+  integrated and main CI is green, update its body (list of tasks/PRs) and tell Dylan; Dylan tells the owner.
+- Rules kept: test first, never weaken/edit existing tests without a human `uak allow --tests`; one live task per
+  identity; adversarial pre-review + browser QA before done; one complete all-SUCCESS CI run per SHA (a capacity
+  cancellation with 0 steps is not a failure; a real failure never ships; rerun only proven flakes, record them in
+  PENDING-IMPROVEMENTS); merge main into in-flight branches after each integration; cancel runs of obsolete SHAs.
+- Machine notes: Dylan's Mac has no `python` (shim python→python3 on PATH for Verify). Windows: `python` may be the
+  Store stub; use `py`. Git Bash for every engine command on Windows.
+- Pending improvements up to #38 (#35, #36, #38 Windows CI flakes; #37 ci-once parser P3). Product decisions stay Dylan's.
