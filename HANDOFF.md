@@ -294,3 +294,12 @@ continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): n
   share one accessible name; Content-Type with charset → 415. Held: CSRF/Host/token, hostile folder names, registration guards, rollback,
   390px, keyboard. r4's wizard server may still run on port 58057 (stop it).
   These are follow-up tasks (uak plan, Dylan's call); none blocks the integrated program, but P1/P2s should precede the upstream announcement.
+
+## claude-Dylan · 2026-11-13 04:10 · end of turn
+- Program: 14 tasks INTEGRATED, main 6f31689, CI 90/90. Upstream PR JoahanMorales#2 body updated (all 14 tasks; old body kept in
+  the session scratchpad). Fork PR #18 (sync with upstream, 14 commits, clean, smoke PASS, CI 94/94) is open: the auto-mode classifier
+  refused my merge without a review, so it is a HUMAN ACTION for Dylan: `gh pr merge 18 --repo DylanMCDS/upiixia-agentic-kit --merge`.
+- Test rounds done: qa/rounds-2026-11-13/SUMMARY.md (+ r1-r3 reports). Videos with Spanish subtitles (mov_text; also .srt) in
+  ~/Movies/uak-pruebas-2026-11-13/ (ronda1 136 s, ronda3 143 s, ronda4 28 s). Frames under the session scratchpad rounds/rN/frames.
+- Recommendation before announcing upstream: plan the P1/P2 items of SUMMARY.md as follow-up tasks (uak plan, Dylan) — the program is
+  complete and green, but a novice on a fresh folder still hits the Claude Code trust prompt and the Codex sandbox.
