@@ -233,3 +233,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** spanish_journey_has_no_english, never_seen_human_is_named, reviewer_is_not_offered_implementation
 - **Verify:** `python kit/.uak/tests/test_setup_guide.py && python kit/.uak/tests/test_next_reviewer.py`
 - **Next step:** write the named tests (rendered Spanish page text, a uak next run as NAME-r); see them fail; then translate and fix.
+## UI-014 · Each person picks the role of each coding tool they have
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 4 h
+- **Depends on:** UI-009
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_roles.py, kit/.uak/docs/WHY.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (Dylan, after the test rounds 2026-11-13): the team step always says "Claude Code implements, Codex reviews", but many people have only one subscription (only Claude or only Codex) and could not follow it; the engine already lets any tool take either role (a role is only an identity: UAK_AGENT)., For each coding tool installed in the project and signed in on this computer (the same detection planning uses), the person picks its role: implements, reviews, or both., With one tool, it can do both roles with two identities (TOOL-NAME implements, NAME-r reviews), and the page says the reviewer never reviews its own identity's work., With two tools, any combination works (for example Codex implements and Claude Code reviews); the choice is per person and remembered for the project (not shared with teammates)., The Copy commands follow the choice: the implement command opens the chosen tool in the task worktree with its first prompt, the review command starts the chosen tool as NAME-r with its review prompt (Claude Code: /uak-review; Codex: $uak-review, with --add-dir for .git); commands stay built only from server values., A tool not installed or not signed in is never offered, and the page says why; WHY.md and docs/DASHBOARD.md are updated, with Spanish for every new line.
+- **Tests:** roles_follow_the_tools_you_have, one_tool_does_both_roles, any_tool_can_review, unavailable_tool_is_not_offered
+- **Verify:** `python kit/.uak/tests/test_setup_roles.py`
+- **Next step:** write the named tests with fake tools (only claude, only codex, both); see them fail; then add the role choice to the team step.
