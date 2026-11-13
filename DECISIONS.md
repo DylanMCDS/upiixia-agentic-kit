@@ -30,3 +30,4 @@ Coordination decisions on the claims branch.
 - 1794517434 | deadline lease/UAK-012/1794509559 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 - 1794533962 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794548368 | plan --amend | Dylan/Dylan | amended: UI-007 Paths: kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/tests/test_setup_guide.py, docs/DASHBOARD.md, CHANGELOG.md → kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/tests/test_setup_guide.py, docs/DASHBOARD.md, CHANGELOG.md, kit/.uak/bin/lib/setup.py; | Why: scope or criteria fixed before review
+- 1794581664 | plan | Dylan/Dylan | tasks added: UI-008 UI-009 UI-010 UI-011 UI-012 UI-013 | Why: backlog without PR (Plan-Channel: claims)
