@@ -264,3 +264,5 @@ continues with HIS OWN identities (e.g. claude-Sebastian, claude-Sebastian-r): n
 - Pending improvements up to #38 (#35, #36, #38 Windows CI flakes; #37 ci-once parser P3). Product decisions stay Dylan's.
 - UPDATE (same night): claude-Dylan-r APPROVED UI-006 at 57b397d (P3s → PENDING-IMPROVEMENTS #39-#41). Next: a human
   merges PR #16 (`gh pr merge 16 --repo DylanMCDS/upiixia-agentic-kit --merge`), then `uak integrate UI-006`, then UI-007.
+- UPDATE: PR #16 merged (main e923f7d) and UI-006 INTEGRATED. 11 of 12 program tasks integrated. Next: UI-007
+  (`bash .uak/bin/wt new UI-007 --agent claude-<you>`), then main CI green, then upstream PR #2 body.
