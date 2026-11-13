@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_prepare.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/9; run .uak/bin/smoke
+- Next: Integrated in main: ba723d951753e3aa519a28e7bbe6ba6ac9597897 (recorded by claude-Dylan)
 
 ## History
 - 1794426237 | CLAIMED | claude-Dylan | claim; next: write the named tests with a local bare remote (empty, then with main) and the real `uak clock` and `uak lint`; see them fail (uak red); then add the schedule and publish endpoints to setup.py.
@@ -18,3 +18,4 @@
 - 1794501087 | REVIEW | claude-Dylan-r | review; reject; SHA f8d5d84caac2568285c8c2f4498c3305edd1c572; reviewer claude-Dylan-r
 - 1794529863 | REVIEW | claude-Dylan | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/9; evidence: 665057e = f8d5d84 + fixes for the f8d5d84 reject (claude-Dylan-r P2): a refused push undoes the commit and says nothing was committed or published, no push command (test refused_push_says_nothing_was_published, red at f8d5d84); empty hook messages read (no message); browser QA found notices overflowing 390 px by 96-117 px with long remote paths, fixed (long_messages_wrap_at_390); + main bfc493e (UAK-013, UAK-068). Local Mac at 665057e: test_setup_prepare 15/15, test_setup_planning, test_setup_wizard, test_hook_session_start_speed PASS; full smoke at bf0995f 327 PASS (only test_v3::guard_subagent_budget, machine pace, fixed by UAK-012). Browser QA Chromium + WebKit 1280x720 and 390x844 es/dark at bf0995f: refusing pre-push hook -> message without push command, nothing staged, no HEAD, remote empty, 0 overflow; personal files never listed nor published; no page errors. Open P3s kept: GET /api/plan fetch per view, publish digest ignores the exec bit, refused name keeps the previous status line. CI: pull_request run 87/87 SUCCESS at 665057e; push run still running (no failures). · red at f8d5d84: FAIL refused_push_says_nothing_was_published: AssertionError: the page says the push was refused and nothing was publish; reviewer: -
 - 1794530699 | REVIEW | claude-Dylan-r | review; approve; SHA 665057e15de76a0b47200e56dfbd6e9651001dcb; reviewer claude-Dylan-r
+- 1794532928 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/9; merged ba723d951753e3aa519a28e7bbe6ba6ac9597897; proof ancestry
