@@ -204,3 +204,63 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-009 · The team step stays right after the first claim
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 3 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_team.py, docs/DASHBOARD.md
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #2, #3, #5): state["reviewer"] is server-wide, so another project, another name or a retired reviewer shows "registered" (r4); the Codex reviewer command lacks the `--add-dir "<repo>/.git"` that wt recommends and `uak next` fails under its sandbox (r1, r3); after the first claim the page leaves "ready", the team commands vanish (r4) or it keeps offering the claimed task (r3)., "Registered" is derived per project and reviewer name from claims (roles/reviewers minus meta/retired), never from a server-wide flag., The Codex reviewer command grants write access to the repository's .git directory, quoted for the folder., After claims exist the team step stays visible: it offers an unclaimed task for a new implementer, a resume command for each claimed one, and the reviewer command.
+- **Tests:** reviewer_state_follows_project_and_name, codex_command_can_write_git, team_step_survives_the_first_claim
+- **Verify:** `python kit/.uak/tests/test_setup_team.py`
+- **Next step:** write the named tests against the ready fixture with a claim on HACK-001; see them fail; then fix the reviewer state and the commands.
+
+## UI-010 · Planning and schedule never pretend
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/planning.py, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_planning.py, kit/.uak/tests/test_setup_prepare.py
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #6, #7): a planning run that wrote no TASKS.md showed a green "plan passes uak lint" and an approve button (r3); planning took 4 to 8 minutes with no progress cue (r1); the event schedule defaults to today and saving it untouched silently froze a next-day hackathon (r1)., A run without .uak/TASKS.md is shown as failed (translated message, retry button, no lint line, no approve button)., While planning runs the page shows elapsed time and the last output line., The schedule fields start empty; saving requires a date, and a freeze time in the past or within the next hour asks for confirmation.
+- **Tests:** missing_tasks_file_is_a_failed_plan, planning_shows_progress, schedule_is_never_guessed
+- **Verify:** `python kit/.uak/tests/test_setup_planning.py && python kit/.uak/tests/test_setup_prepare.py`
+- **Next step:** write the named tests with a fake planner that exits without writing TASKS.md; see them fail; then fix the plan view and the schedule form.
+
+## UI-011 · The page answers while Git talks to the network, and publishing has no dead end
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UI-009
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_prepare.py, kit/.uak/tests/test_setup_team.py
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #4, #9; PENDING-IMPROVEMENTS.md #40): network git (ls-remote, fetch) ran under the server lock and blocked /api/status (r4); offline, the team step said "publish the kit" (r4); a GitHub repository created with a .gitignore left publish advising "git pull", a dead end (r4)., Network Git runs outside the server lock with a timeout; /api/status answers within 1 s while it runs., Offline, the team step says the remote cannot be reached and offers retry, not publish., When the remote has unrelated history the page explains it and gives one exact command that keeps both histories, or offers to publish to a new empty repository.
+- **Tests:** status_answers_during_network_git, offline_team_step_says_offline, unrelated_remote_history_has_a_way_out
+- **Verify:** `python kit/.uak/tests/test_setup_prepare.py && python kit/.uak/tests/test_setup_team.py`
+- **Next step:** write the named tests with a fake runner that blocks on ls-remote; see them fail; then move network calls out of the lock.
+
+## UI-012 · Identity warning compares Git and GitHub separately
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/tests/test_setup_guide.py
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #8; PENDING-IMPROVEMENTS.md #44): one matching word suppressed the warning when Git matched the person but GitHub was someone else (r4); accented names did not match their unaccented form., The warning checks the Git name/email and the GitHub login each against the person's name and says which one belongs to someone else., Names match ignoring case and accents (José = jose).
+- **Tests:** github_login_is_checked_on_its_own, accents_do_not_break_the_match
+- **Verify:** `python kit/.uak/tests/test_setup_guide.py`
+- **Next step:** write the named tests with a fake identity (Git = person, gh = other); see them fail; then split the check.
+
+## UI-013 · No English left in the Spanish journey, and small honesty fixes
+
+- **Type:** fix
+- **Priority:** P3
+- **Estimate:** 3 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/dash.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/status.sh, kit/.uak/tests/test_setup_guide.py, kit/.uak/tests/test_next_reviewer.py
+- **Acceptance:** Evidence (test rounds 2026-11-13, SUMMARY.md #10)., In Spanish the status heading, the doctor sub-lines, the schedule weekday, the claim progress line ("N commit(s) since the claim · last: …") and "No technical output yet" are translated, and the status heading has no ✓ while TODOs remain., A human never seen shows "never", not "20770 d"; the Agents tab lists the registered reviewer., The plan's Approved-By and the kit's Published-By use the same human name., `uak next` run as a registered reviewer offers reviews only, never implementation work.
+- **Tests:** spanish_journey_has_no_english, never_seen_human_is_named, reviewer_is_not_offered_implementation
+- **Verify:** `python kit/.uak/tests/test_setup_guide.py && python kit/.uak/tests/test_next_reviewer.py`
+- **Next step:** write the named tests (rendered Spanish page text, a uak next run as NAME-r); see them fail; then translate and fix.
+
