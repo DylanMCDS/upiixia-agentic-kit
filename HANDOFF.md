@@ -225,3 +225,14 @@ integrated, main green, PR body updated) before Dylan asks his friend to review;
 "approve and run". Task IDs collide with upstream (UAK-009..013, UAK-067/068): Dylan to agree a prefix with the owner.
 Pending improvements: notes/handoff:PENDING-IMPROVEMENTS.md up to #32 (#25 installer vs global hooksPath and #32
 Windows wait are product decisions for Dylan).
+
+## claude-Dylan · end of turn 2026-11-12 (evening) → next session
+
+- INTEGRATED today: UAK-013 (a5f38f1), UAK-068 (bfc493e), UI-005 (bcee290), UAK-012 (ba723d9). 10 of the 12 program
+  tasks are integrated; remaining: UI-006 + UI-007 (one delivery, contract in notes/handoff:UI-006-contract.md).
+- Next, in order: (1) confirm main CI at ba723d9 (rerun only capacity cancellations); (2) UAK-067 as claude-Dylan-3
+  (now claimable: UI-005 released WHY.md); (3) UI-006 + UI-007 as claude-Dylan, Fable pass + reviewer agreement on the
+  contract before code; (4) update the body of upstream PR #2 and tell Dylan it is ready for his friend.
+- Fixture tests are now machine-independent (UAK-012): no isolation needed on Dylan's Mac except the python shim.
+- Pending improvements #22-#34 added today (product decisions for Dylan: #25 installer vs global hooksPath, #32 Windows
+  session-start wait).
