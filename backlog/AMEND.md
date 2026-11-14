@@ -473,3 +473,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-016 · A short demo video, from zero to a finished deployed product, shipped with the kit for its setup page
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/media/, docs/video/, kit/.uak/tests/test_tutorial_video.py, kit/.uak/settings/known-files.txt, README.md, install.sh
+- **Acceptance:** Evidence (Sebastián and Dylan, 2026-11-13; test rounds SUMMARY.md: novices did not know which steps happen in the page, in a terminal or by the agents). Dylan: demonstration only, small, shown in the interface the kit opens (the local setup page; UI-017 wires it in)., One video under 90 seconds that walks through the kit from zero to a complete product: install the kit into an empty project, prepare and plan in the local page, start the team (Claude Code implements, a second identity reviews), agents claim, build, review and merge tasks, the board shows progress, and the product ends deployed (a simulated hackathon app, e.g. a cafeteria queue board, with its live URL). A simulation (scripted screens and terminal) is fine, labelled as a demonstration., Source in docs/video/ (Remotion or another scripted tool, pinned versions), rendered with one documented command., Shipped files in kit/.uak/media/: tutorial.mp4 (H.264, at most 3 MB), tutorial-en.vtt and tutorial-es.vtt (WebVTT captions with the same cues), tutorial-poster.jpg (at most 150 KB); all listed by kit_hashes in known-files.txt; the installed kit grows by at most 3.5 MB., README may link the MP4 (optional).
+- **Tests:** video_is_short_and_small, captions_exist_in_both_languages, media_ships_with_the_kit
+- **Verify:** `python kit/.uak/tests/test_tutorial_video.py`
+- **Next step:** write the tests (ffprobe duration < 90 s when available, file sizes, both .vtt parse with the same cue count, install.sh copies kit/.uak/media); see them fail; then script and render the video.
+
