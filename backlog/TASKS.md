@@ -289,3 +289,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** tutorial_is_short_enough, readme_shows_the_tutorial, welcome_offers_the_tutorial_in_its_language, tutorial_is_served_safely, tutorial_never_autoplays
 - **Verify:** `python kit/.uak/tests/test_setup_tutorial.py`
 - **Next step:** write the named tests (ffprobe duration < 90 s and size limits, README markup, welcome markup per language, served with the token/Host checks and a video Content-Type, no autoplay attribute); see them fail; then script and render the video and wire it in.
+## UI-017 · The setup page offers the demo video on its welcome screen
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 1.5 h
+- **Depends on:** UI-016, UI-015
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_tutorial.py, kit/.uak/docs/WHY.md, docs/DASHBOARD.md, CHANGELOG.md
+- **Acceptance:** Evidence (Dylan, 2026-11-13: "the landing of the kit is the interface it opens")., The welcome screen of the local setup page shows a "Watch the 75-second demo" block with the poster; the video plays in the page (controls, never autoplays, captions in the page's language: English or Spanish track default), keyboard operable, and respects reduced motion (no autoplaying poster animation)., The setup server serves /media/tutorial.mp4, the .vtt files and the poster from the kit only (fixed allowlist, no path from the request), with the existing protections (token or same-origin page load as the page's other assets, Host and loopback checks), correct Content-Type (video/mp4, text/vtt, image/jpeg) and HTTP Range support so the browser can seek; a missing media file hides the block instead of erroring., Spanish for every new string; WHY.md and docs/DASHBOARD.md updated; layouts at 1280x720 and 390x844 keep working.
+- **Tests:** welcome_offers_the_demo, demo_is_served_safely, demo_never_autoplays, missing_demo_hides_the_block
+- **Verify:** `python kit/.uak/tests/test_setup_tutorial.py`
+- **Next step:** write the tests against a fixture kit with a tiny media file; see them fail; then add the route and the block.
