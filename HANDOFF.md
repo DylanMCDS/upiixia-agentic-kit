@@ -352,3 +352,29 @@ In flight:
 - UI-018 (claim claude-Dylan-3, worktree ../upiixia-agentic-kit-dylan-wt/ui-018): usability from Dylan's real run on ~/hackathon-prueba/turno-cafeteria-2 — busy/result next to every button, blocked buttons say why (no wait cursor), toast on out-of-order clicks, no layout jumps, point to the page's own control (Publish) instead of raw gate text, GitHub default branch = claims note. Then fresh opus claude-Dylan-r review, merge, integrate.
 - Final PR #2 description drafted at scratchpad pr2-body-v4.md (lead's machine) — regenerate: add rows UI-009/012/015/016/017/018 + UAK-090 and set Status to ready; then send Dylan the message for Joahan.
 Dylan's live test: turno-cafeteria-2 (empty GitHub repo). Next for him: Prepare → "Publicar el kit en main", then set GitHub default branch to main, then plan.
+
+## 2026-11-14 · Sebastián's session (lead) → back to Dylan's computer
+
+Main: bdf79bf (unchanged). Nothing running on Sebastián's Mac; everything is pushed.
+- Sync PR #28 (sync/upstream-4) · now a7b0f94, CI 106/106 green, MERGEABLE. Upstream released v6.3.0 (722a722) after the
+  first sync, so a7b0f94 merges it too: CHANGELOG conflict resolved (fork's Unreleased above upstream's v6.3.0);
+  design_fonts.py + test_design_fonts.py take upstream's own Windows fix (my c82cd08 superseded, no fork diff left there);
+  known-files regenerated. ACCIÓN HUMANA (Dylan): `gh pr merge 28 --repo DylanMCDS/upiixia-agentic-kit --merge`.
+  Until it is merged, EVERY fork CI run fails test_dashboard_journey (live "update the kit 6.2.0 vs 6.3.0" blocker,
+  PENDING #51), main included.
+- UI-018 · CLAIMED claude-Dylan-3 (claim's worktree path is still Dylan's old one; Sebastián's worktree at
+  ../upiixia-agentic-kit-wt/ui-018). PR #29, head 4df3acb (red d656e62 + implementation 4df3acb; no existing test edited).
+  Local: setup/dashboard suites, test_unified_workspace, kit_lint, kit_hashes --check, full smoke PACKAGE_PASS; Playwright
+  QA en/es · Beginner/Advanced · 1280x720/390x844 · reduced motion: no overflow, no console errors. CI run 43564879056: 95
+  pass, 2 fail = the 6.3.0 blocker only (both attempts). `uak done` NOT run yet.
+  Uncertain (tell the reviewer): the exact "renders narrow then expands" jump was not reproduced (panel now waits for the
+  first status); app-link input keeps max 520px at 1280.
+  Next exact steps after #28 is merged: on Dylan's machine `git fetch && git worktree add ../upiixia-agentic-kit-dylan-wt/ui-018
+  feat/ui-018` (or reuse the old one and `git pull`), `git merge --no-edit origin/main`, rerun setup/dashboard suites +
+  kit_lint + `python3 scripts/kit_hashes.py --check`, push, wait for PR #29 CI (Windows failure → one rerun), then
+  `UAK_AGENT=claude-Dylan-3 bash .uak/bin/uak done UI-018 --pr https://github.com/DylanMCDS/upiixia-agentic-kit/pull/29 --evidence "..."`,
+  fresh opus claude-Dylan-r review, merge, `UAK_AGENT=claude-Dylan bash .uak/bin/uak integrate UI-018`.
+- Then: upstream PR JoahanMorales#2 body (rows UI-009 #23, UI-012 #24, UI-015 #26, UI-016 #25, UI-017 #27, UI-018 #29,
+  UAK-090 #22; "Twenty-four tasks"; Status ready for review; Codex in Windows Git Bash not verified), check MERGEABLE,
+  message for Joahan.
+- PENDING #51 added (journey test depends on the live kit version).
