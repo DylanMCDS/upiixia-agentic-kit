@@ -343,3 +343,12 @@ Main: 4c9e57b. Ran with Dylan's identities per Dylan's lead brief (claude-Dylan-
   (OWNERS of kit/.uak/bin/lib/).
 - Then: upstream PR JoahanMorales#2 body (rows UI-009, UI-012, UI-015, UAK-090, UI-016; clear "still landing") and the message to Dylan's friend.
 - PENDING #48-#50 added.
+
+## 2026-11-13 night (2) · claude-Dylan (lead) · handoff to Sebastián's session
+
+Main: bdf79bf, main CI 100/100. INTEGRATED today since Sebastián's handoff: UI-012 (#24), UI-015 (#26), UI-016 (#25, demo video in kit/.uak/media), UI-017 (#27, video on the setup welcome). Dylan accepted "Codex in Windows Git Bash: not verified" (amendment 9).
+In flight:
+- Sync PR #28 (branch sync/upstream-4, worktree ../upiixia-agentic-kit-dylan-wt/sync-4): merges upstream main (20 commits, e9292c7); only conflict known-files.txt (regenerated); plus a fix Dylan authorized to upstream's test_design_fonts (bare `bash` = WSL on Windows → resolve_binary("bash")), commit 797fd6e. Upstream's own main CI is red on that Windows job. When PR #28 CI is green: merging a sync PR without review was refused by the classifier before → give Dylan `gh pr merge 28 --repo DylanMCDS/upiixia-agentic-kit --merge` as ACCIÓN HUMANA. Then upstream PR #2 stops being CONFLICTING.
+- UI-018 (claim claude-Dylan-3, worktree ../upiixia-agentic-kit-dylan-wt/ui-018): usability from Dylan's real run on ~/hackathon-prueba/turno-cafeteria-2 — busy/result next to every button, blocked buttons say why (no wait cursor), toast on out-of-order clicks, no layout jumps, point to the page's own control (Publish) instead of raw gate text, GitHub default branch = claims note. Then fresh opus claude-Dylan-r review, merge, integrate.
+- Final PR #2 description drafted at scratchpad pr2-body-v4.md (lead's machine) — regenerate: add rows UI-009/012/015/016/017/018 + UAK-090 and set Status to ready; then send Dylan the message for Joahan.
+Dylan's live test: turno-cafeteria-2 (empty GitHub repo). Next for him: Prepare → "Publicar el kit en main", then set GitHub default branch to main, then plan.
