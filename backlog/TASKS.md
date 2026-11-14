@@ -311,3 +311,146 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** blocked_buttons_say_why, actions_show_busy_and_result, check_reports_even_when_nothing_changed, no_wait_cursor_on_blocked_buttons, layout_is_stable_across_refresh
 - **Verify:** `python kit/.uak/tests/test_setup_feedback.py`
 - **Next step:** reproduce with Playwright (Spanish, 1280x720): the plan step before the kit is on main, a Check press, a refresh cycle (measure section heights/offsets across polls); write the tests; see them fail; fix.
+## UAK-091 · A newer kit release never blocks a working project; update hints name the kit that installed it
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/start, kit/.uak/bin/doctor, kit/.uak/tests/test_start_version_gate.py
+- **Acceptance:** Evidence (QA rounds 2026-11-14, notes/handoff:qa/rounds-2026-11-14: A-F1, B-02, C-4; and Dylan's live turno-cafeteria-2): when the kit's GitHub released 6.3.0, every `uak start` on a 6.2.0 project became "TODO update the kit", READY never came, the setup page hid the team step, and the hint pointed at ~/.uak-kit (another clone); `UAK_KIT_PIN=1` is the only escape., Once the kit is on the project's main (or Freeze-Epoch is set), a newer release is a NOTE, never a TODO; READY is unaffected., The update hint names the folder that installed this project when known (recorded at install), else says how to find it; it never names a different clone as fact., A fresh teammate clone of a READY project is READY without any env var., The setup page path is unaffected by stripped UAK_* variables (the decision is in start, not the environment).
+- **Tests:** newer_release_is_a_note_after_publish, update_hint_names_the_installing_kit, teammate_clone_is_ready
+- **Verify:** `python kit/.uak/tests/test_start_version_gate.py`
+- **Next step:** fixture with a local bare "kit GitHub" tagged above the project's VERSION; see start TODO; tests fail; then change start.
+
+## UAK-092 · Projects without GitHub can finish a task (Review-Mode: claims needs no PR URL)
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 1.5 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/done.sh, kit/.uak/bin/wt, kit/.uak/tests/test_done_without_github.py
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-2): on a non-GitHub remote `wt pr` says "Not a GitHub remote" and `uak done --pr file://…` says "needs --pr HTTPS URL (… wt pr)" — a dead loop; the tester used a fake https URL., With Review-Mode: claims (or any non-GitHub remote), `uak done ID --pr none` (or the branch name) is accepted and recorded; both error messages name that fallback; GitHub remotes keep requiring a real PR URL in PR review mode.
+- **Tests:** done_accepts_no_pr_without_github, wt_pr_names_the_fallback, github_still_needs_a_pr
+- **Verify:** `python kit/.uak/tests/test_done_without_github.py`
+- **Next step:** fixture with a local bare remote; reproduce the loop; tests; fix.
+
+## UAK-093 · The product smoke exists from the start and boots the app
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** UAK-091
+- **Paths:** kit/.uak/bin/lib/smoke-init.sh, kit/.uak/bin/start, kit/.uak/tests/test_smoke_onboarding.py
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-1, C-3, C-10): nothing on the onboarding path created .uak/bin/smoke-project, so `uak start` said READY and then the first /uak-ship and the merge gate failed PRODUCT_UNVERIFIED; after two green merges the integrated app crashed on boot (ImportError) because tests forced a fake store and no gate booted the app; init-smoke left an empty scripts/ dir., `uak start` shows a TODO (with the exact init-smoke command for the detected stack, or a generic one) until .uak/bin/smoke-project exists; the generated smoke for a web stack starts the app and requests one route (bounded timeout), not only unit tests; init-smoke creates no stray folders.
+- **Tests:** start_asks_for_the_smoke, web_smoke_boots_the_app, init_smoke_leaves_no_stray_dirs
+- **Verify:** `python kit/.uak/tests/test_smoke_onboarding.py`
+- **Next step:** fixture: stdlib Python app whose import is broken but unit tests pass; the generated smoke must fail; then implement.
+
+## UAK-094 · Engine messages and caches that misled agents
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/status.sh, kit/.uak/bin/lib/messages.sh, kit/.uak/bin/stats, kit/.uak/bin/board, kit/.uak/bin/dash, kit/.uak/tests/test_engine_messages_qa14.py
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-7, C-11..C-16): a contract message cited a SHA only on an unmerged branch; `next`'s "= unchanged" cache is keyed by session not identity (beto-r saw "Nothing new" after ana-r); stats lists normal queue waits as human-queue reasons; board shows "PR#001" for a non-numeric URL; dash prints a tar DeprecationWarning and reports mode "" ., A contract message's SHA is resolved to its branch and the message shows `git show origin/BRANCH:path`; the next cache key includes UAK_AGENT; stats counts only real escalations; board shows the URL tail when there is no number; dash extracts with filter="data" (when supported) and falls back to PROJECT.md for Mode.
+- **Tests:** contract_message_names_the_branch, next_cache_is_per_identity, stats_counts_only_escalations, board_pr_label_without_number, dash_reports_the_mode
+- **Verify:** `python kit/.uak/tests/test_engine_messages_qa14.py`
+- **Next step:** one fixture per item; see them fail; fix each in its file.
+
+## UAK-095 · Plain Python projects deploy, and the planner only promises what the kit can do
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/deploy, kit/.uak/stacks/python-stdlib/, kit/.uak/tests/test_deploy_python_stdlib.py
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-5): the planner wrote "uak deploy --write has produced Dockerfile" but deploy says "no known stack here" for a stdlib Python app, and the agent hand-wrote a broken Dockerfile., `uak deploy --write` recognises a stdlib Python web app (python3 -m <module> or a server.py) and writes a working Dockerfile + Render Blueprint; when no stack matches, the message says what to add.
+- **Tests:** deploy_recognises_stdlib_python, deploy_says_what_is_missing
+- **Verify:** `python kit/.uak/tests/test_deploy_python_stdlib.py`
+- **Next step:** fixture app; see "no known stack"; add the stack.
+
+## UI-019 · Coming back to a project: the page restores where you were
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 3 h
+- **Depends on:** UI-018
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_resume.py
+- **Acceptance:** Evidence (Dylan's live run 2026-11-14: "se me borró todo al refrescar", stuck "Comprobar siguiente paso"; QA notes/handoff:qa/rounds-2026-11-14 A-F2, A-F3, A-F4, A-F8, A-F11, B-04, B-05, B-14, D-6.1): after a refresh, a restart or re-picking the project the page landed on Welcome/Prepare with empty forms, offered publish and "Crear el plan" for an approved plan, forgot the human name (team step silently hidden by a 400), and the old tab after a restart showed raw "Failed to fetch" while polling forever., The server re-inspects its target on start and the page lands on the furthest real step (derived from the repo: installed, kit on main, schedule, idea, plan approved, reviewer registered); completed steps are shown done and collapsed; the human name persists per project (in the Git dir, never committed) and the team step asks for it inline if missing; the check runs automatically after inspect; re-picking keeps state; the active tab survives reloads; when the server is gone the page shows a translated banner ("Setup se cerró: vuelve a ejecutar el comando y abre el nuevo enlace") and backs off polling.
+- **Tests:** restart_lands_on_the_team_step, refresh_keeps_the_step_and_values, name_persists_per_project, repick_keeps_state, server_gone_banner
+- **Verify:** `python kit/.uak/tests/test_setup_resume.py`
+- **Next step:** fixture of an installed+approved project; restart; assert landing step; tests fail; fix.
+
+## UI-020 · Branches and publishing never leave a dead end
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2.5 h
+- **Depends on:** UI-019
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_branches.py
+- **Acceptance:** Evidence (Dylan's live turno-cafeteria-2: GitHub default branch became claims; QA notes/handoff:qa/rounds-2026-11-14 B-01, B-03, B-09, B-16): a teammate clone landed on claims and the kit was installed there; after the way-out pull, publish refused in English with no command; "El comando de abajo…" shown with no command; a quote in the path blocked the way-out., Inspect/install warn and stop when HEAD is not the base branch (with "git switch main"); the page warns when the remote's default branch is claims and says how to change it on GitHub; the way-out includes the push step and the publish refusal is translated with the exact command; the "command below" sentence only appears with a command; paths with a quote mark get a correctly quoted command.
+- **Tests:** install_refuses_a_non_base_branch, warns_when_remote_default_is_claims, way_out_includes_the_push, no_promise_without_a_command, quote_in_path_gets_a_command
+- **Verify:** `python kit/.uak/tests/test_setup_branches.py`
+- **Next step:** fixtures from QA round B; tests fail; fix.
+
+## UI-021 · Forms say what is wrong next to the field and never accept bad data
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UI-020
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_forms.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 D-9.1, D-5.1, D-5.2, D-5.3, A-F13, A-F14): name/schedule/idea errors went to a global box ~2,900 px away with focus on body; "Mars/Base" accepted as a time zone; event times as weekdays without dates in reversed order; relative paths said "does not exist"; schedule inputs overlap 8 px; no gap above "Guardar la idea"; native English validation bubbles., Per-field errors under the field with aria-invalid/aria-describedby and focus moved to it; server validates time zones against zoneinfo (datalist prefilled with the browser zone); schedule confirmations show dates in chronological order; relative paths get "use the full path"; layout fixes; page messages instead of native bubbles (translated).
+- **Tests:** field_errors_sit_next_to_the_field, invalid_time_zone_is_refused, schedule_shows_dates_in_order, relative_path_says_so
+- **Verify:** `python kit/.uak/tests/test_setup_forms.py`
+- **Next step:** reproduce with Playwright; tests fail; fix.
+
+## UI-022 · Spanish all the way and plain words for beginners
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-021
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/planning.py, kit/.uak/tests/test_setup_language.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F10, B-11, D-4.1, D-2.1, D-2.2, D-2.4, A-F20): English left in the Spanish UI (gate lines like "the kit's GitHub", FREEZE line, git stderr when offline with a misleading "check your connection", violation list, CLAIMED/all/human tokens, publish refusals); jargon for novices; ustedes/tú mix; one control with three labels; the plan written in English for a Spanish idea., Every engine line the page shows has a Spanish pattern or a plain Spanish summary; common git failures (not a repo, auth, DNS, timeout) map to one plain sentence with stderr under Technical details; Beginner view explains jargon (abbr/tooltip); tú throughout; one label per action; the planner writes titles and criteria in the idea's language.
+- **Tests:** spanish_page_has_no_engine_english, git_failures_are_plain, planner_follows_the_idea_language, one_label_per_action
+- **Verify:** `python kit/.uak/tests/test_setup_language.py`
+- **Next step:** collect every English string from the QA screenshots; tests fail; translate.
+
+## UI-023 · The dashboard tells the truth and is accessible
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-022
+- **Paths:** kit/.uak/bin/lib/dash.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_dashboard_truth.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F9, B-06, B-07, B-08, B-12, B-13, B-15, D WCAG 1.4.3/2.5.3/2.5.8/1.3.1, D-4.3/4.4/8.3/1.3): dependency-blocked tasks shown as available; frozen project shown as "team working"; a merge needing a human missing from setup's next step (raw English reason with an absolute path); offline shows the local plan as all available; plural labels on single rows; approved reviews have no mark; muted text contrast 3.26–4.45:1; "View" label vs accessible name; 53x19 px task buttons; missing headings; tabs not ARIA tabs ("Board2"); tab strip cut at 390; green dot at 0 agents., "Esperando dependencias" bucket and "aprobada" badge; FREEZE shown as frozen everywhere; needs-human items first in setup's next step, translated, no paths; offline falls back to the last known claims marked stale; singular/plural labels; contrast ≥ 4.5:1 in light and dark; label-in-name; targets ≥ 24 px; headings per view; ARIA tabs with arrow keys; tabs wrap at 390; grey dot at 0.
+- **Tests:** blocked_tasks_are_not_available, frozen_is_frozen, needs_human_comes_first, offline_uses_last_claims, dashboard_meets_contrast_and_targets
+- **Verify:** `python kit/.uak/tests/test_dashboard_truth.py`
+- **Next step:** fixtures with hand-made claims states (QA round B scripts); tests fail; fix.
+
+## UI-024 · The team step leads a beginner through the first run
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-023
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_first_run.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F6, A-F7, A-F15, A-F16, A-F19, B-10, D-3.2, D-6.1, D-7.1, D-10.1, D-10.2, D-1.1, D-1.2, D-9.2): Claude Code's trust dialog defaults to "No, exit" and shows an English 51-permissions warning the page never mentions; launch commands copyable before the reviewer is registered; "Comprobar siguiente paso" redraws the list and jumps 1,014 px; a hanging remote makes the check take 75 s with every view 409; blocked reasons shown 3 times; two 1–5 numberings; two humans never addressed; "Set up my project" below the fold; busy-disabled buttons without a reason; after a planner rule break the page says "Done" with a green lint box and conflicting undo advice., Trust step says "press ↓ then Enter" and that the warning is expected, and detects trust (Claude's own config) to show ✓/✗; launch commands stay locked until the reviewer is registered; the check keeps the old list dimmed until the new result (no jump) and network steps are bounded (results stay viewable during a check); one place per blocked reason; one step model; a two-person note (who runs what); CTA above the fold; every disabled button has a reason; a rule break reads "Terminó con problemas" with one undo instruction and its command.
+- **Tests:** trust_step_is_explicit, commands_wait_for_the_reviewer, check_does_not_jump, views_answer_during_a_check, rule_break_is_not_done
+- **Verify:** `python kit/.uak/tests/test_setup_first_run.py`
+- **Next step:** reproduce with QA round A/D scripts; tests fail; fix.
+
+## UAK-096 · Small events get small plans, and projects don't receive the kit's own tests
+
+- **Type:** fix
+- **Priority:** P3
+- **Estimate:** 1.5 h
+- **Depends on:** None
+- **Paths:** kit/.agents/skills/uak-plan/SKILL.md, kit/.claude/commands/uak-plan.md, install.sh, kit/.uak/tests/test_plan_scale.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F12, A-F18, C-17): a 3-hour, 2-person stdlib idea got 7 P0 tasks including a human-gated design lock and a landing; publishing committed 532 files including the kit's own .uak/tests suite; headless work needs 4 prompts per task., The planning skill scales the task count to event length × team size and avoids human-gated tasks in sprints under a day; install.sh does not copy kit/.uak/tests into user projects unless something in the project needs them (check smoke, doctor and garden first; if they are needed, document why and close this criterion with that evidence); the plan skill documents a single headless "run to REVIEW" prompt.
+- **Tests:** short_sprint_plans_are_small, install_skips_the_kit_tests
+- **Verify:** `python kit/.uak/tests/test_plan_scale.py`
+- **Next step:** check where install copies tests and where the plan skill sizes tasks; tests; fix.
