@@ -1,16 +1,16 @@
 # STATE
 
 Phase: execution
-Updated: 1794623456
+Updated: 1794625309
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 
-CLAIMED: UI-017 
+CLAIMED: -
 BLOCKED: -
-REVIEW: -
+REVIEW: UI-017 
 INTEGRATED: (22; last 12) ... UI-002 UI-003 UI-004 UI-005 UI-006 UI-007 UI-008 UI-009 UI-010 UI-012 UI-015 UI-016 
 CANCELLED: UI-011 UI-013 UI-014 
 
 Claims (first 24; status --task ID shows detail):
-UI-017 | CLAIMED | claude-Dylan-4 | until 1794637856
+UI-017 | REVIEW | claude-Dylan-4 | until 1794711709
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
