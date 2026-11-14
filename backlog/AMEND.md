@@ -438,3 +438,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-016 · A short demo video on the kit's landing (README): from zero to a finished, deployed product
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** docs/media/tutorial.mp4, docs/media/tutorial-en.srt, docs/media/tutorial-es.srt, docs/media/tutorial-poster.gif, docs/video/, README.md, kit/.uak/tests/test_tutorial_video.py
+- **Acceptance:** Evidence (Sebastián and Dylan, 2026-11-13; test rounds SUMMARY.md: novices did not know which steps happen in the page, in a terminal or by the agents). Dylan narrowed the scope: demonstration only, small, on the landing., One video under 90 seconds that walks through the kit from zero to a complete product: install the kit into an empty project, prepare and plan in the local page, start the team (Claude Code implements, a second identity reviews), agents claim, build, review and merge tasks, the board shows progress, and the product ends deployed (a simulated hackathon app, e.g. a cafeteria queue board, with its live URL). It may be a simulation (scripted screens and terminal), labelled as a demonstration., Source in docs/video/ (Remotion or another scripted tool, pinned versions), rendered with one documented command; the MP4 is H.264, at most 3 MB, with English and Spanish .srt captions and an animated poster at most 1.5 MB., The README (the kit's landing on GitHub) shows the poster near the top, linking to the MP4, with a line naming the captions in both languages; nothing is added to the installed kit.
+- **Tests:** video_is_short_and_small, readme_shows_the_demo, captions_exist_in_both_languages
+- **Verify:** `python kit/.uak/tests/test_tutorial_video.py`
+- **Next step:** write the tests (ffprobe duration < 90 s when available, file sizes, README markup, both .srt files parse); see them fail; then script and render the video.
