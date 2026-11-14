@@ -508,3 +508,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** blocked_buttons_say_why, actions_show_busy_and_result, check_reports_even_when_nothing_changed, no_wait_cursor_on_blocked_buttons, layout_is_stable_across_refresh, out_of_order_click_explains_the_next_step
 - **Verify:** `python kit/.uak/tests/test_setup_feedback.py`
 - **Next step:** reproduce with Playwright (Spanish, 1280x720): the plan step before the kit is on main, a Check press, a refresh cycle (measure section heights/offsets across polls); write the tests; see them fail; fix.
+## UAK-006 · Proof of no change, and the targets turned on
+
+- **Type:** integration
+- **Priority:** P0
+- **Estimate:** 4 h
+- **Depends on:** UAK-003, UAK-004, UAK-005, UAK-008, UI-002, UI-004, UAK-010, UI-005, UI-006, UI-007, UAK-067, UI-008, UI-009, UI-010, UI-012, UAK-069, UI-015, UAK-090, UI-016, UI-017, UI-018, UAK-091, UAK-092, UAK-093, UAK-094, UAK-095, UI-019, UI-020, UI-021, UI-022, UI-023, UI-024
+- **Paths:** scripts/claims_diff.py, kit/.uak/tests/test_claims_perf.py, kit/.uak/bin/lib/, kit/.uak/bin/uak, kit/.uak/bin/uak-coordination, docs/perf-windows.md
+- **Acceptance:** the protocol suites run the old and the new engine side by side on the same fixtures: every command's stdout and the resulting claims tree are identical, the XFAIL set of test_claims_perf.py is empty: next ≤ 40, status ≤ 30, heartbeat ≤ 20 processes, docs/perf-windows.md has the before and after times from `scripts/perf_claims.sh` on Windows
+- **Tests:** old_and_new_engines_print_the_same_and_write_the_same_tree
+- **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
+- **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
+
