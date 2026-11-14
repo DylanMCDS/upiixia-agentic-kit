@@ -10,3 +10,4 @@
 
 ## History
 - 1794629334 | CLAIMED | claude-Dylan-3 | claim; next: reproduce with Playwright (Spanish, 1280x720): the plan step before the kit is on main, a Check press, a refresh cycle (measure section heights/offsets across polls); write the tests; see them fail; fix.
+- 1794656403 | CLAIMED | claude-Dylan-3 | heartbeat; lease until 1794670803
