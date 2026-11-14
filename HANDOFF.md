@@ -378,3 +378,16 @@ Main: bdf79bf (unchanged). Nothing running on Sebastián's Mac; everything is pu
   UAK-090 #22; "Twenty-four tasks"; Status ready for review; Codex in Windows Git Bash not verified), check MERGEABLE,
   message for Joahan.
 - PENDING #51 added (journey test depends on the live kit version).
+
+## 2026-11-14 (2) · Sebastián's session (lead) · program closed on the fork
+
+- Dylan merged #28 (sync 6.3.0) and #29; UI-018 INTEGRATED. Upstream then merged UAK-082 (f3abe88), which made upstream PR #2
+  CONFLICTING again. Sync PR #30 (sync/upstream-5): one conflict in test_tokens_coverage.py resolved by keeping both fixes
+  (fork UAK-009 publish_landed + upstream UAK-082 wait_until_released; TESTS = union, no assertion dropped); CI 107/107;
+  merged by Sebastián (he asked to do Dylan's part). Main cdabe23, CI 111/111 (full matrix incl. macOS). Upstream main is an
+  ancestor of fork main; upstream PR #2 = MERGEABLE.
+- Upstream PR #2 body: Seebaastiaan has no permission on JoahanMorales' repo (UpdatePullRequest refused). New body is
+  `pr2-body-v5.md` on this branch (24 rows, "Twenty-four tasks", Status ready for review, Codex in Windows Git Bash not
+  verified). ACCIÓN HUMANA (Dylan): `git show origin/notes/handoff:pr2-body-v5.md > /tmp/pr2.md && gh pr edit 2 --repo JoahanMorales/upiixia-agentic-kit --body-file /tmp/pr2.md`
+- Then send Joahan the message (in Sebastián's chat; summary: 24 tasks, PR #2 mergeable and green, ready for review).
+- Not touched: Dylan's in-flight claims (UAK-091/092/094/095, UI-019; shown EXPIRED on claims at 2026-11-14).
