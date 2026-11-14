@@ -67,3 +67,8 @@ Coordination decisions on the claims branch.
 - 1794655398 | plan | Dylan/Dylan | tasks added: UAK-091 UAK-092 UAK-093 UAK-094 UAK-095 UI-019 UI-020 UI-021 UI-022 UI-023 UI-024 UAK-096 | Why: backlog without PR (Plan-Channel: claims)
 - 1794655406 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794656056 | plan --amend | Dylan/Dylan | amended: UAK-094 Paths: kit/.uak/bin/lib/status.sh, kit/.uak/bin/lib/messages.sh, kit/.uak/bin/stats, kit/.uak/bin/board, kit/.uak/bin/dash, kit/.uak/tests/test_engine_messages_qa14.py → kit/.uak/bin/lib/status.sh, kit/.uak/bin/lib/messages.sh, kit/.uak/bin/stats, kit/.uak/bin/board, kit/.uak/bin/dash, kit/.uak/bin/lib/dash.py, kit/.uak/tests/test_engine_messages_qa14.py; | Why: scope or criteria fixed before review
+- 1794672841 | deadline lease/UAK-091/1794669926 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
+- 1794672841 | deadline lease/UAK-092/1794669887 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
+- 1794672841 | deadline lease/UAK-094/1794669880 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
+- 1794672841 | deadline lease/UAK-095/1794669914 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
+- 1794672841 | deadline lease/UI-019/1794671419 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
