@@ -60,3 +60,4 @@ Coordination decisions on the claims branch.
 - 1794618587 | plan | Dylan/Dylan | tasks added: UI-017 | Why: backlog without PR (Plan-Channel: claims)
 - 1794618601 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1794621008 | plan --amend | Dylan/Dylan | amended: UI-016 Paths: kit/.uak/media/, docs/video/, kit/.uak/tests/test_tutorial_video.py, kit/.uak/settings/known-files.txt, README.md → kit/.uak/media/, docs/video/, kit/.uak/tests/test_tutorial_video.py, kit/.uak/settings/known-files.txt, README.md, install.sh; | Why: scope or criteria fixed before review
+- 1794629317 | plan | Dylan/Dylan | tasks added: UI-018 | Why: backlog without PR (Plan-Channel: claims)
