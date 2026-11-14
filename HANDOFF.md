@@ -318,3 +318,28 @@ In flight:
 - Upstream PR #2 body updated (status lists UI-009, UI-012, UI-015, UAK-090 as landing). Update the table when they integrate; then send Dylan's friend the final message.
 
 Lessons: subagents must be launched with model "opus" (default was Sonnet); a QA shell step with `cd X; git commit` committed into the main checkout (tag junk/app-001-leak) — always `&&` and temp dirs.
+
+## 2026-11-13 night · Sebastián's session (lead) → back to Dylan's computer
+
+Main: 4c9e57b. Ran with Dylan's identities per Dylan's lead brief (claude-Dylan-3 implements, claude-Dylan-r reviews, fresh opus subagents).
+- UI-009 · INTEGRATED (PR #23 merged at a45e3fe, main 4c9e57b). claude-Dylan-r approved with P3s → PENDING #49. Decision for Dylan:
+  amendment 9 (Codex in Windows Git Bash) is still unrun; accept it or run it before the upstream announcement.
+- UI-012 · REVIEW, claim claude-Dylan-3, PR #24, branch feat/ui-012 (worktree on Sebastián's Mac: ../upiixia-agentic-kit-wt/ui-012).
+  done at 4af5789 (CI run 43527268622 green on attempt 2; Windows flake → PENDING #48). claude-Dylan-r REJECTED 4af5789:
+  P2 setup.html sameName(): a shared word/substring suppressed the warning (person "mariana" vs Git "Ana Lopez"/gh "ana-lopez";
+  "maria-garcia" vs "Juan Garcia"; "ana" vs gh "banana"). Fix commit 3bc4018 PUSHED (whole-name match + new must-warn cases; P3s:
+  scoped one-word labels, robust claim progress line, honest Approved-By fallback, /api/dashboard degrades on name_the_team
+  failure, retired reviewer not listed). NOT yet verified end to end: the full smoke was interrupted (stopped by hand at handover),
+  CI of 3bc4018 not checked, `uak done` NOT re-run.
+  Next exact steps: `git fetch && bash .uak/bin/wt new UI-012 --agent claude-Dylan-3` (reuses the claim; or check out feat/ui-012),
+  merge origin/main, run Verify + setup/dashboard suites + kit_lint + `python3 scripts/kit_hashes.py --check` + `cd kit && bash
+  .uak/bin/smoke --package-only`, wait for PR #24 CI on 3bc4018, then
+  `UAK_AGENT=claude-Dylan-3 bash .uak/bin/uak done UI-012 --pr https://github.com/DylanMCDS/upiixia-agentic-kit/pull/24 --note "fixes the reject of 4af5789: whole-name identity match, scoped labels, progress line, Approved-By fallback, dashboard degrades" --evidence "..."`,
+  then a fresh claude-Dylan-r review (model opus) of 3bc4018 (or later), merge, `uak integrate UI-012`.
+- UI-015 · AVAILABLE (unchanged; after UI-012, diff in qa/windows/UI-010-1401.md; `uak allow UI-015 --tests` granted).
+- UI-016 · NEW, AVAILABLE, P2 (published by UAK_HUMAN=Sebastian, Sebastián's request): tutorial video < 90 s (Remotion, source in
+  docs/video/, EN + ES renders ≤ 2 MB each, .srt, poster) in the README and in the setup welcome screen (page language, no autoplay,
+  served by setup with token/Host/loopback). Depends on UI-012, UI-015. UAK-006 amended (UAK_HUMAN=Sebastian) to depend on UI-016
+  (OWNERS of kit/.uak/bin/lib/).
+- Then: upstream PR JoahanMorales#2 body (rows UI-009, UI-012, UI-015, UAK-090, UI-016; clear "still landing") and the message to Dylan's friend.
+- PENDING #48-#50 added.
