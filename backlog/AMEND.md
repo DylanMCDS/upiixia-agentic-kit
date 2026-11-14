@@ -520,3 +520,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UAK-094 · Engine messages and caches that misled agents
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/status.sh, kit/.uak/bin/lib/messages.sh, kit/.uak/bin/stats, kit/.uak/bin/board, kit/.uak/bin/dash, kit/.uak/bin/lib/dash.py, kit/.uak/tests/test_engine_messages_qa14.py
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-7, C-11..C-16): a contract message cited a SHA only on an unmerged branch; `next`'s "= unchanged" cache is keyed by session not identity (beto-r saw "Nothing new" after ana-r); stats lists normal queue waits as human-queue reasons; board shows "PR#001" for a non-numeric URL; dash prints a tar DeprecationWarning and reports mode "" ., A contract message's SHA is resolved to its branch and the message shows `git show origin/BRANCH:path`; the next cache key includes UAK_AGENT; stats counts only real escalations; board shows the URL tail when there is no number; dash extracts with filter="data" (when supported) and falls back to PROJECT.md for Mode.
+- **Tests:** contract_message_names_the_branch, next_cache_is_per_identity, stats_counts_only_escalations, board_pr_label_without_number, dash_reports_the_mode
+- **Verify:** `python kit/.uak/tests/test_engine_messages_qa14.py`
+- **Next step:** one fixture per item; see them fail; fix each in its file.
+
