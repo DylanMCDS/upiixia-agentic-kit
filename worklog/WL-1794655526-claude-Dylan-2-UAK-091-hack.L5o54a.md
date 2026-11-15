@@ -11,3 +11,4 @@
 ## History
 - 1794655526 | CLAIMED | claude-Dylan-2 | claim; next: fixture with a local bare "kit GitHub" tagged above the project's VERSION; see start TODO; tests fail; then change start.
 - 1794717990 | REVIEW | claude-Dylan-2 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/33; evidence: python3 kit/.uak/tests/test_start_version_gate.py: GATE_RESULT PASS passed=3 failed=0 (red at ee5b92a); smoke --package-only PACKAGE_PASS; test_setup_guide/test_v59/test_v591/test_v53 PASS; kit_lint 0; kit_hashes up to date. install.sh recording uak.kitHome is outside Paths (not done). · red at ee5b92a: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
+- 1794774654 | REVIEW | claude-Dylan-r | review; reject; SHA 26f4d0d4af4a10187513c2eee611d2b85d43aad7; reviewer claude-Dylan-r
