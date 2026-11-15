@@ -72,3 +72,4 @@ Coordination decisions on the claims branch.
 - 1794672841 | deadline lease/UAK-094/1794669880 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 - 1794672841 | deadline lease/UAK-095/1794669914 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 - 1794672841 | deadline lease/UI-019/1794671419 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
+- 1794717917 | plan --amend | Dylan/Dylan | amended: UI-019 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_resume.py → kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_resume.py, kit/.uak/settings/known-files.txt, kit/.uak/docs/WHY.md; | Why: scope or criteria fixed before review
