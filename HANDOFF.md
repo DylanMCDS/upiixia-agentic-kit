@@ -391,3 +391,19 @@ Main: bdf79bf (unchanged). Nothing running on Sebastián's Mac; everything is pu
   verified). ACCIÓN HUMANA (Dylan): `git show origin/notes/handoff:pr2-body-v5.md > /tmp/pr2.md && gh pr edit 2 --repo JoahanMorales/upiixia-agentic-kit --body-file /tmp/pr2.md`
 - Then send Joahan the message (in Sebastián's chat; summary: 24 tasks, PR #2 mergeable and green, ready for review).
 - Not touched: Dylan's in-flight claims (UAK-091/092/094/095, UI-019; shown EXPIRED on claims at 2026-11-14).
+
+## 2026-11-15 · claude-Dylan (lead) · handoff to Sebastián
+
+Upstream PR #2 (24 tasks): body v5 published; fork main 3f77c03 = synced with upstream UAK-083 (sync PR #31, CI 108/108); PR #2 MERGEABLE (its CI on upstream needs Joahan's "Approve and run workflows"). Dylan sends Joahan the message. **main is FROZEN for PR #2: no follow-up merges into main.**
+
+Follow-ups (Dylan: "déjalo para otro PR"): QA rounds 2026-11-14 (qa/rounds-2026-11-14/{A,B,C,D}-REPORT.md, real Claude runs) → 12 tasks UAK-091..096 + UI-019..024. They integrate into branch **`next`** (created from main): every uak/wt command with `UAK_BASE=next`, PRs `--base next`, merge `origin/next` before done, `UAK_BASE=next uak integrate ID` after the GitHub merge. After Joahan merges PR #2: a new upstream PR from `next`.
+State:
+- UAK-092: INTEGRATED in next (554d5a7, PR #32).
+- REVIEW, need a fresh opus claude-Dylan-r review (template: notes/handoff:review-template.txt):
+  - UAK-091 PR #33 (version gate is a NOTE once published). Known gap: nothing writes `git config uak.kitHome` because install.sh is outside Paths → likely reject on that → amend Paths (+install.sh) and implementer adds the one line in install.sh; teammate clones still need `uak start --fix` once (hooksPath).
+  - UAK-094 PR #34: rejected at 3b88093 (Windows: CRLF Mode in dash.py, next_cache test needs uak-live on Windows); fixed and resubmitted at 2f3f269 → re-review + check Windows job.
+  - UAK-095 PR #35 (deploy python-stdlib): touched known-files.txt outside Paths (2 hashes from a removed preset in history) → if reviewer rejects only for that, amend Paths with known-files.txt and re-done same SHA.
+  - UI-019 PR #36 (restore where you were; contract by Fable at notes/handoff:UI-019-contract.md if present, else in the PR).
+- Not started: UAK-093 (depends UAK-091), UAK-096 (install.sh; wait for UAK-091's Paths decision), UI-020 → UI-024 (chained after UI-019, all setup.py).
+- Implementer template: notes/handoff:impl-template.txt (replace {AGENT}/{TASK}; add the `next` rules).
+Dylan's live repo ~/hackathon-prueba/turno-cafeteria-2 is blocked by "update the kit 6.2.0 vs 6.3.0" until UAK-091 lands — do not touch it.
