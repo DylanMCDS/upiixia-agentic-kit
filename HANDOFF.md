@@ -407,3 +407,4 @@ State:
 - Not started: UAK-093 (depends UAK-091), UAK-096 (install.sh; wait for UAK-091's Paths decision), UI-020 → UI-024 (chained after UI-019, all setup.py).
 - Implementer template: notes/handoff:impl-template.txt (replace {AGENT}/{TASK}; add the `next` rules).
 Dylan's live repo ~/hackathon-prueba/turno-cafeteria-2 is blocked by "update the kit 6.2.0 vs 6.3.0" until UAK-091 lands — do not touch it.
+- Addendum UI-019 (PR #36, head d07f6313, CI green Ubuntu+Windows, REVIEW): `uak done` flagged CHANGELOG.md and docs/DASHBOARD.md outside Paths (docs the brief asked for). Before merging, either amend UI-019's Paths to add both (UAK_HUMAN, Dylan's OK) or drop them (`git checkout origin/next -- CHANGELOG.md docs/DASHBOARD.md` in its worktree, commit, re-done). Language/view/theme still reset on restart (new port each time): candidate follow-up.
