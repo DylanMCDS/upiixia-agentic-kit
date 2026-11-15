@@ -408,3 +408,16 @@ State:
 - Implementer template: notes/handoff:impl-template.txt (replace {AGENT}/{TASK}; add the `next` rules).
 Dylan's live repo ~/hackathon-prueba/turno-cafeteria-2 is blocked by "update the kit 6.2.0 vs 6.3.0" until UAK-091 lands — do not touch it.
 - Addendum UI-019 (PR #36, head d07f6313, CI green Ubuntu+Windows, REVIEW): `uak done` flagged CHANGELOG.md and docs/DASHBOARD.md outside Paths (docs the brief asked for). Before merging, either amend UI-019's Paths to add both (UAK_HUMAN, Dylan's OK) or drop them (`git checkout origin/next -- CHANGELOG.md docs/DASHBOARD.md` in its worktree, commit, re-done). Language/view/theme still reset on restart (new port each time): candidate follow-up.
+
+## 2026-11-15 (2) · Sebastián's session (lead) · handoff back to Dylan
+
+Reviews run by fresh opus claude-Dylan-r (UAK_BASE=next). Local smokes ran 4 in parallel and took ~50 min (load 58): run them one at a time.
+- UAK-094 · INTEGRATED in next (PR #34 merged d47afab, approved at 2f3f269, CI green first attempt).
+- UAK-091 · PR #33 REJECTED at 26f4d0d: only finding P2 = nothing writes `git config uak.kitHome` (install.sh outside Paths). Code otherwise correct, CI green.
+  Needs (UAK_HUMAN=Dylan): amend Paths += install.sh. Then implementer claude-Dylan-2: add `git -C "$target" config uak.kitHome "$here"` in install.sh + a test through the real installer, merge origin/next, `uak done` again, fresh review.
+- UAK-095 · PR #35 REJECTED at bddd49c: only finding P2 = known-files.txt outside Paths (2 hashes of the removed python-stdlib preset, legit; kit_hashes --check green, CI green).
+  Needs (UAK_HUMAN=Dylan): amend Paths += kit/.uak/settings/known-files.txt; `uak done` again at the same SHA; re-review. P3s (not blocking): deploy:51 `./*/server.py` matches deeper dirs; src-layout becomes `-m src.app.server`; unescaped file names in CMD.
+- UI-019 · PR #36 REJECTED at d07f631: only finding P2 = CHANGELOG.md and docs/DASHBOARD.md outside Paths. Either amend Paths (UAK_HUMAN) or `git checkout origin/next -- CHANGELOG.md docs/DASHBOARD.md` in the branch. Contract checks, 5 tests, QA en/es 1280/390 all OK; CI green on attempt 2 (Windows 10 s socket timeouts on attempt 1).
+  P3s: /api/inspect starts 10 processes (was 6), /api/human 5 (was 0) → Windows latency (never_seen_human_is_named 39 s); refresh_progress() runs while the op thread is alive (409 window ~4.5/6 s); "setup closed" banner covers header tabs at 1280x720; idle on Configuration tab shows the banner only at the next request.
+- Not started: UAK-093 (after UAK-091), UAK-096 (install.sh; after UAK-091's Paths decision), UI-020 → UI-024 (after UI-019, all setup.py). No implementer was launched; no UAK_HUMAN act was done (no OK from Dylan yet).
+- Mac quirk: no `python`; use a shim dir with `python -> python3` on PATH. Templates' paths point at Dylan's machine: substitute.
