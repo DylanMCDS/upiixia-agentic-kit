@@ -544,3 +544,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_setup_resume.py`
 - **Next step:** fixture of an installed+approved project; restart; assert landing step; tests fail; fix.
 
+## UAK-091 · A newer kit release never blocks a working project; update hints name the kit that installed it
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/start, kit/.uak/bin/doctor, install.sh, kit/.uak/tests/test_start_version_gate.py
+- **Acceptance:** Evidence (QA rounds 2026-11-14, notes/handoff:qa/rounds-2026-11-14: A-F1, B-02, C-4; and Dylan's live turno-cafeteria-2): when the kit's GitHub released 6.3.0, every `uak start` on a 6.2.0 project became "TODO update the kit", READY never came, the setup page hid the team step, and the hint pointed at ~/.uak-kit (another clone); `UAK_KIT_PIN=1` is the only escape., Once the kit is on the project's main (or Freeze-Epoch is set), a newer release is a NOTE, never a TODO; READY is unaffected., The update hint names the folder that installed this project when known (recorded at install), else says how to find it; it never names a different clone as fact., A fresh teammate clone of a READY project is READY without any env var., The setup page path is unaffected by stripped UAK_* variables (the decision is in start, not the environment).
+- **Tests:** newer_release_is_a_note_after_publish, update_hint_names_the_installing_kit, teammate_clone_is_ready
+- **Verify:** `python kit/.uak/tests/test_start_version_gate.py`
+- **Next step:** fixture with a local bare "kit GitHub" tagged above the project's VERSION; see start TODO; tests fail; then change start.
+
