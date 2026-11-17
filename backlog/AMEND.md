@@ -592,3 +592,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_setup_language.py`
 - **Next step:** collect every English string from the QA screenshots; tests fail; translate.
 
+## UI-021 · Forms say what is wrong next to the field, and the page speaks plain Spanish all the way (absorbs UI-022)
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 3.5 h
+- **Depends on:** UI-020
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_forms.py, kit/.uak/bin/lib/planning.py, kit/.uak/tests/test_setup_language.py, kit/.uak/settings/known-files.txt, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md
+- **Acceptance:** Dylan merged UI-022 into this task (one delivery, one review, one CI) on 2026-11-17 to save a cycle. From UI-021: Evidence (QA notes/handoff:qa/rounds-2026-11-14 D-9.1, D-5.1, D-5.2, D-5.3, A-F13, A-F14): name/schedule/idea errors went to a global box ~2,900 px away with focus on body; "Mars/Base" accepted as a time zone; event times as weekdays without dates in reversed order; relative paths said "does not exist"; schedule inputs overlap 8 px; no gap above "Guardar la idea"; native English validation bubbles., Per-field errors under the field with aria-invalid/aria-describedby and focus moved to it; server validates time zones against zoneinfo (datalist prefilled with the browser zone); schedule confirmations show dates in chronological order; relative paths get "use the full path"; layout fixes; page messages instead of native bubbles (translated). From UI-022: Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F10, B-11, D-4.1, D-2.1, D-2.2, D-2.4, A-F20): English left in the Spanish UI (gate lines like "the kit's GitHub", FREEZE line, git stderr when offline with a misleading "check your connection", violation list, CLAIMED/all/human tokens, publish refusals); jargon for novices; ustedes/tú mix; one control with three labels; the plan written in English for a Spanish idea., Every engine line the page shows has a Spanish pattern or a plain Spanish summary; common git failures (not a repo, auth, DNS, timeout) map to one plain sentence with stderr under Technical details; Beginner view explains jargon (abbr/tooltip); tú throughout; one label per action; the planner writes titles and criteria in the idea's language.
+- **Tests:** field_errors_sit_next_to_the_field, invalid_time_zone_is_refused, schedule_shows_dates_in_order, relative_path_says_so, spanish_page_has_no_engine_english, git_failures_are_plain, planner_follows_the_idea_language, one_label_per_action
+- **Verify:** `python kit/.uak/tests/test_setup_forms.py && python kit/.uak/tests/test_setup_language.py`
+- **Next step:** reproduce with the QA round D/A scripts; tests fail; fix forms first, then language.
