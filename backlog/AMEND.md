@@ -698,3 +698,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** field_errors_sit_next_to_the_field, invalid_time_zone_is_refused, schedule_shows_dates_in_order, relative_path_says_so, spanish_page_has_no_engine_english, git_failures_are_plain, planner_follows_the_idea_language, one_label_per_action
 - **Verify:** `python kit/.uak/tests/test_setup_forms.py && python kit/.uak/tests/test_setup_language.py`
 - **Next step:** reproduce with the QA round D/A scripts; tests fail; fix forms first, then language.
+## UAK-096 · Small events get small plans, and projects don't receive the kit's own tests
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 1.5 h
+- **Depends on:** None
+- **Paths:** kit/.agents/skills/uak-plan/SKILL.md, kit/.claude/commands/uak-plan.md, install.sh, kit/.uak/tests/test_plan_scale.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F12, A-F18, C-17): a 3-hour, 2-person stdlib idea got 7 P0 tasks including a human-gated design lock and a landing; publishing committed 532 files including the kit's own .uak/tests suite; headless work needs 4 prompts per task., The planning skill scales the task count to event length × team size and avoids human-gated tasks in sprints under a day; install.sh does not copy kit/.uak/tests into user projects unless something in the project needs them (check smoke, doctor and garden first; if they are needed, document why and close this criterion with that evidence); the plan skill documents a single headless "run to REVIEW" prompt.
+- **Tests:** short_sprint_plans_are_small, install_skips_the_kit_tests
+- **Verify:** `python kit/.uak/tests/test_plan_scale.py`
+- **Next step:** check where install copies tests and where the plan skill sizes tasks; tests; fix.
