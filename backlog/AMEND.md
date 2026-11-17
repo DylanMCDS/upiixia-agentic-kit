@@ -556,3 +556,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_start_version_gate.py`
 - **Next step:** fixture with a local bare "kit GitHub" tagged above the project's VERSION; see start TODO; tests fail; then change start.
 
+## UI-019 · Coming back to a project: the page restores where you were
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 3 h
+- **Depends on:** UI-018
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_resume.py, kit/.uak/settings/known-files.txt, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (Dylan's live run 2026-11-14: "se me borró todo al refrescar", stuck "Comprobar siguiente paso"; QA notes/handoff:qa/rounds-2026-11-14 A-F2, A-F3, A-F4, A-F8, A-F11, B-04, B-05, B-14, D-6.1): after a refresh, a restart or re-picking the project the page landed on Welcome/Prepare with empty forms, offered publish and "Crear el plan" for an approved plan, forgot the human name (team step silently hidden by a 400), and the old tab after a restart showed raw "Failed to fetch" while polling forever., The server re-inspects its target on start and the page lands on the furthest real step (derived from the repo: installed, kit on main, schedule, idea, plan approved, reviewer registered); completed steps are shown done and collapsed; the human name persists per project (in the Git dir, never committed) and the team step asks for it inline if missing; the check runs automatically after inspect; re-picking keeps state; the active tab survives reloads; when the server is gone the page shows a translated banner ("Setup se cerró: vuelve a ejecutar el comando y abre el nuevo enlace") and backs off polling.
+- **Tests:** restart_lands_on_the_team_step, refresh_keeps_the_step_and_values, name_persists_per_project, repick_keeps_state, server_gone_banner
+- **Verify:** `python kit/.uak/tests/test_setup_resume.py`
+- **Next step:** fixture of an installed+approved project; restart; assert landing step; tests fail; fix.
+
