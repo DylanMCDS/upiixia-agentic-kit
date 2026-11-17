@@ -568,3 +568,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_setup_resume.py`
 - **Next step:** fixture of an installed+approved project; restart; assert landing step; tests fail; fix.
 
+## UAK-095 · Plain Python projects deploy, and the planner only promises what the kit can do
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/deploy, kit/.uak/stacks/python-stdlib/, kit/.uak/tests/test_deploy_python_stdlib.py, kit/.uak/settings/known-files.txt
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-5): the planner wrote "uak deploy --write has produced Dockerfile" but deploy says "no known stack here" for a stdlib Python app, and the agent hand-wrote a broken Dockerfile., `uak deploy --write` recognises a stdlib Python web app (python3 -m <module> or a server.py) and writes a working Dockerfile + Render Blueprint; when no stack matches, the message says what to add.
+- **Tests:** deploy_recognises_stdlib_python, deploy_says_what_is_missing
+- **Verify:** `python kit/.uak/tests/test_deploy_python_stdlib.py, kit/.uak/settings/known-files.txt`
+- **Next step:** fixture app; see "no known stack"; add the stack.
+
