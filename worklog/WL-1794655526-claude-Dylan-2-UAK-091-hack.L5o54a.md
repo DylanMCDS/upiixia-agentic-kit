@@ -15,3 +15,4 @@
 - 1794953316 | CLAIMED | claude-Dylan-2 | heartbeat; lease until 1794967716
 - 1794953330 | REVIEW | claude-Dylan-2 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/33; evidence: install.sh records the installing kit clone (git -C TARGET config uak.kitHome, only when its folder is the top of a Git clone holding install.sh; cygpath -m on Git Bash; also on --update); start quotes hint paths with spaces and accepts a worktree .git. test_start_version_gate 4/4 incl. install_records_the_kit_clone (red without the install.sh change); test_v53/v59/v591/v57_install/setup_guide/setup_resume green; kit_lint 0; kit_hashes --check ok; smoke --package-only PACKAGE_PASS at 638ec609; merged origin/next 4b2853d3 · red at ee5b92a: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
 - 1794954811 | REVIEW | claude-Dylan-2 | heartbeat; lease until 1795041211
+- 1794956226 | REVIEW | claude-Dylan-2 | heartbeat; lease until 1795042626
