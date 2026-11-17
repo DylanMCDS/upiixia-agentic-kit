@@ -580,3 +580,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_deploy_python_stdlib.py, kit/.uak/settings/known-files.txt`
 - **Next step:** fixture app; see "no known stack"; add the stack.
 
+## UI-022 · Spanish all the way and plain words for beginners
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** None
+- **Paths:** kit/.uak/tests/test_setup_language.py
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F10, B-11, D-4.1, D-2.1, D-2.2, D-2.4, A-F20): English left in the Spanish UI (gate lines like "the kit's GitHub", FREEZE line, git stderr when offline with a misleading "check your connection", violation list, CLAIMED/all/human tokens, publish refusals); jargon for novices; ustedes/tú mix; one control with three labels; the plan written in English for a Spanish idea., Every engine line the page shows has a Spanish pattern or a plain Spanish summary; common git failures (not a repo, auth, DNS, timeout) map to one plain sentence with stderr under Technical details; Beginner view explains jargon (abbr/tooltip); tú throughout; one label per action; the planner writes titles and criteria in the idea's language.
+- **Tests:** spanish_page_has_no_engine_english, git_failures_are_plain, planner_follows_the_idea_language, one_label_per_action
+- **Verify:** `python kit/.uak/tests/test_setup_language.py`
+- **Next step:** collect every English string from the QA screenshots; tests fail; translate.
+
