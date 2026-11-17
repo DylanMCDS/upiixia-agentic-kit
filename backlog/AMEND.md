@@ -651,3 +651,39 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_setup_first_run.py`
 - **Next step:** reproduce with QA round A/D scripts; tests fail; fix.
 
+## UI-020 · Branches and publishing never leave a dead end
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2.5 h
+- **Depends on:** UI-019
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_branches.py, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (Dylan's live turno-cafeteria-2: GitHub default branch became claims; QA notes/handoff:qa/rounds-2026-11-14 B-01, B-03, B-09, B-16): a teammate clone landed on claims and the kit was installed there; after the way-out pull, publish refused in English with no command; "El comando de abajo…" shown with no command; a quote in the path blocked the way-out., Inspect/install warn and stop when HEAD is not the base branch (with "git switch main"); the page warns when the remote's default branch is claims and says how to change it on GitHub; the way-out includes the push step and the publish refusal is translated with the exact command; the "command below" sentence only appears with a command; paths with a quote mark get a correctly quoted command.
+- **Tests:** install_refuses_a_non_base_branch, warns_when_remote_default_is_claims, way_out_includes_the_push, no_promise_without_a_command, quote_in_path_gets_a_command
+- **Verify:** `python kit/.uak/tests/test_setup_branches.py`
+- **Next step:** fixtures from QA round B; tests fail; fix.
+
+## UI-023 · The dashboard tells the truth and is accessible
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-021
+- **Paths:** kit/.uak/bin/lib/dash.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_dashboard_truth.py, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F9, B-06, B-07, B-08, B-12, B-13, B-15, D WCAG 1.4.3/2.5.3/2.5.8/1.3.1, D-4.3/4.4/8.3/1.3): dependency-blocked tasks shown as available; frozen project shown as "team working"; a merge needing a human missing from setup's next step (raw English reason with an absolute path); offline shows the local plan as all available; plural labels on single rows; approved reviews have no mark; muted text contrast 3.26–4.45:1; "View" label vs accessible name; 53x19 px task buttons; missing headings; tabs not ARIA tabs ("Board2"); tab strip cut at 390; green dot at 0 agents., "Esperando dependencias" bucket and "aprobada" badge; FREEZE shown as frozen everywhere; needs-human items first in setup's next step, translated, no paths; offline falls back to the last known claims marked stale; singular/plural labels; contrast ≥ 4.5:1 in light and dark; label-in-name; targets ≥ 24 px; headings per view; ARIA tabs with arrow keys; tabs wrap at 390; grey dot at 0.
+- **Tests:** blocked_tasks_are_not_available, frozen_is_frozen, needs_human_comes_first, offline_uses_last_claims, dashboard_meets_contrast_and_targets
+- **Verify:** `python kit/.uak/tests/test_dashboard_truth.py`
+- **Next step:** fixtures with hand-made claims states (QA round B scripts); tests fail; fix.
+
+## UI-024 · The team step leads a beginner through the first run
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-023
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_first_run.py, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F6, A-F7, A-F15, A-F16, A-F19, B-10, D-3.2, D-6.1, D-7.1, D-10.1, D-10.2, D-1.1, D-1.2, D-9.2): Claude Code's trust dialog defaults to "No, exit" and shows an English 51-permissions warning the page never mentions; launch commands copyable before the reviewer is registered; "Comprobar siguiente paso" redraws the list and jumps 1,014 px; a hanging remote makes the check take 75 s with every view 409; blocked reasons shown 3 times; two 1–5 numberings; two humans never addressed; "Set up my project" below the fold; busy-disabled buttons without a reason; after a planner rule break the page says "Done" with a green lint box and conflicting undo advice., Trust step says "press ↓ then Enter" and that the warning is expected, and detects trust (Claude's own config) to show ✓/✗; launch commands stay locked until the reviewer is registered; the check keeps the old list dimmed until the new result (no jump) and network steps are bounded (results stay viewable during a check); one place per blocked reason; one step model; a two-person note (who runs what); CTA above the fold; every disabled button has a reason; a rule break reads "Terminó con problemas" with one undo instruction and its command.
+- **Tests:** trust_step_is_explicit, commands_wait_for_the_reviewer, check_does_not_jump, views_answer_during_a_check, rule_break_is_not_done
+- **Verify:** `python kit/.uak/tests/test_setup_first_run.py`
+- **Next step:** reproduce with QA round A/D scripts; tests fail; fix.
+
