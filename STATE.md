@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1794953503
+Updated: 1794953524
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UAK-093 UI-020 UI-021 UI-023 UI-024 UAK-096 
 CLAIMED: -
 BLOCKED: -
@@ -15,11 +15,11 @@ UAK-095 | REVIEW | claude-Dylan-6 | until 1795039000
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1794952554 | plan --amend | Dylan/Dylan | amended: UAK-095 Paths: kit/.uak/bin/deploy, kit/.uak/stacks/python-stdlib/, kit/.uak/tests/test_deploy_python_stdlib.py → kit/.uak/bi
 - 1794952596 | deadline lease/UAK-095/1794804734 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 - 1794953481 | plan --amend | Dylan/Dylan | amended: UI-022 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/planning.
 - 1794953498 | plan --amend | Dylan/Dylan | amended: UI-021 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_
 - 1794953503 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1794953524 | plan --amend | Dylan/Dylan | amended: UI-020 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
