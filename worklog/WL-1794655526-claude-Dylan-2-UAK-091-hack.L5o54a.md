@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_start_version_gate.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/33; run .uak/bin/smoke
+- Next: Integrated in next: dad0996928121e4b43425d90c3d132830f8fcaf2 (recorded by claude-Dylan)
 
 ## History
 - 1794655526 | CLAIMED | claude-Dylan-2 | claim; next: fixture with a local bare "kit GitHub" tagged above the project's VERSION; see start TODO; tests fail; then change start.
@@ -18,3 +18,4 @@
 - 1794956226 | REVIEW | claude-Dylan-2 | heartbeat; lease until 1795042626
 - 1794956232 | REVIEW | claude-Dylan-2 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/33; evidence: test_start_version_gate 4/4 incl. install_records_the_kit_clone; test_v53/v59/v591/v57_install/setup_guide/setup_resume green; smoke PACKAGE_PASS; PR CI 116/116 on 82b8e6f0 (one Windows prepare flake rerun green) · red at ee5b92a: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
 - 1794956455 | REVIEW | claude-Dylan-r | review; approve; SHA 82b8e6f0cd2b527e657b364a53103ac63323e858; reviewer claude-Dylan-r
+- 1794956497 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/33; merged dad0996928121e4b43425d90c3d132830f8fcaf2; proof ancestry
