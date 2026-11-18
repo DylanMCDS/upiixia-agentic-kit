@@ -11,3 +11,4 @@
 ## History
 - 1794956538 | CLAIMED | claude-Dylan-6 | claim; next: check where install copies tests and where the plan skill sizes tasks; tests; fix.
 - 1794966824 | REVIEW | claude-Dylan-6 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/39; evidence: test_plan_scale PASS 2/2 (red at 86d49c5); install suites v57/v5x/claude_only/harness_commands green; kit_lint, gen_harness --check, kit_hashes --check ok; .uak/tests unused project-side (merge gate runs product smoke; doctor/garden never read it) · red at 86d49c5: FAIL short_sprint_plans_are_small (assertion failed: .claude/commands/uak-plan.md has no 'Task budget: ... hours × peop; reviewer: -
+- 1794967701 | REVIEW | claude-Dylan-r | review; approve; SHA 6549df02992f17cfadd175688494219fd68f03c6; reviewer claude-Dylan-r
