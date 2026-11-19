@@ -367,3 +367,6 @@ test_setup_planning (the planner prompt is unchanged), then `cd kit && bash .uak
   by default" decision (UI-030 runs survey on folder pick), and the lint proof (L1–L4).
 - CLI.md: the `survey` prose row (what it reads, read-only default, `--write`, `--run-tests` runs the project's code).
 - TASKS.template.md: the `Builds on:` rule.
+
+## Decisions (Dylan, 2026-11-19)
+All recommendations accepted: the file is .uak/SURVEY.md (template SURVEY.template.md), not STATE.md; survey never runs tests by default, only with --run-tests (offline, 300 s, no install); a setup task when SURVEY.md says the app runs is a lint ERROR. UAK-098 Paths amended per this contract (bin/survey, lint.sh, TASKS/IDEA templates) and it depends on UAK-099 (lint.sh).

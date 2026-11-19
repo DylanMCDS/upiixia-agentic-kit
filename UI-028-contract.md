@@ -440,3 +440,6 @@ test_setup_feedback, test_setup_first_run, test_setup_team, test_setup_team_tab 
   `/api/help` request/reply shapes of §2.1/§1/§2.5/§2.6.
 - CHANGELOG.md (Unreleased): "The setup page has a Help button: quick questions are answered by the page; other
   questions use your coding tool's cheapest model, with no tools."
+
+## Decisions (Dylan, 2026-11-19)
+All recommendations accepted: rate limit 4/min and 30/h (local answers free); tool order implementer tool, then Claude Code, then Codex; AGENTS.md rule 7 lists help_chat.py (AGENTS.md added to Paths).
