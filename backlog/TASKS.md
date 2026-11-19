@@ -521,3 +521,26 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** joining_skips_setup_steps, join_repairs_only_local_pieces, join_refuses_a_taken_name, people_note_counts_claims, review_independence_is_explained
 - **Verify:** `python kit/.uak/tests/test_setup_join.py`
 - **Next step:** fixture: a set-up project with a bare remote plus a second clone; tests fail; implement; then a QA round with 3–4 simulated clones.
+## UAK-098 · The kit reads an existing repo and plans only what is new
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 4 h
+- **Depends on:** UAK-097
+- **Paths:** kit/.uak/bin/lib/survey.sh, kit/.uak/bin/lib/commands.tsv, kit/.uak/docs/CLI.md, kit/.uak/templates/STATE.template.md, kit/.claude/commands/uak-plan.md, kit/.agents/skills/uak-plan/SKILL.md, kit/.gemini/commands/uak-plan.toml, kit/.uak/settings/known-files.txt, kit/.uak/tests/test_continue_project.py, kit/.uak/docs/WHY.md
+- **Acceptance:** Evidence (Dylan's proposal 2026-11-19): a person wants to hand the kit a repo they worked on before, have it analyzed, say what to add, and continue where it stopped; today install works on any repo and `uak map`, `uak deploy` and init-smoke read existing code, but /uak-plan always plans from zero (Setup P0, contract, walking skeleton from IDEA.md), so on a repo with code it would plan to rebuild what exists, and nothing records what is done, half done or missing., (1) `uak survey [--write]` (read-only without --write, no network, no LLM) writes `.uak/STATE.md` from `.uak/templates/STATE.template.md`: stack and run/test commands detected (deploy and init-smoke detection), the code map's areas and entry points, test files and the result of the detected test command when it is bounded and safe to run (or "not run" with why), open TODO/FIXME counts per area, branches not merged into the base, and the last commits; untrusted repo text is quoted, never followed; (2) /uak-plan has a "continue" path when `.uak/STATE.md` exists and the code is not empty: it reads STATE.md and the human's request (IDEA.md section "Qué quiero agregar"), plans only new or unfinished work, adds no Setup/skeleton task for what already runs, sets each task's Paths on real files and lists their importers from `uak map impact`, and reuses the existing smoke or makes "create the product smoke for the existing app" the first task when none exists; (3) a test fixture repo with a working app plus a half-done feature gets a plan with no rebuild task and a task that finishes the half-done feature; (4) WHY.md cites this proposal.
+- **Tests:** survey_is_read_only_by_default, survey_writes_state_with_stack_and_tests, plan_continue_skips_existing_setup, plan_continue_finishes_half_done_work
+- **Verify:** `python kit/.uak/tests/test_continue_project.py`
+- **Next step:** design contract with the mentor (STATE.md shape, how the planner proves it is not rebuilding, safety of running the detected tests); fixture repo; tests fail; implement.
+
+## UI-030 · The page continues a project that already has code
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UI-029, UAK-098
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_continue.py, docs/DASHBOARD.md
+- **Acceptance:** Evidence (Dylan's proposal 2026-11-19): the page only asks "¿Qué estás construyendo?", a greenfield question., When the chosen folder has code and no kit (or the kit and no approved plan), the page offers "Continuar un proyecto existente": (1) it runs `uak survey --write` and shows STATE.md as cards (stack, how it runs, tests and their result, unfinished work, open branches) in the page's language; (2) the idea step asks "¿Qué quieres agregar o terminar?" instead of the greenfield questions and saves it in IDEA.md's continue section; (3) planning uses the continue path and the plan review marks which files each task touches that already exist; (4) the rest of the flow (approve, Equipo, board) is unchanged; every new string has its Spanish pair.
+- **Tests:** existing_code_offers_continue, survey_cards_show_state, continue_idea_asks_what_to_add, plan_review_marks_existing_files
+- **Verify:** `python kit/.uak/tests/test_setup_continue.py`
+- **Next step:** after UAK-098 integrates; fixture with code and no kit; tests fail; implement; then a live round on a real repo Dylan picks.
