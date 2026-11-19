@@ -744,3 +744,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_smoke_onboarding.py`
 - **Next step:** fixture: stdlib Python app whose import is broken but unit tests pass; the generated smoke must fail; then implement.
 
+## UAK-093 · The product smoke exists from the start and boots the app
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** UAK-091
+- **Paths:** kit/.uak/bin/lib/smoke-init.sh, kit/.uak/bin/start, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_smoke_onboarding.py
+- **Acceptance:** Evidence (QA round C, notes/handoff:qa/rounds-2026-11-14 C-1, C-3, C-10): nothing on the onboarding path created .uak/bin/smoke-project, so `uak start` said READY and then the first /uak-ship and the merge gate failed PRODUCT_UNVERIFIED; after two green merges the integrated app crashed on boot (ImportError) because tests forced a fake store and no gate booted the app; init-smoke left an empty scripts/ dir., Until .uak/bin/smoke-project exists, `uak start` shows the exact init-smoke command for the detected stack (or a generic one): a blocking TODO in sprint mode when an app is detected (the kit's own merge gate runs the product smoke), a non-blocking NOTE in sprint mode when no app is detected yet (a fresh hackathon has nothing to boot, so the first claim is not deadlocked), and a non-blocking NOTE in marathon mode (the human merges on the forge); existing tests that expect START READY on a fresh install keep passing (Dylan's decisions 2026-11-17 and 2026-11-18); the generated smoke for a web stack starts the app and requests one route (bounded timeout), not only unit tests; init-smoke creates no stray folders.
+- **Tests:** start_asks_for_the_smoke, start_notes_the_smoke_before_any_app, web_smoke_boots_the_app, init_smoke_leaves_no_stray_dirs
+- **Verify:** `python kit/.uak/tests/test_smoke_onboarding.py`
+- **Next step:** fixture: stdlib Python app whose import is broken but unit tests pass; the generated smoke must fail; then implement.
+

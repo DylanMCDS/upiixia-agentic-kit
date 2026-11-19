@@ -90,3 +90,4 @@ Coordination decisions on the claims branch.
 - 1794967792 | plan --amend | Dylan/Dylan | amended: UAK-093 | Why: scope or criteria fixed before review
 - 1794986278 | plan --amend | Dylan/Dylan | amended: UAK-093 Paths: kit/.uak/bin/lib/smoke-init.sh, kit/.uak/bin/start, kit/.uak/tests/test_smoke_onboarding.py → kit/.uak/bin/lib/smoke-init.sh, kit/.uak/bin/start, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_smoke_onboarding.py; | Why: scope or criteria fixed before review
 - 1795050198 | allow | Dylan | test change: UI-024 | Why: UI-024 locks agent commands until the reviewer is registered; existing team/roles/resume tests use a ready_team() helper that registers the reviewer first (no assertion weakened)
+- 1795050291 | plan --amend | Dylan/Dylan | amended: UAK-093 | Why: scope or criteria fixed before review
