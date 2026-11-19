@@ -556,3 +556,15 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Acceptance:**
   - Lint asks for .dockerignore only when a Dockerfile is planned (static render.yaml stacks write none)
 - **Verify:** `python kit/.uak/tests/test_skeleton_scope.py`
+
+## UI-031 · Team tab polish: no stale wait text above a 400 reason, tooltips on shortened tab labels, no wt new line in Technical details before the reviewer is registered (follow-up of UI-025)
+
+- **Type:** follow-up
+- **Priority:** P1
+- **Depends on:** UI-025
+- **Follow-up of:** UI-025
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_team_tab.py, docs/DASHBOARD.md, CHANGELOG.md
+- **Freeze-Allowed:** no
+- **Acceptance:**
+  - Team tab polish: no stale wait text above a 400 reason, tooltips on shortened tab labels, no wt new line in Technical details before the reviewer is registered
+- **Verify:** `python kit/.uak/tests/test_setup_team_tab.py`
