@@ -104,3 +104,4 @@ Coordination decisions on the claims branch.
 - 1795099652 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1795099982 | plan | Dylan/Dylan | tasks added: UI-029 | Why: backlog without PR (Plan-Channel: claims)
 - 1795100009 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1795100086 | plan --amend | Dylan/Dylan | amended: UAK-097 Paths: kit/.uak/bin/lib/review-merge.sh, kit/.uak/bin/lib/lint.sh, kit/.agents/skills/uak-plan/SKILL.md, kit/.uak/tests/test_skeleton_scope.py, kit/.uak/docs/WHY.md → kit/.uak/bin/lib/review-merge.sh, kit/.uak/bin/lib/lint.sh, kit/.agents/skills/uak-plan/SKILL.md, kit/.claude/commands/uak-plan.md, kit/.gemini/commands/uak-plan.toml, kit/.uak/tests/test_skeleton_scope.py, kit/.uak/docs/WHY.md; | Why: scope or criteria fixed before review
