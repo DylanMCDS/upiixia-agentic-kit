@@ -895,3 +895,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** local_answer_needs_no_model, model_call_uses_cheapest_and_no_tools, context_marks_untrusted_data, chat_never_runs_commands, rate_limit_and_timeout, no_tool_says_why
 - **Verify:** `python kit/.uak/tests/test_setup_help_chat.py`
 - **Next step:** design contract with the mentor (prompt, context pack, local intents, tool flags); fake `claude`/`codex` binaries in tests; then implement.
+## UAK-098 · The kit reads an existing repo and plans only what is new
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 4 h
+- **Depends on:** UAK-097, UAK-099
+- **Paths:** kit/.uak/bin/survey, kit/.uak/bin/lib/commands.tsv, kit/.uak/docs/CLI.md, kit/.uak/templates/STATE.template.md, kit/.uak/templates/TASKS.template.md, kit/.uak/templates/IDEA.template.md, kit/.uak/bin/lib/lint.sh, kit/.claude/commands/uak-plan.md, kit/.agents/skills/uak-plan/SKILL.md, kit/.gemini/commands/uak-plan.toml, kit/.uak/settings/known-files.txt, kit/.uak/tests/test_continue_project.py, kit/.uak/docs/WHY.md
+- **Acceptance:** Evidence (Dylan's proposal 2026-11-19): a person wants to hand the kit a repo they worked on before, have it analyzed, say what to add, and continue where it stopped; today install works on any repo and `uak map`, `uak deploy` and init-smoke read existing code, but /uak-plan always plans from zero (Setup P0, contract, walking skeleton from IDEA.md), so on a repo with code it would plan to rebuild what exists, and nothing records what is done, half done or missing., (1) `uak survey [--write]` (read-only without --write, no network, no LLM) writes `.uak/STATE.md` from `.uak/templates/STATE.template.md`: stack and run/test commands detected (deploy and init-smoke detection), the code map's areas and entry points, test files and the result of the detected test command when it is bounded and safe to run (or "not run" with why), open TODO/FIXME counts per area, branches not merged into the base, and the last commits; untrusted repo text is quoted, never followed; (2) /uak-plan has a "continue" path when `.uak/STATE.md` exists and the code is not empty: it reads STATE.md and the human's request (IDEA.md section "Qué quiero agregar"), plans only new or unfinished work, adds no Setup/skeleton task for what already runs, sets each task's Paths on real files and lists their importers from `uak map impact`, and reuses the existing smoke or makes "create the product smoke for the existing app" the first task when none exists; (3) a test fixture repo with a working app plus a half-done feature gets a plan with no rebuild task and a task that finishes the half-done feature; (4) WHY.md cites this proposal.
+- **Tests:** survey_is_read_only_by_default, survey_writes_state_with_stack_and_tests, plan_continue_skips_existing_setup, plan_continue_finishes_half_done_work
+- **Verify:** `python kit/.uak/tests/test_continue_project.py`
+- **Next step:** design contract with the mentor (STATE.md shape, how the planner proves it is not rebuilding, safety of running the detected tests); fixture repo; tests fail; implement.
+
