@@ -510,3 +510,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** local_answer_needs_no_model, model_call_uses_cheapest_and_no_tools, context_marks_untrusted_data, chat_never_runs_commands, rate_limit_and_timeout, no_tool_says_why
 - **Verify:** `python kit/.uak/tests/test_setup_help_chat.py`
 - **Next step:** design contract with the mentor (prompt, context pack, local intents, tool flags); fake `claude`/`codex` binaries in tests; then implement.
+## UI-029 · A teammate joins a running project from the page in a few clicks
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UI-028
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_join.py, docs/DASHBOARD.md
+- **Acceptance:** Evidence (Dylan's question 2026-11-19, and QA round B 2026-11-14 B-04/B-05: a returning approved project landed on Prepare with empty forms and the team step only after a manual check): the kit already shares the install, schedule, plan and approval through main and claims, so a third or fourth person only needs their hooks, their name, their reviewer and their tools, but the page has no explicit path for that, the team-size note comes only from IDEA.md, and cross-human review (`Review-Independence: human`) is never mentioned., When the chosen folder is a clone whose main already holds the kit and an approved plan, the page offers "Unirme a este proyecto" instead of the setup steps: (1) it shows what is already done by the team (kit version, mode, schedule and freeze, plan and progress, who is working: humans and agents from claims) and hides install/publish/plan; (2) it repairs only this clone's local pieces (hooks, the kit home) with one button and a plain explanation; (3) it asks the person's name, refuses a name another human already uses in claims, then goes to the Equipo tab (reviewer, tools, commands); (4) the "two or more people" note counts the humans seen in claims, not only IDEA.md's team size; (5) the Equipo tab explains, when more than one human is active, that each person's reviewer may approve their own agents' work unless PROJECT.md says `Review-Independence: human`, with what that changes; (6) a clone on the wrong branch or behind origin gets the exact command first; every new string has its Spanish pair.
+- **Tests:** joining_skips_setup_steps, join_repairs_only_local_pieces, join_refuses_a_taken_name, people_note_counts_claims, review_independence_is_explained
+- **Verify:** `python kit/.uak/tests/test_setup_join.py`
+- **Next step:** fixture: a set-up project with a bare remote plus a second clone; tests fail; implement; then a QA round with 3–4 simulated clones.
