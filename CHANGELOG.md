@@ -6,6 +6,13 @@ The human of this project found the terminal-only setup hard to follow. Now the 
 in the background; installing, the next step, planning and progress happen in the browser. The CLI path is unchanged.
 Guide: [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
+- **The team has its own tab, and the top bar stays visible (UI-025).** Start your team (reviewer, tools and roles,
+  the implement and review commands, the two-person note, trust) moved from the dashboard into a third tab, **Team**,
+  between Configuration and Dashboard; it is offered once the plan is approved and says why before that. Dashboard
+  keeps only progress, and its next step links to the Team tab. The active tab survives a reload. The top bar is
+  sticky, opaque and never widens the page (no horizontal scroll at 390 px). Evidence: Dylan's live run of 2026-11-19
+  (the progress board and the team setup competed on one long page; switching tabs needed a scroll to the top).
+
 - **The team step leads a beginner through the first run (UI-024).** Claude Code's trust question is explained before
   it is asked: it starts on "No, exit", so press ↓ until "Yes, proceed" and then Enter; the English "Ignoring …
   permissions.allow entries" warning before it is expected. Setup reads only whether Claude Code already trusts the

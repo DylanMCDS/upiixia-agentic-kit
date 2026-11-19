@@ -222,7 +222,13 @@
         top: 16px;
         background: var(--paper);
         padding: 10px;
-        z-index: 10;
+        z-index: 30;
+      }
+      /* UI-025: the top bar (logo, language, view, theme, tabs) stays in view while the page scrolls. Its own box keeps
+         its width; the shadow paints the page colour to both window edges and the clip keeps it a band, so nothing
+         widens the page. */
+      html {
+        scroll-padding-top: 112px;
       }
       .header {
         max-width: 1240px;
@@ -232,6 +238,12 @@
         align-items: center;
         justify-content: space-between;
         gap: 24px;
+        position: sticky;
+        top: 0;
+        z-index: 15;
+        background: var(--bg);
+        box-shadow: 0 0 0 100vmax var(--bg);
+        clip-path: inset(0 -100vmax);
       }
       .brand {
         display: flex;
@@ -1099,6 +1111,9 @@
         margin: 0 0 24px;
       }
       @media (max-width: 600px) {
+        html {
+          scroll-padding-top: 184px; /* UI-025: the sticky bar wraps to three rows on a phone */
+        }
         .dashboard-shell {
           padding: 0 16px 20px;
         }
@@ -1335,6 +1350,9 @@
       <nav class="workspace-nav" aria-label="Workspace">
         <button type="button" id="open-setup" aria-pressed="true">
           Configuration
+        </button>
+        <button type="button" id="open-team" aria-pressed="false">
+          Team
         </button>
         <button type="button" id="open-dashboard" aria-pressed="false">
           Dashboard
@@ -2041,30 +2059,11 @@
         </main>
       </div>
     </div>
-    <main
-      class="dashboard-shell"
-      id="dashboard-shell"
-      hidden
-      aria-label="Dashboard"
-      tabindex="-1"
-    >
-      <div class="dashboard-bar">
-        <div>
-          <h1>Your project at a glance</h1>
-          <p class="secondary" id="dashboard-project" data-no-i18n></p>
-        </div>
-        <button class="secondary-button" id="refresh-dashboard">
-          Refresh dashboard
-        </button>
-      </div>
-      <p class="notice" id="dashboard-status" role="status">
-        Loading your project dashboard…
+    <main class="dashboard-shell team-shell" id="team-shell" hidden aria-label="Team" data-i18n-aria="Team" tabindex="-1">
+      <p class="notice" id="team-wait" role="status" hidden>
+        Your team starts once the plan is approved. Finish Configuration first: install the kit, prepare the project
+        and approve the plan.
       </p>
-      <p class="notice error" id="dashboard-freeze" role="status" hidden></p>
-      <p class="notice" id="dashboard-remote-default" role="status" data-no-i18n hidden></p>
-      <button class="primary" id="dashboard-choose-project" hidden>
-        Choose another project
-      </button>
       <section id="team-step" class="team-step" hidden aria-labelledby="team-heading" tabindex="-1">
         <h2 id="team-heading" tabindex="-1">Start your team</h2>
         <p class="hint">
@@ -2186,6 +2185,31 @@
         </p>
         <p class="hint" id="team-copy-status" role="status"></p>
       </section>
+    </main>
+    <main
+      class="dashboard-shell"
+      id="dashboard-shell"
+      hidden
+      aria-label="Dashboard"
+      tabindex="-1"
+    >
+      <div class="dashboard-bar">
+        <div>
+          <h1>Your project at a glance</h1>
+          <p class="secondary" id="dashboard-project" data-no-i18n></p>
+        </div>
+        <button class="secondary-button" id="refresh-dashboard">
+          Refresh dashboard
+        </button>
+      </div>
+      <p class="notice" id="dashboard-status" role="status">
+        Loading your project dashboard…
+      </p>
+      <p class="notice error" id="dashboard-freeze" role="status" hidden></p>
+      <p class="notice" id="dashboard-remote-default" role="status" data-no-i18n hidden></p>
+      <button class="primary" id="dashboard-choose-project" hidden>
+        Choose another project
+      </button>
       <section id="beginner-dashboard" hidden>
         <div class="dashboard-metrics">
           <div>
@@ -2209,6 +2233,7 @@
               Copy
             </button>
           </div>
+          <button type="button" class="secondary-button" id="next-team" hidden>Open the Team tab</button>
           <button type="button" class="primary" id="next-check" hidden>
             Check what’s next
           </button>
@@ -2241,6 +2266,7 @@
           <code id="advanced-next-command" data-no-i18n></code>
           <button type="button" class="secondary-button" id="copy-advanced-next">Copy</button>
         </div>
+        <button type="button" class="secondary-button" id="advanced-next-team" hidden>Open the Team tab</button>
       </section>
       <iframe
         id="dashboard-frame"
@@ -2325,19 +2351,42 @@
           currentSection = section;
           writeSaved(state.target, { section: section }); // UI-019: the tab survives a reload (B-14)
           el("setup-shell").hidden = section !== "setup";
+          el("team-shell").hidden = section !== "team";
           el("dashboard-shell").hidden = section !== "dashboard";
           el("open-setup").setAttribute(
             "aria-pressed",
             String(section === "setup"),
           );
+          el("open-team").setAttribute("aria-pressed", String(section === "team"));
           el("open-dashboard").setAttribute(
             "aria-pressed",
             String(section === "dashboard"),
           );
           document.querySelector(".skip").href =
-            section === "dashboard" ? "#dashboard-shell" : "#content";
-          if (section === "setup" && dashboardTimer)
+            section === "dashboard" ? "#dashboard-shell" : section === "team" ? "#team-shell" : "#content";
+          if (section !== "dashboard" && dashboardTimer)
             clearTimeout(dashboardTimer);
+        }
+        // UI-025: Start your team is its own tab, offered once the plan is approved; before that it says why.
+        function teamAvailable(data) {
+          data = data || {};
+          var resume = data.resume || {};
+          return !!data.installed && (resume.plan_approved === true || !!data.ready || !!data.team ||
+            resume.step === "team" || resume.step === "progress");
+        }
+        function drawTeamTab() {
+          var open = teamAvailable(state);
+          el("team-wait").hidden = open;
+          if (open) el("open-team").removeAttribute("aria-describedby");
+          else {
+            el("open-team").setAttribute("aria-describedby", "team-wait");
+            el("team-step").hidden = true;
+          }
+          return open;
+        }
+        function openTeam() {
+          openSection("team");
+          if (drawTeamTab()) loadTeam();
         }
         function sendDashboard() {
           el("dashboard-frame").title = UAKWorkspace.t("Dashboard");
@@ -2357,16 +2406,16 @@
         var teamReady = false,
           teamTool = "Claude Code";
         // UI-024 (D-3.2, review of a8c124f): before the reviewer is registered no next step carries the claim
-        // command; it points to registering the reviewer in Start your team.
+        // command; it points to registering the reviewer in the Team tab (UI-025).
         function reviewerReady() {
           return (state.reviewer || {}).registered === true ||
             !!(teamView && teamView.registered && teamView.registered.registered === true);
         }
         function teamGuide(g) {
           if (g.kind === "ready" && !reviewerReady())
-            return { kind: g.kind, title: g.title, detail: "Next: register your reviewer in Start your team.", commands: [], steps: [] };
+            return { kind: g.kind, title: g.title, detail: "Next: register your reviewer in the Team tab.", commands: [], steps: [], team: true };
           return g.kind === "ready" && teamReady
-            ? { kind: g.kind, title: g.title, detail: UAKWorkspace.format("Use Start your team above: its first command claims this task for {tool}.", { tool: teamTool }), commands: [], steps: [] }
+            ? { kind: g.kind, title: g.title, detail: UAKWorkspace.format("Use the Team tab: its first command claims this task for {tool}.", { tool: teamTool }), commands: [], steps: [], team: true }
             : g;
         }
         function drawNext(g) {
@@ -2377,6 +2426,7 @@
           var command = (g.commands || []).join("\n");
           el("next-command").textContent = command;
           el("next-command-box").hidden = !command;
+          el("next-team").hidden = !g.team; // UI-025: the team step is a tab of its own, linked from here
           el("next-steps").replaceChildren();
           (g.steps || []).forEach(function (line) {
             var li = document.createElement("li");
@@ -3007,6 +3057,11 @@
         }
         function error(message) {
           // The dashboard hides the setup panel: show the failure where the person is looking.
+          if (currentSection === "team") {
+            el("team-note").hidden = false;
+            el("team-note").textContent = UAKWorkspace.t(message);
+            return;
+          }
           if (currentSection === "dashboard") {
             el("dashboard-status").hidden = false;
             el("dashboard-status").textContent = UAKWorkspace.t(message);
@@ -3542,14 +3597,14 @@
             // UI-024 (A-F11, D-3.2): the claim command waits for the reviewer; until then this line points there.
             code.textContent = registered ? (ready.commands || []).join("\n") : "";
             code.hidden = !code.textContent;
-            if (!registered) text.textContent = UAKWorkspace.t("Next: register your reviewer in Start your team.");
+            if (!registered) text.textContent = UAKWorkspace.t("Next: register your reviewer in the Team tab.");
             else if (code.hidden) text.textContent = UAKWorkspace.t(ready.detail || "Your project is ready");
             progress.type = "button";
             progress.className = "primary";
             progress.textContent = UAKWorkspace.t(registered ? "See project progress" : "Register the reviewer");
             progress.onclick = function () {
               if (!registered) {
-                openSection("setup");
+                openTeam();
                 pointTo("team-register");
                 return;
               }
@@ -3595,7 +3650,7 @@
             if (!saved || typeof saved !== "object" || Array.isArray(saved) || saved.v !== 1 || saved.target !== target)
               return {};
             if (typeof saved.at !== "number" || Date.now() - saved.at > SAVED_DAYS * 864e5) return {};
-            if (saved.section !== undefined && ["setup", "dashboard"].indexOf(saved.section) < 0) return {};
+            if (saved.section !== undefined && ["setup", "team", "dashboard"].indexOf(saved.section) < 0) return {};
             var drafts = {};
             if (saved.drafts && typeof saved.drafts === "object")
               DRAFT_FIELDS.forEach(function (id) {
@@ -3613,7 +3668,7 @@
           var saved = readSaved(target),
             next = { v: 1, target: target, at: Date.now(), drafts: saved.drafts || {} };
           if (saved.section) next.section = saved.section;
-          if (patch.section === "setup" || patch.section === "dashboard") next.section = patch.section;
+          if (["setup", "team", "dashboard"].indexOf(patch.section) >= 0) next.section = patch.section;
           Object.keys(patch.drafts || {}).forEach(function (id) {
             var value = patch.drafts[id];
             if (DRAFT_FIELDS.indexOf(id) < 0) return;
@@ -3885,6 +3940,9 @@
         el("open-setup").onclick = function () {
           openSection("setup");
         };
+        el("open-team").onclick = openTeam;
+        el("next-team").onclick = openTeam;
+        el("advanced-next-team").onclick = openTeam;
         el("open-dashboard").onclick = function () {
           openSection("dashboard");
           loadDashboard();
@@ -3926,6 +3984,7 @@
           el("advanced-next-description").textContent = UAKWorkspace.t(guide.detail || "");
           el("advanced-next-command").textContent = (guide.commands || []).join("\n");
           el("advanced-next-box").hidden = !(guide.commands || []).length;
+          el("advanced-next-team").hidden = !guide.team;
         }
         // UI-009: the reviewer's state comes from this project's claims (null: could not be read); each person picks
         // which available tool implements and which reviews; claimed tasks stay listed with their resume line.
@@ -4769,6 +4828,12 @@
             checkAuto = false;
             if (automatic) {
               if (currentSection === "dashboard") loadDashboard();
+            } else if ((data.ready || previous === "approving") && currentSection !== "dashboard" &&
+              (data.reviewer || {}).registered !== true && teamAvailable(data)) {
+              // UI-025: the next thing to do is in the Team tab (register the reviewer), not in project progress.
+              var toTeam = currentSection !== "team";
+              openTeam();
+              if (toTeam) el("team-shell").focus();
             } else if (data.ready || currentSection === "dashboard") {
               var moved = currentSection !== "dashboard";
               openSection("dashboard");
@@ -4777,6 +4842,7 @@
             }
           }
           drawJourney();
+          drawTeamTab();
           drawIdentity(data);
           drawBranch(data);
           // Who signs is read in the background after choosing the project: ask again until it arrives (a few tries).
@@ -4821,6 +4887,7 @@
             render(data);
             if (isBusy(data.phase)) refresh();
           }
+          if (where.section === "team") openTeam();
           if (where.section === "dashboard") {
             openSection("dashboard");
             // A check the page just started loads the dashboard when it ends (render); asking now only meets a 409.
