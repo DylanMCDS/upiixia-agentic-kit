@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1795097554
+Updated: 1795097663
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-026 
 CLAIMED: UI-025 
 BLOCKED: -
@@ -14,11 +14,11 @@ UI-025 | CLAIMED | claude-Dylan-3 | until 1795111658
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1795050291 | plan --amend | Dylan/Dylan | amended: UAK-093 | Why: scope or criteria fixed before review
 - 1795060110 | plan --amend | Dylan/Dylan | amended: UI-024 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_
 - 1795097207 | plan | Dylan/Dylan | tasks added: UI-025 UI-026 | Why: backlog without PR (Plan-Channel: claims)
 - 1795097237 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1795097554 | plan --amend | Dylan/Dylan | amended: UI-026 | Why: scope or criteria fixed before review
+- 1795097663 | plan | Dylan/Dylan | tasks added: UAK-097 | Why: backlog without PR (Plan-Channel: claims)
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
