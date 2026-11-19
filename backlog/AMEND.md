@@ -803,3 +803,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UAK-097 · The walking skeleton can merge the files the kit itself generates
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** UAK-093
+- **Paths:** kit/.uak/bin/lib/review-merge.sh, kit/.uak/bin/lib/lint.sh, kit/.agents/skills/uak-plan/SKILL.md, kit/.uak/tests/test_skeleton_scope.py, kit/.uak/docs/WHY.md
+- **Acceptance:** Evidence (Dylan's live run 2026-11-19, turno-cafeteria-3, kit next 9998cb4): HACK-001 (the walking skeleton) followed its acceptance ("Dockerfile y render.yaml generados con uak deploy --write", "bash .uak/bin/smoke sale con 0") and UAK-093's start NOTE ("give that step to the walking-skeleton task"), but `uak done` warned that .dockerignore, .uak/bin/smoke-project and .uak/bin/.smoke-project.provenance are outside its Paths, so the merge gate sends the task to the human queue: deploy --write writes three files while the planner listed two, and the smoke adapter is a shared resource that needs a human even when the plan the human approved names it., (1) when a task's Paths name Dockerfile or render.yaml, `uak lint` requires .dockerignore too (or the scope gate treats the three deploy --write outputs as one unit); (2) the scope gate lets a task ADD .uak/bin/smoke-project and .uak/bin/.smoke-project.provenance when the base has no smoke-project and the task's Paths name those exact files (the human approved that plan); editing an existing adapter, or adding it without those Paths, still needs a human; (3) /uak-plan puts those two files and .dockerignore in the walking-skeleton task's Paths when the stack is deployable; (4) the human-queue reason for a shared file says which of these applies; WHY.md cites this run.
+- **Tests:** dockerfile_paths_need_dockerignore, skeleton_adds_the_smoke_adapter, editing_the_adapter_still_needs_a_human, adapter_outside_paths_still_needs_a_human
+- **Verify:** `python kit/.uak/tests/test_skeleton_scope.py`
+- **Next step:** read rm scope check in review-merge.sh (shared list before Paths); fixture repo with a skeleton task; tests fail; fix.
