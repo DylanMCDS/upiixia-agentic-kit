@@ -544,3 +544,15 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** existing_code_offers_continue, survey_cards_show_state, continue_idea_asks_what_to_add, plan_review_marks_existing_files
 - **Verify:** `python kit/.uak/tests/test_setup_continue.py`
 - **Next step:** after UAK-098 integrates; fixture with code and no kit; tests fail; implement; then a live round on a real repo Dylan picks.
+
+## UAK-099 · Lint asks for .dockerignore only when a Dockerfile is planned (static render.yaml stacks write none) (follow-up of UAK-097)
+
+- **Type:** follow-up
+- **Priority:** P1
+- **Depends on:** UAK-097
+- **Follow-up of:** UAK-097
+- **Paths:** kit/.uak/bin/lib/review-merge.sh, kit/.uak/bin/lib/lint.sh, kit/.agents/skills/uak-plan/SKILL.md, kit/.claude/commands/uak-plan.md, kit/.gemini/commands/uak-plan.toml, kit/.uak/tests/test_skeleton_scope.py, kit/.uak/docs/WHY.md, kit/.uak/settings/known-files.txt
+- **Freeze-Allowed:** no
+- **Acceptance:**
+  - Lint asks for .dockerignore only when a Dockerfile is planned (static render.yaml stacks write none)
+- **Verify:** `python kit/.uak/tests/test_skeleton_scope.py`
