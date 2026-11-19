@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_team_tab.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/44; run .uak/bin/smoke
+- Next: Integrated in next: f014a11781effc11a03ac589e60e972b25843a93 (recorded by claude-Dylan)
 
 ## History
 - 1795097258 | CLAIMED | claude-Dylan-3 | claim; next: read setup.html sections (configure, dashboard) and the UI-024 team gate; write the tests (fake DOM / static checks like test_setup_first_run.py); then move the section.
@@ -14,3 +14,4 @@
 - 1795100056 | REVIEW | claude-Dylan-r | review; reject; SHA 014c577f53d579c71519a4702d60dac3894fc558; reviewer claude-Dylan-r
 - 1795113539 | REVIEW | claude-Dylan-3 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/44; evidence: Review of 014c577 fixed at da6df3b: at <=1080 px or when the bar wraps only the tab row stays pinned, one line, ellipsized labels; Playwright Spanish pinned part 60 px at 601/390/320 and 844x390, 62 px at 1280 (Spanish wraps), no horizontal scroll, all 3 tabs visible and clickable; scroll-padding-top = measured --bar-visible (fitBar on resize/language/ResizeObserver); Open the Team tab is primary when registering the reviewer; plain 400 from /api/team shows the wait reason plus the error. test_setup_team_tab 4/4; all test_setup_*, test_dashboard_*, test_unified_workspace green (env -u UAK_BASE); kit_lint 0; kit_hashes up to date; CI 124/124 after one rerun of flaky v57 subagent cap + Windows socket timeout · red at 44ee7ac: FAIL team_has_its_own_tab: AssertionError: the header has Configuration, Team and Dashboard, in that order: [960, -1, 10; reviewer: -
 - 1795113723 | REVIEW | gpt-Dylan-r | review; approve; SHA da6df3b255850431617ad51a582b2c9523b4403f; reviewer gpt-Dylan-r
+- 1795114361 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/44; merged f014a11781effc11a03ac589e60e972b25843a93; proof ancestry
