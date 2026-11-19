@@ -6,7 +6,7 @@
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_smoke_onboarding.py`
-- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/42; run .uak/bin/smoke
+- Next: Integrated in next: eccb15f5dff037bab431befc19c8b4aae03001b3 (recorded by claude-Dylan)
 
 ## History
 - 1794956506 | CLAIMED | claude-Dylan-2 | claim; next: fixture: stdlib Python app whose import is broken but unit tests pass; the generated smoke must fail; then implement.
@@ -16,3 +16,4 @@
 - 1795056489 | REVIEW | claude-Dylan-r | review; reject; SHA f33c2f2366c4b43f0fd8a2fbfd00b31eb0cf1680; reviewer claude-Dylan-r
 - 1795059776 | REVIEW | claude-Dylan-2 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/42; evidence: Review fix at 62b50c1: vite line is 'npm run dev -- --host 127.0.0.1 --port $PORT --strictPort' (test asserts it); next --hostname 127.0.0.1, streamlit --server.address 127.0.0.1, spring SERVER_ADDRESS=127.0.0.1 SERVER_PORT=$PORT (mvn/gradle when no wrapper), fastapi/django already 127.0.0.1; probe falls back to [::1] (curl -g) for go/stdlib apps on localhost, tested with an http.server bound to ::1. test_smoke_onboarding 5/5 PASS; smoke --package-only PACKAGE_PASS; kit_lint clean; kit_hashes up to date; PR CI 122/122 (Windows mcp_tools tearDownClass flake, rerun green) · red at 48257a1: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
 - 1795060032 | REVIEW | claude-Dylan-r | review; approve; SHA 62b50c100465e7de57e02f34f4a7343263d0961a; reviewer claude-Dylan-r
+- 1795060067 | INTEGRATED | claude-Dylan | integrate; recorded by claude-Dylan; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/42; merged eccb15f5dff037bab431befc19c8b4aae03001b3; proof ancestry
