@@ -593,6 +593,12 @@ rm_gate_scope() {
   # Paths pattern. Why (UAK-008): src/app,x.txt was split at its comma and src/app[1].txt cut at its glob, and both
   # passed as inside src/app/.
   # The lists by ENVIRON: awk -v would read the backslashes of a path as escapes.
+  # The smoke adapter defines the product merge gate: a task may ADD it only when the base has none and its Paths name
+  # both files exactly (the plan the human approved). Why (UAK-097, turno-cafeteria-3): the walking skeleton ran
+  # init-smoke as its acceptance asked and its merge went to the human queue anyway.
+  local base_adapter=no
+  ! git -C "$RM_BUILD" cat-file -e "$RM_BASE_TIP:.uak/bin/smoke-project" 2>/dev/null || base_adapter=yes
+  UAK_SCOPE_BASE_ADAPTER=$base_adapter \
   UAK_SCOPE_ALLOWED="$TXROOT/merge-allowed" UAK_SCOPE_ADDITIVE="$TXROOT/merge-additive" awk '
     function load(f, list,   n, l) { n = 0; while ((getline l < f) > 0) if (l != "") list[++n] = l; close(f); return n }
     function fold(p) {
@@ -607,6 +613,7 @@ rm_gate_scope() {
       return 0
     }
     function has(s, list, n,   i) { for (i = 1; i <= n; i++) if (index(s, list[i])) return 1; return 0 }
+    function named(p, list, n,   i) { for (i = 1; i <= n; i++) if (list[i] == p) return 1; return 0 }
     BEGIN {
       na = load(ENVIRON["UAK_SCOPE_ALLOWED"], allow); nd = load(ENVIRON["UAK_SCOPE_ADDITIVE"], add)
       nfx = split("/fixtures/ /testdata/ /__fixtures__/ /test-fixtures/", fx, " ")
@@ -627,7 +634,15 @@ rm_gate_scope() {
       # db/migration/fixtures/V9__x.sql is still a migration (Flyway scans db/migration recursively). Why (audit, Oct 2026).
       lp = "/" tolower(path) "/"; fixture = 0
       for (i = 1; i <= nfx; i++) if ((k = index(lp, fx[i])) && !has(substr(lp, 1, k - 1) "/", keep, nkeep)) fixture = 1
-      if (!fixture && has(lp, shared, nsh)) { print "shared"; print path; exit }
+      if (!fixture && has(lp, shared, nsh)) {
+        # The smoke adapter: a first ADD named exactly in Paths passes; an edit, or a Paths dir or glob, does not.
+        if (path == ".uak/bin/smoke-project" || path == ".uak/bin/.smoke-project.provenance") {
+          if (st != "A" || ENVIRON["UAK_SCOPE_BASE_ADAPTER"] == "yes") { print "adapter-edit"; print path; exit }
+          if (!named(fold(path), allow, na)) { print "adapter-paths"; print path; exit }
+          next
+        }
+        print "shared"; print path; exit
+      }
       p = fold(path)
       if (under(p, allow, na)) next
       # A new EMPTY file (package marker such as __init__.py, .gitkeep) changes no behavior of other tasks: the empty
@@ -641,6 +656,8 @@ rm_gate_scope() {
     '') return 0;;
     newline) RM_REASON='Path with newline not supported'; return 1;;
     shared) RM_REASON="Shared resource/CI needs a human: $path"; return 1;;
+    adapter-edit) RM_REASON="Shared resource/CI needs a human: $path (the base already has a smoke adapter: changing it changes the merge gate of every task, so a human merges the PR)"; return 1;;
+    adapter-paths) RM_REASON="Shared resource/CI needs a human: $path (a first smoke adapter merges on its own only when the task's Paths name .uak/bin/smoke-project and .uak/bin/.smoke-project.provenance exactly: a human amends them with uak plan FILE --amend, or merges the PR)"; return 1;;
   esac
   added=no; [ "$code" != added ] || added=yes
   if printf '%s' "$path" | grep -Eq '(^|/)(__pycache__|node_modules|\.pytest_cache|\.next|dist|build|target|\.gradle)/|\.pyc$|\.class$|(^|/)\.DS_Store$'; then

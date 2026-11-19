@@ -149,6 +149,26 @@ lint_verify_scaffold() {
     done
   done
 }
+# `uak deploy --write` writes Dockerfile, .dockerignore and render.yaml together: a task whose Paths name Dockerfile
+# or render.yaml reserves the .dockerignore beside it, or its merge goes to the human queue for a file the kit wrote.
+# Why (UAK-097, turno-cafeteria-3): the walking skeleton listed two of the three files.
+lint_deploy_paths() {
+  [ -s "$BACKLOG" ] || return 0
+  local id tp d
+  for id in $(awk '/^## [A-Z][A-Z0-9]*-[0-9]/ {print $2}' "$BACKLOG"); do
+    tp=$(ID=$id task_field Paths)
+    normalize_paths "$tp" > "$TXROOT/lint-deploy" 2>/dev/null || continue
+    # The .dockerignore beside each one (Paths are lower-cased by normalize_paths), one per line: a dir may hold a space.
+    awk '/(^|\/)(dockerfile|render\.yaml)$/ { sub(/(dockerfile|render\.yaml)$/, ""); print $0 ".dockerignore" }' \
+      "$TXROOT/lint-deploy" | sort -u > "$TXROOT/lint-deploy-need"
+    while IFS= read -r d; do
+      printf '%s\n' "$d" > "$TXROOT/lint-deploy-one"
+      ! overlaps "$TXROOT/lint-deploy-one" "$TXROOT/lint-deploy" || continue
+      say "LINT: $id's Paths name Dockerfile or render.yaml but not $d: uak deploy --write writes the three together, and the merge gate sends a file outside Paths to the human. Add $d (uak plan FILE --amend)." >&2
+      LINT_ERRORS=$((LINT_ERRORS + 1))
+    done < "$TXROOT/lint-deploy-need"
+  done
+}
 budget() {
   [ -f "$1" ] || { say "LINT: missing $1" >&2; LINT_ERRORS=$((LINT_ERRORS + 1)); return; }
   lines=$(awk 'END {print NR+0}' "$1"); words=$(awk '{n+=NF} END {print n+0}' "$1")
@@ -236,6 +256,7 @@ EOF_OC
   # scaffold's pyproject; agents verified on local merges of it, stacked branches and clashed with its ruff config.
   lint_verify_scaffold
   lint_verify_syntax
+  lint_deploy_paths
   lint_tests_named
   lint_paths_hint
   lint_design
