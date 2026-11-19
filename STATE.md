@@ -1,8 +1,8 @@
 # STATE
 
 Phase: execution
-Updated: 1795100631
-AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-026 UI-027 UI-028 UI-029 
+Updated: 1795100653
+AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-026 UI-027 UI-028 UI-029 UAK-098 UI-030 
 CLAIMED: UAK-097 
 BLOCKED: -
 REVIEW: UI-025 
@@ -15,11 +15,11 @@ UI-025 | REVIEW | claude-Dylan-3 | until 1795184659
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1795099982 | plan | Dylan/Dylan | tasks added: UI-029 | Why: backlog without PR (Plan-Channel: claims)
 - 1795100009 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1795100086 | plan --amend | Dylan/Dylan | amended: UAK-097 Paths: kit/.uak/bin/lib/review-merge.sh, kit/.uak/bin/lib/lint.sh, kit/.agents/skills/uak-plan/SKILL.md, kit/.uak/tests
 - 1795100279 | plan --amend | Dylan/Dylan | amended: UAK-097 Paths: kit/.uak/bin/lib/review-merge.sh, kit/.uak/bin/lib/lint.sh, kit/.agents/skills/uak-plan/SKILL.md, kit/.claude/co
 - 1795100631 | plan | Dylan/Dylan | tasks added: UAK-098 UI-030 | Why: backlog without PR (Plan-Channel: claims)
+- 1795100653 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
