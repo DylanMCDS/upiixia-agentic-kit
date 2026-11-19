@@ -429,3 +429,8 @@ Reviews run by fresh opus claude-Dylan-r (UAK_BASE=next). Local smokes ran 4 in 
 - PR 3 progress: 10/11. After UI-024: open the upstream PR from DylanMCDS:next once Joahan merges PR #2.
 - Record to fix later: UAK-095's Verify line was corrupted by a sed in the lead's amend (reads "...py, kit/.uak/settings/known-files.txt"); integrated, P3.
 - P3 follow-ups from reviews: rm_human_hint "merge none"; quote mark in agent launch commands; language/view/theme reset on restart; offline_detail unused; glossary oleada vs ola; zone names like US/Pacific; smoke --package-only message from projects; dash.py offline fallback; DEPENDENCY regex digit count; CANCELLED dependency label; skipped=N in summaries; UAK-093: cold go/maven builds may exceed the 60 s boot timeout (UAK_SMOKE_BOOT_TIMEOUT), deploy's rule treats helper scripts running http.server as the app, free-port pick race.
+
+## 2026-11-19 · PR 3 complete (claude-Dylan)
+- UI-024 INTEGRATED in next (PR #43, head f4298d8a, merge 9998cb49; one reject at a8c124fc: P1 bare wt new copyable before reviewer registration, P2 glossary hidden after install; both fixed, approved by claude-Dylan-r with CI 123/123).
+- PR 3 = 11/11 integrated on next. Next step: when Joahan merges upstream PR #2 (OPEN, MERGEABLE), open the upstream PR from DylanMCDS:next.
+- New P3 follow-ups from UI-024 review: Advanced view's technical details still shows engine's raw `START READY · wt new` line before reviewer registration (no Copy); running check shifts ~29 px because technical details empty; trusted parent folder (e.g. home) counts as trusted (contract R2).
