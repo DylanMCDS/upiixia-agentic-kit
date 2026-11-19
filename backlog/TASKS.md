@@ -454,3 +454,26 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** short_sprint_plans_are_small, install_skips_the_kit_tests
 - **Verify:** `python kit/.uak/tests/test_plan_scale.py`
 - **Next step:** check where install copies tests and where the plan skill sizes tasks; tests; fix.
+## UI-025 · The team has its own tab, and the top bar stays visible
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UI-024
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_team_tab.py, docs/DASHBOARD.md, CHANGELOG.md
+- **Acceptance:** Evidence (Dylan's live run 2026-11-19 on turno-cafeteria-3): "Arranca tu equipo" (reviewer registration, tools and roles, the implement and review commands) is rendered inside "Panel del proyecto", so the progress board and the team setup compete on one long page; the top bar (logo, language, view, theme, tabs) scrolls away, so switching tabs needs a scroll to the top., The header gets a third tab "Equipo" between "Configuración" and "Panel del proyecto" holding the whole team step (reviewer, tools, roles, commands, two-person note, trust); "Panel del proyecto" keeps only progress (counters, next step, task list, freeze banner, app link) and its next step links to the Equipo tab instead of embedding it; the tab is offered once the plan is approved (before that it says why it is not available yet); the active tab survives a reload; the top bar is sticky (position: sticky, top 0, opaque background, z-index above content, no layout shift, works at 390 px without horizontal scroll); every new string has its Spanish pair.
+- **Tests:** team_has_its_own_tab, dashboard_shows_only_progress, team_tab_waits_for_the_plan, header_stays_visible
+- **Verify:** `python kit/.uak/tests/test_setup_team_tab.py`
+- **Next step:** read setup.html sections (configure, dashboard) and the UI-024 team gate; write the tests (fake DOM / static checks like test_setup_first_run.py); then move the section.
+
+## UI-026 · Fixes from the live run on turno-cafeteria-3
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UI-025
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_live_run.py, CHANGELOG.md
+- **Acceptance:** Evidence (Dylan's live run 2026-11-19, kit next 9998cb4): (a) after a successful publish (origin/main had the commit) step 3 kept "Espera: se está publicando el kit.", "Listo a las 07:35." and the "Revisar los archivos" button; (b) with Claude Code's trust already ✓ the note still said "Hasta entonces ignora los permisos … el plan se detiene antes de tiempo"; (c) "Creando el plan…" gives no idea of duration (it takes 4–5 min); (d) the automatic check (every 60 s) took ~31 s for `uak start` alone and hit the 45 s bound, then blamed "origin no respondió en 45 s" while origin answered in 0.4 s; (e) the user pasted the implementer command inside the Claude Code session opened for the trust step, so the agent ran it as a tool call, stayed in the main folder and refused to code., (a) once publish succeeds step 3 reads "Publicado en main (commit abc1234)" and is marked done, with no busy line and no review button; (b) with trust ✓ only the ✓ line shows (the instruction to open Claude appears only on ✗ or unknown); (c) the plan button area says it usually takes about 5 minutes and shows elapsed time; (d) the check bound covers a normal `uak start` with margin (measure it; the bound is at least 2× a normal run on macOS and Windows), the timeout message names the step that was running instead of always blaming origin, and the automatic check does not start while the previous one runs; (e) every launch command says "Pégalo en una terminal nueva, no dentro de Claude ni Codex", and the trust step says to close that Claude session afterwards; every new string has its Spanish pair.
+- **Tests:** publish_step_says_published, trusted_hides_the_open_claude_note, plan_says_how_long, check_timeout_names_the_step, commands_say_new_terminal
+- **Verify:** `python kit/.uak/tests/test_setup_live_run.py`
+- **Next step:** reproduce each item with the setup test helpers; tests fail; fix.
