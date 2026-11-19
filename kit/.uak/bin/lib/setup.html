@@ -226,9 +226,10 @@
       }
       /* UI-025: the top bar (logo, language, view, theme, tabs) stays in view while the page scrolls. Its own box keeps
          its width; the shadow paints the page colour to both window edges and the clip keeps it a band, so nothing
-         widens the page. */
+         widens the page. In a narrow window only its tab row stays (fitBar() sets --bar-top and --bar-visible from the
+         bar's real height). */
       html {
-        scroll-padding-top: 112px;
+        scroll-padding-top: calc(var(--bar-visible, 96px) + 8px);
       }
       .header {
         max-width: 1240px;
@@ -240,6 +241,7 @@
         gap: 24px;
         position: sticky;
         top: 0;
+        top: var(--bar-top, 0px);
         z-index: 15;
         background: var(--bg);
         box-shadow: 0 0 0 100vmax var(--bg);
@@ -1111,9 +1113,6 @@
         margin: 0 0 24px;
       }
       @media (max-width: 600px) {
-        html {
-          scroll-padding-top: 184px; /* UI-025: the sticky bar wraps to three rows on a phone */
-        }
         .dashboard-shell {
           padding: 0 16px 20px;
         }
@@ -1315,6 +1314,39 @@
         padding: 0 4px;
         font: inherit;
         font-size: 0.9em;
+      }
+      /* UI-025 (review of 014c577): a half-screen window beside the terminal keeps only the tab row pinned, on one line
+         (labels ellipsize); logo, language, view and theme scroll away. Pinned part: 8 + 44 + 8 px. */
+      .header[data-wrapped] {
+        padding-bottom: 8px;
+      }
+      .header[data-wrapped] .workspace-nav {
+        order: 3;
+        width: 100%;
+      }
+      @media (max-width: 1080px) {
+        .header {
+          padding-bottom: 8px;
+        }
+        .workspace-nav {
+          order: 3;
+          width: 100%;
+          flex-wrap: nowrap;
+        }
+        .workspace-nav button {
+          flex: 1 1 0;
+          min-width: 0;
+          min-height: 44px;
+          padding: 8px 6px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+      @media (max-width: 480px) {
+        .workspace-nav button {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
@@ -2064,6 +2096,7 @@
         Your team starts once the plan is approved. Finish Configuration first: install the kit, prepare the project
         and approve the plan.
       </p>
+      <p class="hint" id="team-why" data-no-i18n hidden></p>
       <section id="team-step" class="team-step" hidden aria-labelledby="team-heading" tabindex="-1">
         <h2 id="team-heading" tabindex="-1">Start your team</h2>
         <p class="hint">
@@ -2374,15 +2407,41 @@
           return !!data.installed && (resume.plan_approved === true || !!data.ready || !!data.team ||
             resume.step === "team" || resume.step === "progress");
         }
+        // A plain refusal of /api/team (400) is said in the tab, under the reason it waits, never a blank tab.
+        var teamRefused = "";
         function drawTeamTab() {
-          var open = teamAvailable(state);
-          el("team-wait").hidden = open;
-          if (open) el("open-team").removeAttribute("aria-describedby");
+          var open = teamAvailable(state),
+            shown = open && !teamRefused;
+          el("team-wait").hidden = shown;
+          el("team-why").hidden = !teamRefused;
+          el("team-why").textContent = teamRefused ? UAKWorkspace.t(teamRefused) : "";
+          if (shown) el("open-team").removeAttribute("aria-describedby");
           else {
             el("open-team").setAttribute("aria-describedby", "team-wait");
             el("team-step").hidden = true;
           }
           return open;
+        }
+        function teamRefusal(message) {
+          teamRefused = message || "";
+          drawTeamTab();
+        }
+        // UI-025: the pinned part of the top bar is measured, so scrolling to a control never hides it under the bar.
+        function fitBar() {
+          var bar = document.querySelector(".header"),
+            nav = bar && bar.querySelector(".workspace-nav"),
+            root = document.documentElement;
+          if (!bar || !nav || !root.style || !root.style.setProperty) return;
+          // A wide window whose bar still wraps (Spanish labels at 1280 px) pins only the tab row too: measured without
+          // the mark, so a wider window gets the one-row bar back.
+          bar.removeAttribute("data-wrapped");
+          var narrow = !!(window.matchMedia && window.matchMedia("(max-width: 1080px)").matches),
+            brand = bar.querySelector(".brand"),
+            wrapped = !narrow && !!brand && nav.offsetTop > brand.offsetTop + brand.offsetHeight;
+          if (wrapped) bar.setAttribute("data-wrapped", "");
+          var hide = narrow || wrapped ? Math.max(0, nav.offsetTop - 8) : 0;
+          root.style.setProperty("--bar-top", -hide + "px");
+          root.style.setProperty("--bar-visible", bar.offsetHeight - hide + "px");
         }
         function openTeam() {
           openSection("team");
@@ -2413,9 +2472,9 @@
         }
         function teamGuide(g) {
           if (g.kind === "ready" && !reviewerReady())
-            return { kind: g.kind, title: g.title, detail: "Next: register your reviewer in the Team tab.", commands: [], steps: [], team: true };
+            return { kind: g.kind, title: g.title, detail: "Next: register your reviewer in the Team tab.", commands: [], steps: [], team: "register" };
           return g.kind === "ready" && teamReady
-            ? { kind: g.kind, title: g.title, detail: UAKWorkspace.format("Use the Team tab: its first command claims this task for {tool}.", { tool: teamTool }), commands: [], steps: [], team: true }
+            ? { kind: g.kind, title: g.title, detail: UAKWorkspace.format("Use the Team tab: its first command claims this task for {tool}.", { tool: teamTool }), commands: [], steps: [], team: "use" }
             : g;
         }
         function drawNext(g) {
@@ -2427,6 +2486,11 @@
           el("next-command").textContent = command;
           el("next-command-box").hidden = !command;
           el("next-team").hidden = !g.team; // UI-025: the team step is a tab of its own, linked from here
+          // Registering the reviewer is the step itself: its link is the one primary action (review of 014c577).
+          var register = g.team === "register";
+          el("next-team").className = register ? "primary" : "secondary-button";
+          el("next-check").classList.toggle("primary", !register);
+          el("next-check").classList.toggle("secondary-button", register);
           el("next-steps").replaceChildren();
           (g.steps || []).forEach(function (line) {
             var li = document.createElement("li");
@@ -3941,6 +4005,10 @@
           openSection("setup");
         };
         el("open-team").onclick = openTeam;
+        window.addEventListener("resize", fitBar);
+        window.addEventListener("uak:language", fitBar);
+        if (window.ResizeObserver) new ResizeObserver(fitBar).observe(document.querySelector(".header"));
+        fitBar();
         el("next-team").onclick = openTeam;
         el("advanced-next-team").onclick = openTeam;
         el("open-dashboard").onclick = function () {
@@ -3985,6 +4053,7 @@
           el("advanced-next-command").textContent = (guide.commands || []).join("\n");
           el("advanced-next-box").hidden = !(guide.commands || []).length;
           el("advanced-next-team").hidden = !guide.team;
+          el("advanced-next-team").className = guide.team === "register" ? "primary" : "secondary-button";
         }
         // UI-009: the reviewer's state comes from this project's claims (null: could not be read); each person picks
         // which available tool implements and which reviews; claimed tasks stay listed with their resume line.
@@ -4080,6 +4149,8 @@
           var wasLocked = !!(teamView && teamView.locked);
           teamView = view;
           var reviewer = view.registered || {};
+          teamRefused = "";
+          drawTeamTab();
           el("team-step").hidden = false;
           el("team-name-block").hidden = true;
           el("team-reviewer").hidden = false;
@@ -4188,6 +4259,7 @@
               teamAsk("check", "Checking your project…");
             else if (e.status === 400) {
               el("team-step").hidden = true;
+              teamRefusal(e.message);
             } else {
               // The operation that just ended may still be finishing: ask again shortly, a few times.
               if (e.status === 409 && teamTries < 3) {

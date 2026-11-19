@@ -41,12 +41,12 @@ def run(scenario, language="en"):
     script = tf.script(html)
     sources = [tr.shim(language), tf.lib("workspace.js"), tf.PRELUDE, tr.EXTRA,
                "var teamReady = false, teamTool = 'Claude Code', teamView = null, lastStepTitle = '', gone = false,"
-               " loadTeamCalls = 0, loadDashboardCalls = 0;"
+               " loadTeamCalls = 0, loadDashboardCalls = 0, teamRefused = '';"
                " function loadTeam() { loadTeamCalls += 1; }"
                " function loadDashboard() { loadDashboardCalls += 1; }"]
     sources += [tf.page_function(script, name) for name in ("el", "isBusy", "operationBusy", "error", "api")]
     sources += [tf.block(script), tr.block(script)]
-    sources += [tf.page_function(script, name) for name in ("openSection", "teamAvailable", "drawTeamTab", "openTeam",
+    sources += [tf.page_function(script, name) for name in ("openSection", "teamAvailable", "drawTeamTab", "teamRefusal", "openTeam",
                                                             "reviewerReady", "teamGuide", "drawNext",
                                                             "drawAdvancedNext")]
     with tempfile.TemporaryDirectory(prefix="uak-team-tab-js-") as folder:
@@ -134,13 +134,16 @@ def dashboard_shows_only_progress(root, tmp):
         document.body.dataset.profile = "advanced";
         drawAdvancedNext(ready);
         var locked = {link: !el("next-team").hidden, adv: !el("advanced-next-team").hidden,
-                      text: el("next-description").textContent, label: el("next-team").textContent};
+                      text: el("next-description").textContent, label: el("next-team").textContent,
+                      primary: ["next-team", "next-check", "advanced-next-team"].filter(function (id) {
+                        return el(id).classList.contains("primary"); })};
         state.reviewer = {registered: true};
         teamView = {registered: {registered: true}};
         teamReady = true;
         drawNext(ready);
         var started = {link: !el("next-team").hidden, text: el("next-description").textContent,
-                       box: !el("next-command-box").hidden};
+                       box: !el("next-command-box").hidden, primary: el("next-team").classList.contains("primary"),
+                       check: el("next-check").classList.contains("primary")};
         drawNext({kind: "todo", title: "Save your name", detail: "", commands: [], steps: []});
         var todo = !el("next-team").hidden;
         checksKey = "";
@@ -156,6 +159,9 @@ def dashboard_shows_only_progress(root, tmp):
         return
     assert out["locked"]["link"] and out["locked"]["adv"], "before the reviewer, both next steps link: %r" % out
     assert "Team tab" in out["locked"]["text"] and out["locked"]["label"] == "Open the Team tab", out["locked"]
+    assert out["locked"]["primary"] == ["next-team", "advanced-next-team"], \
+        "registering the reviewer is the step: its Team link is the one primary action: %r" % out["locked"]
+    assert not out["started"]["primary"] and out["started"]["check"], "afterwards the link is secondary again"
     assert out["started"]["link"] and "Team tab" in out["started"]["text"] and not out["started"]["box"], \
         "once the team is started, the next step sends there instead of a second claim command: %r" % out["started"]
     assert not out["todo"], "a step that is not the team's has no Team link"
@@ -170,6 +176,9 @@ def team_tab_waits_for_the_plan(root, tmp):
     words = " ".join(re.sub(r"<[^>]+>", " ", wait).split())
     assert "plan is approved" in words and tf.catalog().get(words), "the reason is said, with Spanish: %r" % words
     assert "drawTeamTab(" in tf.page_function(code(), "render"), "every status redraws the tab's availability"
+    load = tf.page_function(code(), "loadTeam")
+    assert re.search(r"else if \(e\.status === 400\) \{[^}]*teamRefusal\(e\.message\)", load), \
+        "a plain refusal of /api/team is shown in the tab"
     out = run("""
         function look(data) {
           state = data;
@@ -184,10 +193,22 @@ def team_tab_waits_for_the_plan(root, tmp):
           planning: look({installed: true, phase: "setup", ready: false, resume: {step: "plan", plan_approved: false}}),
           approved: look(%s),
           planOnly: teamAvailable({installed: true, phase: "setup", resume: {step: "team", plan_approved: true}}),
+          refused: (function () {
+            state = %s;
+            openTeam();
+            teamRefusal("Save your name first.");
+            var r = {wait: !el("team-wait").hidden, why: !el("team-why").hidden, text: el("team-why").textContent,
+                     step: !el("team-step").hidden};
+            teamRefusal("");
+            r.cleared = el("team-why").hidden && el("team-wait").hidden;
+            return r;
+          })(),
         };
-    """ % APPROVED)
+    """ % (APPROVED, APPROVED))
     if out is None:
         return
+    assert out["refused"] == {"wait": True, "why": True, "text": "Save your name first.", "step": False,
+                              "cleared": True}, "a plain 400 says why in the tab, never a blank tab: %r" % out["refused"]
     for name in ("fresh", "planning"):
         assert out[name] == {"available": False, "wait": True, "step": False, "loads": 0, "why": "team-wait"}, \
             "%s: the tab says why it waits and loads nothing: %r" % (name, out[name])
@@ -217,8 +238,26 @@ def header_stays_visible(root, tmp):
     for name, rule in (("toast", toast), ("server-gone banner", gone), ("skip link", skip)):
         other = re.search(r"z-index:\s*(\d+)", " ".join(rule))
         assert other and int(other.group(1)) > int(z.group(1)), "the %s stays above the bar" % name
-    pad = [b for s, b in found if re.fullmatch(r"html", s) and "scroll-padding-top" in b]
-    assert pad, "a focused or pointed-to control is never hidden under the bar (scroll-padding-top)"
+    pad = " ".join(b for s, b in found if re.fullmatch(r"html", s))
+    assert re.search(r"scroll-padding-top:\s*calc\(var\(--bar-visible", pad), \
+        "scroll-padding-top follows the bar's measured height, not a fixed guess: %r" % pad
+    assert not [s for s, b in found if s.startswith("@media") and "scroll-padding-top" in b], "no fixed per-width value"
+    assert re.search(r"top:\s*var\(--bar-top", css), "the bar's top comes from fitBar(): %r" % css
+    # Review of 014c577: in a narrow window (half a screen beside the terminal) only the tab row stays, on one line,
+    # 72 px or less (Spanish at 390 px measured 199 px before).
+    narrow = {s.split(")", 1)[1].strip(): b for s, b in found if s.startswith("@media (max-width: 1080px)")}
+    nav, button, head = narrow.get(".workspace-nav", ""), narrow.get(".workspace-nav button", ""), narrow.get(".header", "")
+    assert re.search(r"flex-wrap:\s*nowrap", nav) and re.search(r"order:\s*3", nav), "the tabs are the last row, one line"
+    for needle in (r"white-space:\s*nowrap", r"text-overflow:\s*ellipsis", r"overflow:\s*hidden", r"min-width:\s*0"):
+        assert re.search(needle, button), "a long label (Panel del proyecto) ellipsizes instead of wrapping: %s" % needle
+    height = int(re.search(r"min-height:\s*(\d+)px", button).group(1))
+    bottom = int(re.search(r"padding-bottom:\s*(\d+)px", head).group(1))
+    fit = tf.page_function(code(), "fitBar")
+    above = int(re.search(r"nav\.offsetTop - (\d+)", fit).group(1))
+    assert above + height + bottom <= 72, "the pinned part is %d px" % (above + height + bottom)
+    assert '"(max-width: 1080px)"' in fit and "--bar-visible" in fit and "--bar-top" in fit, fit
+    script = code()
+    assert re.search(r'addEventListener\("resize", fitBar\)', script), "fitBar runs again on resize"
 
 
 TESTS = [team_has_its_own_tab, dashboard_shows_only_progress, team_tab_waits_for_the_plan, header_stays_visible]
