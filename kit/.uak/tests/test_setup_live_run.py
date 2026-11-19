@@ -111,13 +111,14 @@ def publish_step_says_published(root, tmp):
         // What the publishing run left: its busy reason, then its result line under Review the files.
         setWaiting(el("publish-preview"), "publishing");
         done(el("publish-kit"));
+        drawDone(state);
         drawPublished(state);
         var line = el("publish-preview-result");
         return {done: !el("publish-done").hidden, text: el("publish-done-text").textContent,
                 marked: el("publish-step").hasAttribute("data-done"), open: el("publish-step").hasAttribute("data-open"),
                 why: !el("publish-preview-why").hidden, result: !!line && !line.hidden && line.textContent !== "",
                 review: !el("publish-preview").hidden};
-    """, ("markDone", "stepsDone", "drawPublished"), language="es")
+    """, ("drawPublished",), language="es")
     if out is not None:
         es = tf.catalog()
         assert es.get("Published on main (commit {sha}).", "").replace("{sha}", "abc1234") == out["text"], out
@@ -229,7 +230,7 @@ def check_timeout_names_the_step(root, tmp):
         return {during: during};
     """, ("autoCheck", "operationBusy", "startCheck"),
         extra="var checkRequested = false, checkAuto = false, checkBefore = null, pointAfterCheck = false, gone = false,"
-              " lastButton = '';")
+              " lastButton = '', autoPending = false;")
     if out is not None:
         assert out["during"] == 1, "the automatic check does not start while the previous one runs: %r" % out
 

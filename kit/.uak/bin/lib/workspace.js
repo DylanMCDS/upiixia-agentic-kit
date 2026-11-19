@@ -674,6 +674,16 @@
     ["On Windows, paste these in Git Bash, not PowerShell.", "En Windows, pégalos en Git Bash, no en PowerShell."],
     ["Terminal 1: a new terminal window on your computer, any folder", "Terminal 1: una ventana de terminal nueva en tu computadora, en cualquier carpeta"],
     ["Terminal 2: another new terminal window on your computer, any folder", "Terminal 2: otra ventana de terminal nueva en tu computadora, en cualquier carpeta"],
+    ["Paste it in a new terminal, not inside Claude or Codex.", "Pégalo en una terminal nueva, no dentro de Claude ni Codex."],
+    ["Then close that Claude Code session (type /exit) before you paste any other command.", "Luego cierra esa sesión de Claude Code (escribe /exit) antes de pegar cualquier otro comando."],
+    ["The agent takes the task through /uak-ship by itself: when its checks pass, the task moves to In review on the dashboard without you doing anything.", "El agente lleva la tarea por /uak-ship por su cuenta: cuando sus pruebas pasan, la tarea pasa a En revisión en el panel sin que hagas nada."],
+    ["Creating the plan usually takes about 5 minutes. The time so far shows below while it runs.", "Crear el plan suele tardar unos 5 minutos. Mientras corre, abajo se muestra el tiempo que lleva."],
+    ["the kit check", "la revisión del kit"],
+    ["the kit update check and reaching the remote (git ls-remote)", "la búsqueda de una versión nueva del kit y la conexión con el remoto (git ls-remote)"],
+    ["the preflight (doctor)", "la revisión previa (doctor)"],
+    ["reading .uak/ from the main branch", "la lectura de .uak/ desde la rama principal"],
+    ["reading the plan and claims (uak lint)", "la lectura del plan y de claims (uak lint)"],
+    ["finding the first task (uak next)", "la búsqueda de la primera tarea (uak next)"],
     ["Copied. Paste it where the block says.", "Copiado. Pégalo donde indica el bloque."],
     ["Registering the reviewer…", "Registrando al revisor…"],
     ["{name} is registered: it reviews your agents' work.", "{name} quedó registrado: revisa el trabajo de tus agentes."],
@@ -934,7 +944,7 @@
   // "command below" without a command. NOTES is read as JSON by the tests: no comments inside it.
   var NOTES = [
     ["Register (.+) first \\(step 1\\): agents start only once a reviewer can review their work\\.", "Registra primero a $1 (paso 1): los agentes empiezan solo cuando hay un revisor que pueda revisar su trabajo."],
-    ["The check stopped: (.+) did not answer within (\\d+) s\\. Your last result is still shown\\. Check your connection, then press Check again\\.", "La comprobación se detuvo: $1 no respondió en $2 s. Tu último resultado sigue a la vista. Revisa tu conexión y pulsa Comprobar de nuevo."],
+    ["The check stopped after (\\d+) s while uak start was at: (.+)\\. Your last result is still shown\\. Press Check again; if it stops at the same step, run bash \\.uak/bin/uak start in a terminal to see why\\.", "La comprobación se detuvo a los $1 s mientras uak start estaba en: $2. Tu último resultado sigue a la vista. Pulsa Comprobar de nuevo; si se detiene en el mismo paso, ejecuta bash .uak/bin/uak start en una terminal para ver por qué."],
     ["(\\S+) needs a person to finish its merge", "$1 necesita que una persona termine su integración"],
     ["Could not reach ([^:]+): ([^.]+)\\. (.+)", "No se pudo conectar con $1: $2. $3"],
     ["Could not read ([^:]+): ([^.]+)\\. (.+)", "No se pudo leer $1: $2. $3"],
@@ -1041,6 +1051,8 @@
     ["(.+) commit\\(s\\) since the claim · last: (.*) \\((\\d+) (seconds?|minutes?|hours?|days?|weeks?|months?|years?) ago\\) · (.+) uncommitted tracked file\\(s\\)", "$1 commit(s) desde que se tomó · último: $2 (hace $3 $4) · $5 archivo(s) con seguimiento sin commit"],
     ["(.+) commit\\(s\\) since the claim · last: (.*?)(?: \\([^()]*\\)?)? · (.+) uncommitted tracked file\\(s\\) · at (\\d+)", "$1 commit(s) desde que se tomó · último: $2 · $3 archivo(s) con seguimiento sin commit · a las $4"],
     ["(.+) commit\\(s\\) since the claim · last: (.*?)(?: \\([^()]*\\)?)? · (.+) uncommitted tracked file\\(s\\)", "$1 commit(s) desde que se tomó · último: $2 · $3 archivo(s) con seguimiento sin commit"],
+    ["(\\d+) commit\\(s\\) pushed to (\\S+) · last: (.*) \\((\\d+) (seconds?|minutes?|hours?|days?|weeks?|months?|years?) ago\\)", "$1 commit(s) subidos a $2 · último: $3 (hace $4 $5)"],
+    ["(\\d+) commit\\(s\\) pushed to (\\S+) · last: (.*)", "$1 commit(s) subidos a $2 · último: $3"],
   ];
   // One-word labels (a dashboard tag, git's time units in a pattern): translated only where the code asks, never in the
   // body translation, so page text that is just "day" or "reviewer" is left alone (review of 4af5789).

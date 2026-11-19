@@ -451,7 +451,10 @@ ZONE_DIRS = ("/usr/share/zoneinfo", "/usr/lib/zoneinfo", "/usr/share/lib/zoneinf
 # `uak start`'s READY line when a task is free: the command, then the engine's note after spaces.
 # The first prompts of the two agents the team step starts (UI-006). Constants with no shell metacharacters, and they
 # start with a word: Git Bash rewrites an argument that starts with / into a Windows path.
-IMPL_PROMPT = "Run /uak-start for %s. Work only in this worktree."
+# UI-026 (f): "Run /uak-start" alone made the implementer stop after its push, before /uak-ship, so the task never
+# reached REVIEW and the reviewer waited (Dylan's live run, HACK-001; QA round A).
+IMPL_PROMPT = ("Run /uak-start for %s. Work only in this worktree. When its checks pass, run /uak-ship until the task is "
+               "in REVIEW, then take the next task.")
 REVIEW_PROMPT = ("You are the reviewer %s. Run bash .uak/bin/uak next; when it names a task to review, run $uak-review "
                  "with that task ID. Never write code for a task.")
 # A task wt accepts (wt: [A-Z][A-Z0-9]*-[0-9]{3,}); the READY line's claim is offered to agents only when it is one.
@@ -459,7 +462,7 @@ TEAM_TASK = re.compile(r"[A-Z][A-Z0-9]*-[0-9]{3,}\Z")
 CLAIM_COMMAND = re.compile(r"^bash \.uak/bin/wt new ([A-Z][A-Z0-9]*-[0-9]+)(?=\s|$)")
 # UI-009 (absorbs UI-014): any available tool takes either role; a role is only an identity (UAK_AGENT).
 TOOL_LABEL = {"claude": "Claude Code", "codex": "Codex"}
-IMPL_PROMPT_CODEX = "Run $uak-start for %s. Work only in this worktree."
+IMPL_PROMPT_CODEX = IMPL_PROMPT.replace("/uak-", "$uak-")
 REVIEW_PROMPT_CLAUDE = REVIEW_PROMPT.replace("$uak-review", "/uak-review")
 # Codex: the ONE place its sandbox flags live. workspace-write, because Codex ignores --add-dir in a read-only sandbox;
 # --add-dir GITDIR, because the sandbox keeps .git read-only and the engine writes refs (rounds 1 and 3: "Operation not
@@ -481,13 +484,25 @@ SAFE_PATH = re.compile(r"[A-Za-z0-9._][A-Za-z0-9._/-]{0,199}\Z")
 LIVE_STATES = ("CLAIMED", "BLOCKED", "REVIEW")
 # UI-019: a re-picked project keeps its last check this long (seconds); later the page checks again by itself.
 CHECK_KEEP = 600
-# UI-024 (B-10): a hanging remote made the check take 75 s while every view answered 409. The check stops after 45 s
-# (its whole tree), and a stalled HTTP transfer ends after 10 s below 1 kB/s. GIT_SSH_COMMAND is never set: it would
-# override the person's core.sshCommand.
-CHECK_TIMEOUT = 45
+# UI-024 (B-10): a hanging remote made the check take 75 s while every view answered 409. The check stops (its whole
+# tree), and a stalled HTTP transfer ends after 10 s below 1 kB/s. GIT_SSH_COMMAND is never set: it would override the
+# person's core.sshCommand. UI-026 (d): a normal `uak start` took ~31 s on Dylan's macOS run against GitHub (2 s
+# against a local bare remote), so 45 s stopped healthy checks; 120 s is about 4x that run, and Windows (20-50 ms
+# per process, docs/perf-windows.md) stays under half of it.
+CHECK_TIMEOUT = 120
 CHECK_ENV = {"GIT_HTTP_LOW_SPEED_LIMIT": "1000", "GIT_HTTP_LOW_SPEED_TIME": "10"}
-CHECK_TIMEOUT_ERROR = ("The check stopped: %s did not answer within %d s. Your last result is still shown. Check your "
-                       "connection, then press Check again.")
+CHECK_TIMEOUT_ERROR = ("The check stopped after %d s while uak start was at: %s. Your last result is still shown. Press "
+                       "Check again; if it stops at the same step, run bash .uak/bin/uak start in a terminal to see why.")
+# UI-026 (d): the step `uak start` was running when the bound stopped it, from the last step it printed (each step
+# prints its OK or TODO line when it ends). The timeout blamed origin, which had answered in 0.4 s.
+CHECK_STEPS = (
+    (r"\d+\. (?:a plan|fix the plan|plan:|Autonomy|approve the plan)", "finding the first task (uak next)"),
+    (r"\d+\. (?:\.uak/ on |push the kit |push your changes )", "reading the plan and claims (uak lint)"),
+    (r"\d+\. preflight", "reading .uak/ from the main branch"),
+    (r"\d+\. (?:remote |reach |a remote )", "the preflight (doctor)"),
+    (r"\d+\. (?:kit installed|update the kit|install the kit)", "the kit update check and reaching the remote (git ls-remote)"),
+)
+CHECK_FIRST_STEP = "the kit check"
 CHECKING_NOTE = "Checking your project… the commands come back when it ends."
 BUSY_NOTE = "An operation is running… the commands come back when it ends."
 CHECKING_WARNING = "Setup is checking your project. Showing the last known state until it ends."
@@ -520,6 +535,15 @@ class WayOut(ValueError):
     def __init__(self, message, way_out):
         super().__init__(message)
         self.way_out = way_out
+
+
+def check_step(output):
+    """UI-026 (d): what `uak start` was doing when the check's bound stopped it: the step after the last one it
+    printed. Lines may end in CR (Git Bash)."""
+    done = re.findall(r"(?m)^(?:OK|TODO)[ \t]+(\d+\.[ \t].*?)\r?$", str(output or ""))
+    if not done:
+        return CHECK_FIRST_STEP
+    return next((name for pattern, name in CHECK_STEPS if re.match(pattern, done[-1])), CHECK_STEPS[0][1])
 
 
 def team_phase(state):
@@ -1036,8 +1060,13 @@ class SetupServer(ThreadingHTTPServer):
                                      "then publish again." % (remote, reason(result)))
                 pushed = True
                 check = self.run([bash_binary(), str(uak), "start"], cwd=str(root), timeout=120)
+                # UI-026 (a): the restore facts change with the phase. Refreshed after it, a poll in between read
+                # "setup" with the kit not on main yet, the page stopped polling, and step 3 kept its button.
+                resume, _ = project_progress(self, root, human)
                 with self.lock:
                     self.apply_readiness(check)
+                    if self.target == str(root):
+                        self.state["resume"] = resume
             except Exception as exc:
                 if not pushed:
                     try:
@@ -1103,7 +1132,7 @@ class SetupServer(ThreadingHTTPServer):
                     if checking and result.returncode == 124:
                         # B-10: the remote did not answer in time; the last result stays, marked current again.
                         self.state.update(phase="setup", checks_stale=False, details=output,
-                                          error=CHECK_TIMEOUT_ERROR % (remote_and_base()[0], CHECK_TIMEOUT))
+                                          error=CHECK_TIMEOUT_ERROR % (CHECK_TIMEOUT, check_step(result.stdout)))
                     elif operation == "installing":
                         success = result.returncode == 0 and installed
                         self.failed_target = "" if success else self.target
@@ -1258,6 +1287,11 @@ class SetupHandler(BaseHTTPRequestHandler):
                     name_the_team(self.server, Path(root), data)
                 except (OSError, ValueError, subprocess.SubprocessError):
                     pass  # the dashboard still shows who has acted; only the extra names are missing
+                try:
+                    pushed_progress(lambda *args: self.server.planning.git(self.server.identity_run, Path(root), *args,
+                                                                           timeout=10), data)
+                except (OSError, ValueError, subprocess.SubprocessError):
+                    pass  # the cards keep the agents' own progress lines
                 config = read_config(root)
                 data["mode"] = config.get("Mode", "")
                 if not data.get("freeze"):
@@ -2341,6 +2375,32 @@ def project_progress(server, root, session=""):
     else:
         resume["step"] = "prepare"
     return resume, saved
+
+
+# The heartbeat's progress line (claim.sh task_progress): commits it counted, and when (epoch).
+HEARTBEAT_PROGRESS = re.compile(r"(\d+) commit\(s\) since the claim · .* · at (\d+)\Z")
+
+
+def pushed_progress(git, data):
+    """UI-026 (g): a card read "0 commit(s) since the claim" (the agent's last heartbeat) while feat/hack-001 already had
+    2 pushed commits. When the task branch's copy on the remote (local refs only, never the network) is newer than the
+    heartbeat or has more commits, the card shows the branch's pushed commits instead. GIT runs git with its arguments
+    in the project and returns a CompletedProcess."""
+    remote, base = remote_and_base()
+    for task in data.get("tasks") or []:
+        found = HEARTBEAT_PROGRESS.match(str(task.get("progress") or ""))
+        branch = "feat/" + str(task.get("id") or "").lower()
+        if task.get("state") not in LIVE_STATES or not found or not REF_NAME.fullmatch(branch):
+            continue
+        ref = "refs/remotes/%s/%s" % (remote, branch)
+        last = git("-c", "log.showSignature=false", "log", "-1", "--no-color", "--format=%ct %h %s (%cr)", ref, "--")
+        count = git("rev-list", "--count", "refs/remotes/%s/%s..%s" % (remote, base, ref), "--")
+        stamp, _, line = (last.stdout or "").strip().partition(" ")
+        if last.returncode or count.returncode or not stamp.isdigit() or not count.stdout.strip().isdigit():
+            continue
+        pushed = int(count.stdout.strip())
+        if int(stamp) > int(found.group(2)) or pushed > int(found.group(1)):
+            task["progress"] = "%d commit(s) pushed to %s · last: %s" % (pushed, branch, line[:120].replace("|", "/"))
 
 
 def name_the_team(server, root, data):
