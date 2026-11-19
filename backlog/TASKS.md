@@ -499,3 +499,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** publish_sets_upstream, human_queue_shows_steps, no_integrate_before_approval, next_task_needs_new_terminal, near_freeze_asks_first
 - **Verify:** `python kit/.uak/tests/test_setup_handoffs.py`
 - **Next step:** reproduce each item with the setup test helpers (fake forge state for the queue); tests fail; fix.
+## UI-028 · A help chat on the page answers "what now?" with the cheapest model
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 4 h
+- **Depends on:** UI-027
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/help_chat.py, kit/.uak/tests/test_setup_help_chat.py, kit/.uak/docs/SECURITY.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (Dylan's live run 2026-11-19, turno-cafeteria-3): at almost every hand-off the human left the page to ask another assistant "what next?", "what does esperando dependencias mean?", "why does Codex do nothing?", "where do I paste this?"; Dylan asked for a help chat on the most visible part of the page that uses the cheapest model of the tool in use so it barely spends quota., A help panel reachable from every tab (button in the top bar) takes a question and answers in the page's language: (1) common questions ("¿qué sigue?", what a state or word means, why a task waits) are answered locally from the page's own state and glossary, without a model; (2) other questions run the person's own coding tool headless with its cheapest model (Claude Code: `claude -p --model haiku`; Codex: its mini model, verified against Codex's docs at implementation time), the tool chosen from the ones setup already detects, never an API key; (3) the model gets a bounded context: the current step, guidance, task states, notices, glossary and the kit's short user guide, with task titles and agent messages marked as untrusted data; (4) the chat is read-only: no tools (no Bash, no edits, no MCP), it may show a command for the human to copy but never runs one, and it never suggests running a UAK_HUMAN command inside an agent session; (5) cost bounds: answers capped in length, one request at a time, a per-minute limit, a visible "usa tu cuota de <tool> (modelo económico)" note, and a clear message when no tool is available or the call fails or times out (bounded, process tree killed); (6) every new string has its Spanish pair; SECURITY.md records the read-only and untrusted-data rules.
+- **Tests:** local_answer_needs_no_model, model_call_uses_cheapest_and_no_tools, context_marks_untrusted_data, chat_never_runs_commands, rate_limit_and_timeout, no_tool_says_why
+- **Verify:** `python kit/.uak/tests/test_setup_help_chat.py`
+- **Next step:** design contract with the mentor (prompt, context pack, local intents, tool flags); fake `claude`/`codex` binaries in tests; then implement.
