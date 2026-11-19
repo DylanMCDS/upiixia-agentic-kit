@@ -1,12 +1,13 @@
 # worklog/WL-1795114395-claude-Dylan-3-UI-026-hack.Iww3Wn.md · UI-026
 
 ## Live summary
-- Done: Claim created; implementation pending
+- Done: python kit/.uak/tests/test_setup_live_run.py exit 0 (7/7; red first at 5c3d13f on assertions); all test_setup_*, test_dashboard_*, test_unified_workspace.py pass; kit_lint 0 findings; kit_hashes up to date; PR CI 126/126 green (windows test_dashboard_truth timed out once on HTTP, passed on rerun). Measured uak start: ~31 s on Dylan's macOS run against GitHub, 2 s against a local bare remote; CHECK_TIMEOUT 120 s. Existing test lines changed under uak allow UI-026 --tests: test_setup_first_run.py:437 and :441 (bound >= 2x31 s with group kill; error names the bound and the running step), test_setup_team.py:545-546 and :679-680 (new implementer prompt), test_setup_roles.py:65-66 (new prompt). Playwright 1280 en / 390 es: new-terminal lines and In review hint visible, no horizontal scroll. · existing tests changed with a human's approval (Dylan) · red at 5c3d13f: FAIL publish_step_says_published: AssertionError: the status that ends publishing already says the kit is on main at 0ae
 - Decision: Own branch and worktree
 - Why: Parallel work without touching the main checkout
 - Failing: No validation run yet
 - Commands: `python kit/.uak/tests/test_setup_live_run.py`
-- Next: reproduce each item with the setup test helpers; tests fail; fix.
+- Next: Another agent reviews https://github.com/DylanMCDS/upiixia-agentic-kit/pull/46; run .uak/bin/smoke
 
 ## History
 - 1795114395 | CLAIMED | claude-Dylan-3 | claim; next: reproduce each item with the setup test helpers; tests fail; fix.
+- 1795116908 | REVIEW | claude-Dylan-3 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/46; evidence: python kit/.uak/tests/test_setup_live_run.py exit 0 (7/7; red first at 5c3d13f on assertions); all test_setup_*, test_dashboard_*, test_unified_workspace.py pass; kit_lint 0 findings; kit_hashes up to date; PR CI 126/126 green (windows test_dashboard_truth timed out once on HTTP, passed on rerun). Measured uak start: ~31 s on Dylan's macOS run against GitHub, 2 s against a local bare remote; CHECK_TIMEOUT 120 s. Existing test lines changed under uak allow UI-026 --tests: test_setup_first_run.py:437 and :441 (bound >= 2x31 s with group kill; error names the bound and the running step), test_setup_team.py:545-546 and :679-680 (new implementer prompt), test_setup_roles.py:65-66 (new prompt). Playwright 1280 en / 390 es: new-terminal lines and In review hint visible, no horizontal scroll. · existing tests changed with a human's approval (Dylan) · red at 5c3d13f: FAIL publish_step_says_published: AssertionError: the status that ends publishing already says the kit is on main at 0ae; reviewer: -
