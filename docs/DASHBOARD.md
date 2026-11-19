@@ -183,8 +183,15 @@ In "Get ready", after the kit is installed:
 
 ## Start your team
 
-After the readiness check says Ready, the dashboard shows **Start your team** (Beginner and Advanced). It stays after
-the first claim: when every task is taken the check says "Your team is working" and the step keeps the reviewer
+**Start your team** has its own tab, **Team**, between Configuration and Dashboard (Beginner and Advanced). It is
+offered once the plan is approved on main; before that the tab says why it is not available yet. When a check finds
+the project ready and the reviewer is not registered yet, the page opens the Team tab; Dashboard keeps only progress
+(counters, the next step, the task list, the freeze banner, the app link), and its next step links to the Team tab
+with **Open the Team tab** instead of embedding it (the main button while the reviewer is not registered). If the
+server refuses the team step, the tab says why instead of staying blank. The top bar (logo, language, view, theme and
+the three tabs) stays at the top of the window while you scroll; in a window 1080 px wide or less (half a screen beside
+the terminal), or whenever the bar wraps, only the tab row stays, on one line (long labels end in "…"), 60 px tall.
+It stays after the first claim: when every task is taken the check says "Your team is working" and the step keeps the reviewer
 command and a line to reopen each of your claimed tasks.
 
 1. **Register the reviewer.** One button registers `NAME-r` (NAME is the name you gave in Prepare). It is a human act:
