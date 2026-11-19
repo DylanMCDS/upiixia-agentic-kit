@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1795114470
+Updated: 1795114867
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-027 UI-028 UI-029 UAK-098 UI-030 UAK-099 UI-031 
 CLAIMED: UI-026 
 BLOCKED: -
@@ -14,11 +14,11 @@ UI-026 | CLAIMED | claude-Dylan-3 | until 1795128795
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1795113526 | plan --amend | Dylan/Dylan | amended: UI-028 Paths: kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/help_chat
 - 1795113530 | plan --amend | Dylan/Dylan | amended: UAK-098 Paths: kit/.uak/bin/lib/survey.sh, kit/.uak/bin/lib/commands.tsv, kit/.uak/docs/CLI.md, kit/.uak/templates/STATE.templa
 - 1795114291 | plan --amend | Dylan/Dylan | amended: UAK-098 Paths: kit/.uak/bin/survey, kit/.uak/bin/lib/commands.tsv, kit/.uak/docs/CLI.md, kit/.uak/templates/STATE.template.md, 
 - 1795114296 | plan --amend | Dylan/Dylan | amended: UI-028 Paths: kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/bin/lib/help_chat
 - 1795114380 | UI-031 | follow-up of UI-025 by claude-Dylan: Team tab polish: no stale wait text above a 400 reason, tooltips on shortened tab labels, no wt new line in Technical d
+- 1795114867 | allow | Dylan | test change: UI-026 | Why: UI-026 (d) raises the 45 s check bound and names the slow step; (f) the implementer prompt carries the task through /uak-s
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
