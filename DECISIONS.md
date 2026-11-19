@@ -94,3 +94,4 @@ Coordination decisions on the claims branch.
 - 1795060110 | plan --amend | Dylan/Dylan | amended: UI-024 Paths: kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_first_run.py, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md → kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_first_run.py, kit/.uak/tests/test_setup_team.py, kit/.uak/tests/test_setup_roles.py, kit/.uak/tests/test_setup_resume.py, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md; | Why: scope or criteria fixed before review
 - 1795097207 | plan | Dylan/Dylan | tasks added: UI-025 UI-026 | Why: backlog without PR (Plan-Channel: claims)
 - 1795097237 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1795097554 | plan --amend | Dylan/Dylan | amended: UI-026 | Why: scope or criteria fixed before review
