@@ -11,3 +11,4 @@
 ## History
 - 1794956506 | CLAIMED | claude-Dylan-2 | claim; next: fixture: stdlib Python app whose import is broken but unit tests pass; the generated smoke must fail; then implement.
 - 1795053310 | REVIEW | claude-Dylan-2 | done; PR https://github.com/DylanMCDS/upiixia-agentic-kit/pull/42; evidence: test_smoke_onboarding.py 4/4 PASS (sprint+app TODO, fresh sprint NOTE+READY, marathon NOTE, broken-import app fails boot smoke and gate, bounded timeout kills process tree, no stray scripts/); smoke --package-only PACKAGE_PASS; setup/dashboard/start suites PASS; kit_lint clean; kit_hashes up to date; PR CI 122/122 green (Windows test_setup_team flaked once with a timeout, rerun green) · red at 48257a1: exit 1 (no assertion line recognized: the reviewer reads the log); reviewer: -
+- 1795053556 | REVIEW | claude-Dylan-r | review; reject; SHA d2c5f231b09d12c7009939836d6d3a2fb665e7e7; reviewer claude-Dylan-r
