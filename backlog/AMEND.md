@@ -756,3 +756,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python kit/.uak/tests/test_smoke_onboarding.py`
 - **Next step:** fixture: stdlib Python app whose import is broken but unit tests pass; the generated smoke must fail; then implement.
 
+## UI-024 · The team step leads a beginner through the first run
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-023
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_first_run.py, kit/.uak/tests/test_setup_team.py, kit/.uak/tests/test_setup_roles.py, kit/.uak/tests/test_setup_resume.py, kit/.uak/docs/WHY.md, CHANGELOG.md, docs/DASHBOARD.md
+- **Acceptance:** Evidence (QA notes/handoff:qa/rounds-2026-11-14 A-F6, A-F7, A-F15, A-F16, A-F19, B-10, D-3.2, D-6.1, D-7.1, D-10.1, D-10.2, D-1.1, D-1.2, D-9.2): Claude Code's trust dialog defaults to "No, exit" and shows an English 51-permissions warning the page never mentions; launch commands copyable before the reviewer is registered; "Comprobar siguiente paso" redraws the list and jumps 1,014 px; a hanging remote makes the check take 75 s with every view 409; blocked reasons shown 3 times; two 1–5 numberings; two humans never addressed; "Set up my project" below the fold; busy-disabled buttons without a reason; after a planner rule break the page says "Done" with a green lint box and conflicting undo advice., Trust step says "press ↓ then Enter" and that the warning is expected, and detects trust (Claude's own config) to show ✓/✗; launch commands stay locked until the reviewer is registered; the check keeps the old list dimmed until the new result (no jump) and network steps are bounded (results stay viewable during a check); one place per blocked reason; one step model; a two-person note (who runs what); CTA above the fold; every disabled button has a reason; a rule break reads "Terminó con problemas" with one undo instruction and its command.
+- **Tests:** trust_step_is_explicit, commands_wait_for_the_reviewer, check_does_not_jump, views_answer_during_a_check, rule_break_is_not_done
+- **Verify:** `python kit/.uak/tests/test_setup_first_run.py`
+- **Next step:** reproduce with QA round A/D scripts; tests fail; fix.
+
