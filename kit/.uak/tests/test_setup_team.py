@@ -542,8 +542,10 @@ REVIEW_CODEX = ("You are the reviewer %s. Run bash .uak/bin/uak next; when it na
                 "that task ID. Never write code for a task.")
 REVIEW_CLAUDE = ("You are the reviewer %s. Run bash .uak/bin/uak next; when it names a task to review, run /uak-review with "
                  "that task ID. Never write code for a task.")
-IMPL_CLAUDE = "Run /uak-start for %s. Work only in this worktree."
-IMPL_CODEX = "Run $uak-start for %s. Work only in this worktree."
+IMPL_CLAUDE = ("Run /uak-start for %s. Work only in this worktree. When its checks pass, run /uak-ship until the task "
+               "is in REVIEW, then take the next task.")
+IMPL_CODEX = ("Run $uak-start for %s. Work only in this worktree. When its checks pass, run $uak-ship until the task "
+              "is in REVIEW, then take the next task.")
 WAITING_OUT = ("OK    1. kit installed\nOK    5. plan: 2 task(s), lint clean\n"
                "TODO  7. a claimable task: uak next offers none\n"
                "         · Waiting on APP-002: depends on APP-001 (CLAIMED)\n\n"
