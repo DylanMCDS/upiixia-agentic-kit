@@ -488,3 +488,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** dockerfile_paths_need_dockerignore, skeleton_adds_the_smoke_adapter, editing_the_adapter_still_needs_a_human, adapter_outside_paths_still_needs_a_human
 - **Verify:** `python kit/.uak/tests/test_skeleton_scope.py`
 - **Next step:** read rm scope check in review-merge.sh (shared list before Paths); fixture repo with a skeleton task; tests fail; fix.
+## UI-027 · The page walks the human through each hand-off of the first task
+
+- **Type:** fix
+- **Priority:** P2
+- **Estimate:** 2.5 h
+- **Depends on:** UI-026
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_handoffs.py, CHANGELOG.md
+- **Acceptance:** Evidence (Dylan's live run 2026-11-19, turno-cafeteria-3; he had to ask the lead at every hand-off): (a) after publish, `git pull` in the project failed with "There is no tracking information for the current branch" because publish pushed main without setting its upstream; (b) when the merge went to the human queue the page gave no steps, so the human needed someone to tell him "merge the PR on GitHub, then uak integrate"; (c) the human merged PR #1 on GitHub before the reviewer approved it and nothing on the page warned him; (d) when HACK-001 was integrated and HACK-002 became available, nothing said that the running Claude session sits in HACK-001's worktree and a new command is needed in a fresh terminal; (e) the schedule form accepted a deadline that put the freeze 25 minutes after install with no warning, and the first sign was "El periodo de cambios terminó" in the team step., (a) publish sets main's upstream (git push -u, or branch --set-upstream-to after the push) so a plain `git pull` works afterwards; (b) a task in the human queue shows, on the board and in the team step, the reason in Spanish and the exact steps with Copy buttons: open the PR (link), merge it there, then the `uak integrate ID` command for a normal terminal; (c) while a task has no approval at its current SHA the human-queue card says "Espera la aprobación del revisor antes de hacer merge" and the integrate command is not offered; (d) when a task the human's implementer owned is integrated and another is available, the team step says the old session can be closed and shows the next task's command for a new terminal; (e) saving a schedule whose freeze is less than 1 h away (or already past) asks for confirmation and states the freeze time; every new string has its Spanish pair.
+- **Tests:** publish_sets_upstream, human_queue_shows_steps, no_integrate_before_approval, next_task_needs_new_terminal, near_freeze_asks_first
+- **Verify:** `python kit/.uak/tests/test_setup_handoffs.py`
+- **Next step:** reproduce each item with the setup test helpers (fake forge state for the queue); tests fail; fix.
