@@ -677,7 +677,8 @@ def codex_command_can_write_git(root, tmp):
     assert impl["command"] == ("cd %s && UAK_HUMAN= bash .uak/bin/wt new APP-001 --agent codex-ana --human ana && cd %s && "
                                "UAK_HUMAN= codex --sandbox workspace-write --add-dir %s "
                                "-c sandbox_workspace_write.network_access=true 'Run $uak-start for APP-001. Work only in "
-                               "this worktree.'" % (q(home), q(worktree), q(gitdir))), impl["command"]
+                               "this worktree. When its checks pass, run $uak-ship until the task is in REVIEW, then "
+                               "take the next task.'" % (q(home), q(worktree), q(gitdir))), impl["command"]
     stubs, log = stub_tools(tmp)
     for line in (review["command"], impl["command"]):
         done = run_line(line, stubs, tmp)
