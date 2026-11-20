@@ -583,7 +583,10 @@ def guidance(state, dashboard=None, now=None):
     # with no path (the engine's own words stay in the Advanced view's conversation).
     human = dashboard["needs_human"] if "needs_human" in dashboard else state.get("needs_human") or []
     if human and state.get("installed"):
-        return step("human", "%s needs a person to finish its merge" % human[0]["task"], plain_reason(human[0]["reason"]))
+        g = step("human", "%s needs a person to finish its merge" % human[0]["task"], plain_reason(human[0]["reason"]))
+        if "approved" in human[0]:
+            g["handoff"] = human[0]  # UI-027 (b, c): the steps, with the PR link and the integrate command
+        return g
     if frozen_since(state, dashboard, now):
         return step("frozen", "Project changes are frozen",
                     "The change window has closed. Review the project with the responsible human before starting new work.")
@@ -699,6 +702,60 @@ def truthful(data):
     data["needs_human"] = [{"task": q.get("task", ""), "reason": q["reason"]} for q in data.get("queue") or []
                            if q.get("state") == "HUMAN"]
     return data
+
+
+PR_URL = re.compile(r"https://[^\s\"'<>\\`]+\Z")
+WAIT_APPROVAL = "Wait for the reviewer's approval before you merge."
+
+
+def track_base(run, planning, root, remote, base):
+    """UI-027 (a): after publishing, the local BASE branch follows REMOTE/BASE, so a plain `git pull` works there ("There
+    is no tracking information for the current branch" in Dylan's run). An upstream the person set is kept."""
+    if planning.git(run, root, "rev-parse", "-q", "--verify", "refs/heads/%s" % base).returncode:
+        return
+    if (planning.git(run, root, "config", "--get", "branch.%s.remote" % base).stdout or "").strip() or \
+            (planning.git(run, root, "config", "--get", "branch.%s.merge" % base).stdout or "").strip():
+        return
+    planning.git(run, root, "config", "branch.%s.remote" % base, remote)
+    planning.git(run, root, "config", "branch.%s.merge" % base, "refs/heads/%s" % base)
+
+
+def same_commit(one, two):
+    one, two = (one or "").strip().lower(), (two or "").strip().lower()
+    return len(one) >= 7 and len(two) >= 7 and (one.startswith(two) or two.startswith(one))
+
+
+def human_queue(records, root, name, queue=None):
+    """UI-027 (b, c): each merge in the human queue with its steps: the reason as a plain sentence, the PR (an https
+    link), whether the reviewer approved the task's current SHA, and only then the exact `uak integrate` command for a
+    normal terminal. QUEUE (task, reason) defaults to RECORDS' own queue (read_claims); everything else is data."""
+    if queue is None:
+        queue = [{"task": task, "reason": without_paths(q.get("reason"))}
+                 for task, q in sorted((records.get("queue") or {}).items()) if q.get("state") == "HUMAN"]
+    tasks, reviews = records.get("tasks") or {}, records.get("reviews") or {}
+    home = Path(root).as_posix() if root else ""
+    found = []
+    for entry in queue:
+        task = entry.get("task", "")
+        record, review = tasks.get(task) or {}, reviews.get(task) or {}
+        approved = review.get("verdict") == "approve" and same_commit(review.get("sha"), record.get("tip"))
+        pr = record.get("pr") or ""
+        item = {"task": task, "reason": entry.get("reason", ""), "plain": plain_reason(entry.get("reason", "")),
+                "pr": pr if PR_URL.match(pr) else "", "approved": approved, "wait": "" if approved else WAIT_APPROVAL,
+                "integrate": ""}
+        if approved and DEPENDENCY.fullmatch(task) and HUMAN_NAME.fullmatch(name or "") and home and quotable(home):
+            item["integrate"] = "cd %s && UAK_HUMAN=%s bash .uak/bin/uak integrate %s" % (shell_quote(home), name, task)
+        found.append(item)
+    return found
+
+
+def claims_records(git, ref):
+    """read_claims of a local copy of claims, for the human queue (None when it cannot be read)."""
+    records = {"reviewers": {}, "retired": [], "claims": {}, "files": []}
+    if git("rev-parse", "-q", "--verify", ref + "^{commit}").returncode:
+        return None
+    read_claims(git, records, ref)
+    return records
 
 
 def last_claims(server, root, module):
@@ -1059,6 +1116,7 @@ class SetupServer(ThreadingHTTPServer):
                                      "staged here. Fix the cause (for example a pre-push hook or a protected branch), "
                                      "then publish again." % (remote, reason(result)))
                 pushed = True
+                track_base(self.run, planning, root, remote, base)
                 check = self.run([bash_binary(), str(uak), "start"], cwd=str(root), timeout=120)
                 # UI-026 (a): the restore facts change with the phase. Refreshed after it, a poll in between read
                 # "setup" with the kit not on main yet, the page stopped polling, and step 3 kept its button.
@@ -1301,6 +1359,16 @@ class SetupHandler(BaseHTTPRequestHandler):
                     except ValueError:
                         data["freeze"] = 0
                 truthful(data)
+                try:
+                    # UI-027 (b, c): each human-queue merge with its steps, from the claims copy just fetched.
+                    home = project_root(root)
+                    records = claims_records(lambda *args: self.server.planning.git(
+                        self.server.identity_run, home, *args, timeout=10), DASH_CLAIMS)
+                    with self.server.lock:
+                        name = self.server.state.get("human") or ""
+                    data["needs_human"] = human_queue(records or {}, home, name, data["needs_human"])
+                except (OSError, ValueError, subprocess.SubprocessError):
+                    pass  # the queue keeps its plain reasons; only the steps are missing
                 with self.server.lock:
                     self.server.state["freeze"] = data.get("freeze") or 0
                     self.server.state["needs_human"] = data["needs_human"]
@@ -2260,8 +2328,10 @@ def read_claims(git, result, ref=SETUP_CLAIMS):
     feeds only its own folder's fields."""
     # The person's Git config must not change the output this parses (review of 993e112: grep.lineNumber or
     # grep.column in a global config turned every line into ref:path:N:Field and nothing was read).
+    # UI-027: task records, the human queue and reviews too (their PR, tip, reason and verdict).
+    folders = ("roles/reviewers", "claims", "meta/agents", "tasks", "queue", "reviews")
     found = git("grep", "--no-color", "--no-line-number", "--no-column", "--full-name", "-E",
-                "^(Reviewer|Registered-By|ID|State|Owner|Role): ", ref, "--", "roles/reviewers", "claims", "meta/agents")
+                "^(Reviewer|Registered-By|ID|State|Owner|Role|PR|Task-Tip|Reason|Verdict|SHA): ", ref, "--", *folders)
     records = {}
     prefix = ref + ":"
     for line in (found.stdout or "").splitlines() if found.returncode == 0 else []:
@@ -2270,7 +2340,7 @@ def read_claims(git, result, ref=SETUP_CLAIMS):
         path, _, text = line[len(prefix):].partition(":")
         folder, _, name = path.rpartition("/")
         match = re.match(r"([A-Za-z-]+): *(.*?) *\r?$", text)
-        if folder not in ("roles/reviewers", "claims", "meta/agents") or not CLAIM_FILE.fullmatch(name) or not match:
+        if folder not in folders or not CLAIM_FILE.fullmatch(name) or not match:
             continue
         records.setdefault((folder, name[:-3]), {}).setdefault(match.group(1), match.group(2))
     for (folder, stem), fields in records.items():
@@ -2280,6 +2350,13 @@ def read_claims(git, result, ref=SETUP_CLAIMS):
             result["claims"][stem] = {"state": fields.get("State", ""), "owner": fields.get("Owner", "")[:64]}
         elif folder == "meta/agents" and fields.get("Role") == "human":
             result.setdefault("humans", []).append(stem)
+        elif folder == "tasks" and fields.get("ID", stem) == stem:
+            result.setdefault("tasks", {})[stem] = {"state": fields.get("State", ""), "owner": fields.get("Owner", "")[:64],
+                                                    "pr": fields.get("PR", "")[:300], "tip": fields.get("Task-Tip", "")[:64]}
+        elif folder == "queue" and fields.get("ID", stem) == stem:
+            result.setdefault("queue", {})[stem] = {"state": fields.get("State", ""), "reason": fields.get("Reason", "")[:600]}
+        elif folder == "reviews" and fields.get("ID", stem) == stem:
+            result.setdefault("reviews", {})[stem] = {"verdict": fields.get("Verdict", ""), "sha": fields.get("SHA", "")[:64]}
     listed = git("ls-tree", "--name-only", ref, "claims/", "meta/retired/")
     for path in (listed.stdout or "").splitlines():
         folder, _, name = path.strip().rpartition("/")
@@ -2776,7 +2853,7 @@ def team_view(server):
             "remote": {"state": "", "detail": ""}, "commands": [], "note": "", "review_note": "", "claimed": [], "tools": [],
             "roles": effective_roles(None, set()), "retry": False, "can_check": False,
             "registered": {"name": who, "registered": False, "registered_by": "", "retired": False, "message": ""},
-            "people": team_size(root)}
+            "people": team_size(root), "human_queue": []}
     text = root.as_posix()
     if not quotable(text) or root.parent == root:
         view["note"] = ("Rename the project folder (no quote mark or control character, and not a drive's root), then "
@@ -2808,6 +2885,7 @@ def team_view(server):
         view["note"] = "Publish the kit to main first (Prepare: Publish the kit to main): agents read the kit from there."
         return view
     view["registered"] = reviewer_record(known, who, name)
+    view["human_queue"] = human_queue(known, root, name)  # UI-027 (b, c)
     tools = tool_view(server, root)
     available = {t["id"] for t in tools if t["available"]}
     roles = effective_roles(read_roles(gitdir).get(name), available)
@@ -2908,6 +2986,12 @@ def team_view(server):
         if view["note"] == reason:
             view["note"] = ""  # one place per reason (A-F15)
         commands = []
+    if any(c["id"] == "implement" for c in commands):
+        # UI-027 (d): the agent of an integrated task still sits in that task's folder; the next task is a new session.
+        done = sorted(t for t, r in (known.get("tasks") or {}).items() if r.get("state") == "INTEGRATED"
+                      and owner.fullmatch(r.get("owner", "")) and TEAM_TASK.fullmatch(t))
+        if done and not any(owner.fullmatch(c["owner"]) for c in claims.values() if c["state"] in LIVE_STATES):
+            view["next_after"] = {"done": done[-1], "task": view["task"]}
     view["commands"] = commands
     return view
 

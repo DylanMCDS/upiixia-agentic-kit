@@ -88,6 +88,15 @@
       .action-result.error {
         color: var(--error);
       }
+      .handoff p {
+        margin: 6px 0;
+      }
+      .handoff a {
+        overflow-wrap: anywhere;
+      }
+      .handoff-list {
+        padding-left: 18px;
+      }
       .blocked-reason {
         color: var(--secondary);
       }
@@ -1856,6 +1865,16 @@
                   </div>
                 </div>
                 <button type="submit" class="secondary-button" id="schedule-save">Save schedule</button>
+                <!-- UI-027 (e): asked on the page; a browser dialog was never seen in Dylan's run. -->
+                <div class="notice" id="schedule-confirm" role="alertdialog" aria-labelledby="schedule-confirm-text"
+                  aria-describedby="schedule-confirm-when" hidden>
+                  <p id="schedule-confirm-text" data-no-i18n>That freeze is in the past or less than an hour away. Save it anyway?</p>
+                  <p id="schedule-confirm-when" data-no-i18n></p>
+                  <div class="actions">
+                    <button type="button" class="primary" id="schedule-confirm-save">Save anyway</button>
+                    <button type="button" class="secondary-button" id="schedule-confirm-cancel">Change the dates</button>
+                  </div>
+                </div>
                 <p class="hint" id="schedule-status" role="status"></p>
                 </div>
               </form>
@@ -2119,6 +2138,10 @@
         <p class="hint">
           Setup steps (install, publish, plan) need no agent; agents start only here.
         </p>
+        <div class="team-block" id="team-human" hidden>
+          <h3>Waiting for you: finish a merge</h3>
+          <ul class="handoff-list" id="team-human-list" data-no-i18n></ul>
+        </div>
         <div class="team-block" id="team-two-people" hidden>
           <h3>Two or more people?</h3>
           <p>
@@ -2187,6 +2210,7 @@
         <div class="team-block" id="team-implement" hidden>
           <h3 id="team-implement-heading" tabindex="-1" data-no-i18n>2. Claude Code implements</h3>
           <p class="hint" id="team-implement-terminal"></p>
+          <p class="notice" id="team-next-task" role="status" data-no-i18n hidden></p>
           <div class="next-command">
             <code id="team-implement-command" data-no-i18n></code>
             <button type="button" class="secondary-button" id="copy-team-implement">Copy</button>
@@ -2284,6 +2308,7 @@
           <p id="next-description"></p>
           <p class="hint" id="beginner-why"></p>
           <ul class="next-steps" id="next-steps" data-no-i18n hidden></ul>
+          <div class="handoff" id="next-handoff" data-no-i18n hidden></div>
           <div class="next-command" id="next-command-box" hidden>
             <code id="next-command" data-no-i18n></code>
             <button type="button" class="secondary-button" id="copy-next-command">
@@ -2323,6 +2348,7 @@
           <code id="advanced-next-command" data-no-i18n></code>
           <button type="button" class="secondary-button" id="copy-advanced-next">Copy</button>
         </div>
+        <div class="handoff" id="advanced-next-handoff" data-no-i18n hidden></div>
         <button type="button" class="secondary-button" id="advanced-next-team" hidden>Open the Team tab</button>
       </section>
       <iframe
@@ -3112,6 +3138,7 @@
           var advanced = document.body.dataset.profile === "advanced";
           // Advanced keeps the same next step as Beginner (its guidance), above the dashboard frame.
           drawAdvancedNext(data.guidance || state.guidance || {});
+          drawHandoffs(data.guidance || state.guidance || {});
           if (teamFor !== [state.target, state.human, state.ready, state.team].join(":")) {
             teamFor = [state.target, state.human, state.ready, state.team].join(":");
             loadTeam();
@@ -3362,6 +3389,7 @@
           "publish-kit": "Publishing…",
           "human-save": "Saving…",
           "schedule-save": "Saving…",
+          "schedule-confirm-save": "Saving…",
           "idea-save": "Saving…",
           save: "Saving…",
           "plan-create": "Creating the plan…",
@@ -4228,6 +4256,78 @@
             el("team-claimed").append(li);
           });
         }
+        // UI-027 (b, c): a merge in the human queue, step by step in the order it happens, each value with its Copy
+        // button; before the reviewer approves the current SHA it says to wait, with no merge step and no integrate.
+        function drawHandoff(box, item, status) {
+          box.replaceChildren();
+          box.hidden = !item || !item.task;
+          if (box.hidden) return;
+          function line(text, kind) {
+            var p = document.createElement("p");
+            p.textContent = UAKWorkspace.t(text);
+            if (kind) p.className = kind;
+            box.append(p);
+          }
+          function copyRow(node, value, label) {
+            var row = document.createElement("div"),
+              copy = document.createElement("button");
+            row.className = "next-command";
+            copy.type = "button";
+            copy.className = "secondary-button";
+            copy.textContent = UAKWorkspace.t("Copy");
+            copy.setAttribute("aria-label", UAKWorkspace.format(label, { task: item.task }));
+            copy.onclick = function () { copyText(value, status || "copy-status"); };
+            row.append(node, copy);
+            box.append(row);
+          }
+          if (item.plain) line(item.plain, "hint");
+          if (!item.approved) line(item.wait || "Wait for the reviewer's approval before you merge.", "blocked-reason");
+          if (item.pr) {
+            line("Open the pull request:");
+            var link = document.createElement("a");
+            link.setAttribute("href", item.pr);
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
+            link.textContent = item.pr;
+            copyRow(link, item.pr, "Copy the pull request link of {task}");
+          } else line("Open its pull request on GitHub (its link is not recorded yet).");
+          if (!item.approved) return;
+          line("Merge it there, on GitHub.");
+          if (item.integrate) {
+            line("Then record the merge: paste this in a new terminal, not inside Claude or Codex.");
+            var code = document.createElement("code");
+            code.textContent = item.integrate;
+            copyRow(code, item.integrate, "Copy the command for {task}");
+          } else line(UAKWorkspace.format("Then record the merge: save your name in this page and come back for the command of {task}.", { task: item.task }));
+        }
+        // The board's next step (Beginner and Advanced) of a merge in the human queue.
+        function drawHandoffs(guide) {
+          var item = guide && guide.kind === "human" ? guide.handoff : null;
+          drawHandoff(el("next-handoff"), item, "copy-status");
+          drawHandoff(el("advanced-next-handoff"), item, "copy-status");
+        }
+        function drawHumanQueue(items) {
+          el("team-human").hidden = !items.length;
+          el("team-human-list").replaceChildren();
+          items.forEach(function (item) {
+            var li = document.createElement("li"),
+              head = document.createElement("strong"),
+              box = document.createElement("div");
+            head.textContent = UAKWorkspace.t(item.task + " needs a person to finish its merge");
+            box.className = "handoff";
+            drawHandoff(box, item, "team-copy-status");
+            li.append(head, box);
+            el("team-human-list").append(li);
+          });
+        }
+        // UI-027 (d): the agent of an integrated task still sits in that task's folder; the next one is a new session.
+        function drawNextTask(view) {
+          var next = (view && view.next_after) || null;
+          el("team-next-task").hidden = !next;
+          el("team-next-task").textContent = next
+            ? UAKWorkspace.format("{done} is integrated: its agent session (in {done}'s folder) can be closed: type /exit there. {task} starts with the command below, in a new terminal.", { done: next.done, task: next.task })
+            : "";
+        }
         function drawTeam(view) {
           var wasLocked = !!(teamView && teamView.locked);
           teamView = view;
@@ -4301,18 +4401,21 @@
             trustLine(el("team-" + id + "-trust"), shown.harness === "claude" && view.trust ? trust[row[2]] : undefined);
           });
           if (wasLocked && !locked && byId.implement) el("team-implement-heading").focus();
+          drawNextTask(view);
+          drawHumanQueue(view.human_queue || []);
           drawClaimed(view);
           teamReady = !!byId.implement;
           teamTool = byId.implement ? byId.implement.tool : "Claude Code";
           var guide = (latestDashboard && latestDashboard.guidance) || state.guidance || {};
           drawNext(guide);
           drawAdvancedNext(guide);
+          drawHandoffs(guide);
         }
         // UI-019: the team step asks for what it needs (the name, A-F2) instead of hiding; only these blocks show then.
         function teamAsk(need, message) {
           el("team-step").hidden = false;
           ["team-reviewer", "team-roles", "team-implement", "team-review", "team-claimed-block", "team-note-actions",
-            "team-review-note"].forEach(function (id) {
+            "team-review-note", "team-human"].forEach(function (id) {
             el(id).hidden = true;
           });
           el("team-name-block").hidden = need !== "human";
@@ -4785,36 +4888,63 @@
             fieldError(el("schedule-start").value ? "schedule-end" : "schedule-start", "Choose the start and end dates of the event.");
             return;
           }
-          action(el("schedule-save"), async function () {
-            // Nothing is written until the person has seen a freeze that is past or about to start.
-            var look = await api("schedule", Object.assign({ preview: true }, body));
-            if (
-              look.soon &&
-              !window.confirm(
-                UAKWorkspace.t("That freeze is in the past or less than an hour away. Save it anyway?") +
-                  "\n" +
-                  UAKWorkspace.when(look.freeze_at || look.freeze),
-              )
-            )
-              return;
-            var result = await api("schedule", body);
-            // In the order they happen, with their dates (UI-021); the engine writes the weekday in English, in the
-            // event's zone ("Fri 2026-11-13 03:30"), and when() puts it in the page's language (UI-012, r1).
-            el("schedule-status").textContent = UAKWorkspace.format(
-              "Saved. Take the first task by {first}; new work stops at {freeze}.",
-              {
-                first: UAKWorkspace.when(result.first_claim_at || result.first_claim || "-"),
-                freeze: UAKWorkspace.when(result.freeze_at || result.freeze),
-              },
-            );
-            dropDrafts(["schedule-start", "schedule-end", "schedule-zone"]);
-            el("schedule-form").removeAttribute("data-open");
-            startCheck(false);
-            await api("check", {});
-            checkRequested = true;
-            await refresh();
+          action(el("schedule-save"), function () {
+            return saveSchedule(body);
           });
         };
+        // UI-027 (e): a freeze that is past or less than an hour away is asked on the page, with its time; nothing is
+        // written until the person answers (Dylan's run saved one 25 minutes away and never saw a question).
+        var scheduleBody = null;
+        async function saveSchedule(body, confirmed) {
+          el("schedule-confirm").hidden = true;
+          if (!confirmed) {
+            var look = await api("schedule", Object.assign({ preview: true }, body));
+            if (look.soon) {
+              askSchedule(body, look);
+              return false;
+            }
+          }
+          scheduleBody = null;
+          var result = await api("schedule", body);
+          // In the order they happen, with their dates (UI-021); the engine writes the weekday in English, in the
+          // event's zone ("Fri 2026-11-13 03:30"), and when() puts it in the page's language (UI-012, r1).
+          el("schedule-status").textContent = UAKWorkspace.format(
+            "Saved. Take the first task by {first}; new work stops at {freeze}.",
+            {
+              first: UAKWorkspace.when(result.first_claim_at || result.first_claim || "-"),
+              freeze: UAKWorkspace.when(result.freeze_at || result.freeze),
+            },
+          );
+          dropDrafts(["schedule-start", "schedule-end", "schedule-zone"]);
+          el("schedule-form").removeAttribute("data-open");
+          startCheck(false);
+          await api("check", {});
+          checkRequested = true;
+          await refresh();
+        }
+        function askSchedule(body, look) {
+          scheduleBody = body;
+          el("schedule-confirm-text").textContent = UAKWorkspace.t("That freeze is in the past or less than an hour away. Save it anyway?");
+          el("schedule-confirm-when").textContent = UAKWorkspace.format("Freeze: {freeze}", {
+            freeze: UAKWorkspace.when(look.freeze_at || look.freeze),
+          });
+          el("schedule-confirm").hidden = false;
+          el("schedule-confirm-save").focus();
+        }
+        function confirmSchedule() {
+          var body = scheduleBody;
+          if (!body) return;
+          action(el("schedule-confirm-save"), function () {
+            return saveSchedule(body, true);
+          });
+        }
+        function cancelSchedule() {
+          scheduleBody = null;
+          el("schedule-confirm").hidden = true;
+          el("schedule-start").focus();
+        }
+        el("schedule-confirm-save").onclick = confirmSchedule;
+        el("schedule-confirm-cancel").onclick = cancelSchedule;
         var publishDigest = "";
         el("publish-preview").onclick = function () {
           action(this, async function () {
