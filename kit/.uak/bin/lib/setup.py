@@ -486,9 +486,9 @@ LIVE_STATES = ("CLAIMED", "BLOCKED", "REVIEW")
 CHECK_KEEP = 600
 # UI-024 (B-10): a hanging remote made the check take 75 s while every view answered 409. The check stops (its whole
 # tree), and a stalled HTTP transfer ends after 10 s below 1 kB/s. GIT_SSH_COMMAND is never set: it would override the
-# person's core.sshCommand. UI-026 (d): a normal `uak start` took ~31 s on Dylan's macOS run against GitHub (2 s
-# against a local bare remote), so 45 s stopped healthy checks; 120 s is about 4x that run, and Windows (20-50 ms
-# per process, docs/perf-windows.md) stays under half of it.
+# person's core.sshCommand. UI-026 (d): measured on macOS, a normal `uak start` took ~31 s against GitHub (Dylan's live
+# run) and 2 s against a local bare remote, so 45 s stopped healthy checks; 120 s is about 4x the GitHub run. Windows
+# is not measured yet: UI-032 measures it and adjusts this bound.
 CHECK_TIMEOUT = 120
 CHECK_ENV = {"GIT_HTTP_LOW_SPEED_LIMIT": "1000", "GIT_HTTP_LOW_SPEED_TIME": "10"}
 CHECK_TIMEOUT_ERROR = ("The check stopped after %d s while uak start was at: %s. Your last result is still shown. Press "
@@ -2378,7 +2378,7 @@ def project_progress(server, root, session=""):
 
 
 # The heartbeat's progress line (claim.sh task_progress): commits it counted, and when (epoch).
-HEARTBEAT_PROGRESS = re.compile(r"(\d+) commit\(s\) since the claim · .* · at (\d+)\Z")
+HEARTBEAT_PROGRESS = re.compile(r"(\d+) commit\(s\) since the claim · (.*) · at (\d+)\Z")
 
 
 def pushed_progress(git, data):
@@ -2389,15 +2389,17 @@ def pushed_progress(git, data):
     teammate's clone never fetches it), so the line says when the agent counted instead of reading as current.
     GIT runs git with its arguments in the project and returns a CompletedProcess."""
     remote, base = remote_and_base()
-    bases = ("refs/uak/dash-base", "refs/remotes/%s/%s" % (remote, base))
-    base_ref = next((r for r in bases if git("rev-parse", "-q", "--verify", r + "^{commit}").returncode == 0), "")
+    base_ref = None
     for task in data.get("tasks") or []:
         found = HEARTBEAT_PROGRESS.match(str(task.get("progress") or ""))
         if task.get("state") not in LIVE_STATES or not found:
             continue
-        reported, at = int(found.group(1)), int(found.group(2))
-        task["progress"] = "%d commit(s) as of the agent's last report, at %s" % (
-            reported, time.strftime("%H:%M", time.localtime(at)))
+        reported, at = int(found.group(1)), int(found.group(3))
+        task["progress"] = "%d commit(s) as of the agent's last report, at %s · %s" % (
+            reported, time.strftime("%H:%M", time.localtime(at)), found.group(2))
+        if base_ref is None:  # read once, and only when a live task has a heartbeat line
+            bases = ("refs/uak/dash-base", "refs/remotes/%s/%s" % (remote, base))
+            base_ref = next((r for r in bases if git("rev-parse", "-q", "--verify", r + "^{commit}").returncode == 0), "")
         branch = "feat/" + str(task.get("id") or "").lower()
         if not base_ref or not REF_NAME.fullmatch(branch):
             continue

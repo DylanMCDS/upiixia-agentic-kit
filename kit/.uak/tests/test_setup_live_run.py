@@ -336,8 +336,10 @@ def card_counts_branch_commits(root, tmp):
     line = data["tasks"][0]["progress"]
     assert re.match(r"2 commit\(s\) pushed to feat/app-001 · last: [0-9a-f]{7,} work 2 \(\d+ (second|minute)s? ago\)$",
                     line), "the card shows the branch's pushed commits, not the older heartbeat: %r" % line
-    assert data["tasks"][1]["progress"] == "2 commit(s) as of the agent's last report, at %s" % \
-        time.strftime("%H:%M", time.localtime(later)), "a newer heartbeat says when it was taken: %r" % data["tasks"][1]
+    assert data["tasks"][1]["progress"] == ("2 commit(s) as of the agent's last report, at %s · last: abc work 2 (1 minute "
+                                           "ago) · 0 uncommitted tracked file(s)" % time.strftime("%H:%M", time.localtime(later))), \
+        "a newer heartbeat says when it was taken and keeps its details: %r" % data["tasks"][1]
+    assert team.translated(data["tasks"][1]["progress"]), data["tasks"][1]
     assert data["tasks"][2]["progress"] == "", "a free task has no line"
     assert team.translated(line), "the line has Spanish: %r" % line
 
@@ -350,13 +352,14 @@ def card_counts_branch_commits(root, tmp):
     data = cards()
     MODULE.pushed_progress(runner(observer), data)
     seen = data["tasks"][0]["progress"]
-    assert seen == "0 commit(s) as of the agent's last report, at %s" % clock, \
+    assert seen == "0 commit(s) as of the agent's last report, at %s · last: - · 0 uncommitted tracked file(s)" % clock, \
         "a clone without the branch does not show the old count as current: %r" % seen
     assert team.translated(seen), "the line has Spanish: %r" % seen
     out = run("return [UAKWorkspace.t(%s), UAKWorkspace.t(%s)];" % (json.dumps(line), json.dumps(seen)), (), language="es")
     if out is not None:
         assert out[0].startswith("2 commit(s) subidos a feat/app-001 · último: ") and "hace" in out[0], out
-        assert out[1] == "0 commit(s) según el último reporte del agente, a las %s" % clock, out
+        assert out[1] == ("0 commit(s) según el último reporte del agente, a las %s · último: - · 0 archivo(s) con "
+                          "seguimiento sin commit" % clock), out
     dash = (root / ".uak/bin/lib/dash.html").read_text(encoding="utf-8")
     strip = re.search(r"t\.progress\.replace\(/([^/]+)/", dash)
     assert strip and not re.search(strip.group(1).replace("\\d", r"\d"), seen), "dash.html keeps the time: %r" % strip
