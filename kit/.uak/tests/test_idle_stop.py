@@ -142,6 +142,9 @@ def main():
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="uak-idle-stop-") as tmp:
         runner = Runner(args.package.resolve(), Path(tmp), resolve_binary("bash"), resolve_binary("git"))
+        # The fixtures' own calls (f.hack, f.claim) use the runner's environment: no identity, base or loop mode leaks in.
+        for k in ("UAK_BASE", "UAK_AGENT", "UAK_TASK", "UAK_HUMAN", "UAK_LOOP", "UAK_NOW", "UAK_WAIT_TIMEOUT", "UAK_WAIT_EVERY"):
+            runner.env.pop(k, None)
 
         def one(test):
             started = time.monotonic()
