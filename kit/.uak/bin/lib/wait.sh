@@ -39,21 +39,29 @@ wait_idle_sig() {
     s="$s $id:$(field "$c" State):$(field "$TX/reviews/$id.md" Verdict)@$(field "$TX/reviews/$id.md" SHA)"
   done
   # A message to this identity from someone else, even one read with inbox --ack between two waits (review of 00a9fd3).
-  s="$s msg:$(msg_select all | awk -F' · ' -v me="$AGENT" '/^#[0-9]/ && $3 != me { n = substr($1, 2) + 0; if (n > m) m = n } END { print m + 0 }')"
+  # Field 3 is "from → to": only the sender is compared, so the agent's own notes never reset it (review of ec326a3).
+  s="$s msg:$(msg_select all | awk -F' · ' -v me="$AGENT" '/^#[0-9]/ { split($3, p, " → ") } /^#[0-9]/ && p[1] != me { n = substr($1, 2) + 0; if (n > m) m = n } END { print m + 0 }')"
   printf '%s' "$s"
 }
-# The last message this identity sent to human that no later message to it (or to that task) answered.
+# The last message this identity sent to human that no later message to it, to that task or to all answered.
+# Bytes (LC_ALL=C): a cut at 160 bytes then drops a trailing incomplete UTF-8 sequence (a lead byte without all of its
+# continuation bytes), so no character is split.
 wait_human_blocker() {
   [ -f "$TX/$MSG_LOG" ] || return 0
-  awk -F' [|] ' -v me="$AGENT" -v now="$(date +%s)" '
+  LC_ALL=C awk -F' [|] ' -v me="$AGENT" -v now="$(date +%s)" '
+    function cut(s) {
+      if (match(s, /[\360-\367][\200-\277][\200-\277]$/) || match(s, /[\340-\367][\200-\277]$/) || match(s, /[\300-\367]$/))
+        return substr(s, 1, RSTART - 1)
+      return s
+    }
     /^- [0-9]/ {
       n = substr($1, 3) + 0; nt = split($4, t, ","); tohuman = 0; tome = 0
       for (i = 1; i <= nt; i++) {
         if (t[i] == "human") tohuman = 1
-        if (t[i] == "agent:" me || (task != "" && t[i] == "task:" task)) tome = 1
+        if (t[i] == "agent:" me || t[i] == "all" || (task != "" && t[i] == "task:" task)) tome = 1
       }
       if (b && $3 != me && tome) b = 0
-      if ($3 == me && tohuman) { b = n; bt = $2 + 0; task = ($6 == "-") ? "" : $6; txt = $7; sub(/\r$/, "", txt); txt = substr(txt, 1, 160) }
+      if ($3 == me && tohuman) { b = n; bt = $2 + 0; task = ($6 == "-") ? "" : $6; txt = $7; sub(/\r$/, "", txt); if (length(txt) > 160) { txt = cut(substr(txt, 1, 160)) "..." } }
     }
     END { if (b) { m = int((now - bt) / 60); if (m < 0) m = 0; printf "#%d (%d min ago): %s", b, m, txt } }' "$TX/$MSG_LOG" |
     LC_ALL=C tr -d '\000-\037\177'   # no escape sequence or tab from a message reaches the terminal
