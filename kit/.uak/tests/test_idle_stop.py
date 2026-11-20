@@ -176,10 +176,43 @@ def json_reports_idle_stop(r):
     return "IDLE_STOP in json"
 
 
+def own_messages_do_not_reset_the_count(r):
+    """Review of ec326a3 (claude-Dylan-r): the agent's own message to human and its task between waits is not news."""
+    f = r.fixture("idle-own", count=2)
+    f.claim(1, "HACK-002", now=int(time.time()))
+    rcs = []
+    for i in range(3):
+        rc, text = empty_wait(r, f.clones[1])
+        rcs.append(rc)
+        r.run([r.bash, ".uak/bin/uak", "msg", "human,HACK-002", "still blocked, need allow %d" % i], cwd=f.clones[1],
+              env=env("agent-2", UAK_NOW=str(int(time.time()))))
+    expect(rcs == [4, 4, 5], "own messages between waits still end in IDLE_STOP: %s %s" % (rcs, text[-300:]))
+    return "4, 4, 5"
+
+
+def blocker_text_is_cut_on_a_character(r):
+    """A long blocker is cut without splitting a UTF-8 character; a reply to all clears it."""
+    f = r.fixture("idle-utf8", count=2)
+    long_text = "a" + "ñ" * 100  # 201 bytes: a 160-byte cut lands inside a character
+    r.run([r.bash, ".uak/bin/uak", "msg", "human", long_text], cwd=f.clones[1], env=env("agent-2", UAK_NOW=str(int(time.time()))))
+    out = [r.run([r.bash, ".uak/bin/uak", "wait", "--for", "message", "--timeout", "2"], cwd=f.clones[1], env=env("agent-2"),
+                 allowed=None, ) for _ in range(3)][2]
+    line = [l for l in out.stdout.splitlines() if l.startswith("IDLE_STOP")]
+    expect(out.returncode == 5 and line and "ññ" in line[0], "IDLE_STOP names the blocker: " + out.stdout[-400:])
+    expect("\ufffd" not in line[0], "no half character: %r" % line[0][-40:])
+    g = r.fixture("idle-all", count=2)
+    r.run([r.bash, ".uak/bin/uak", "msg", "human", "please allow HACK-002"], cwd=g.clones[1], env=env("agent-2", UAK_NOW=str(int(time.time()))))
+    g.hack(0, "msg", "all", "allowed, go ahead", now=int(time.time()))
+    r.run([r.bash, ".uak/bin/uak", "inbox", "--ack"], cwd=g.clones[1], env=env("agent-2"))
+    text = [empty_wait(r, g.clones[1]) for _ in range(3)][2][1]
+    expect("IDLE_STOP" in text and "please allow" not in text, "a reply to all clears the blocker: " + text[-400:])
+    return "cut on a character; all clears"
+
+
 TESTS = [third_empty_wait_says_stop, event_resets_the_idle_count, idle_lines_never_say_wait_again,
          loop_mode_keeps_waiting, idle_stop_names_the_human_blocker,
          message_between_waits_resets_the_count, idle_stop_starts_the_count_over, blocker_text_has_no_control_characters,
-         json_reports_idle_stop]
+         json_reports_idle_stop, own_messages_do_not_reset_the_count, blocker_text_is_cut_on_a_character]
 
 
 def main():
