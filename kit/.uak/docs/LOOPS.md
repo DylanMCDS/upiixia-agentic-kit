@@ -18,11 +18,18 @@ Loop engineering means designing the cycles that run agents, instead of promptin
 | **Parallel (`uak loop --parallel N`)** | many test files fail | one `--each` check per failing file | each sub-loop stops on its own; passing fixes are applied, then Verify runs once |
 | **Heartbeat** | every tool call (hook), throttled to 8 min | lease renewed | none; the lease expires if the agent dies |
 | **Inbox (hook loop)** | every tool call: a claims `ls-remote` every 20 s, the inbox read only when it moved | new actionable message | injects at most 24 lines; `Stop` blocks until handled |
-| **Wait (`uak wait`)** | an agent needs an approval, a dependency or a reply | the event on claims | returns once (exit 0/3) or after `--timeout` (exit 4); never a polling loop of `status` |
+| **Wait (`uak wait`)** | an agent needs an approval, a dependency or a reply | the event on claims | returns once (exit 0/3) or after `--timeout` (exit 4); the third empty timeout in a row is `IDLE_STOP` (exit 5): end the turn. Never a polling loop of `status` or of `wait` |
 | **Review** | `uak done` | reviewer runs Verify on the SHA | reject → owner fixes and repeats `/uak-ship`; approve → merge |
 | **Deadline (cron loop)** | `next`/`status`, or the opt-in `.github/workflows/uak-tick.yml.example` (every 15 min) | receipts on claims | each deadline fires once (CAS receipt) |
 | **Human** | `uak digest` | the human decides | batched, never one ping per PR |
 | **Retro** | end of event or milestone | data from claims | `/uak-retro` proposes rule changes with evidence |
+
+## Idle stop: a wait is not a loop
+An agent with nothing to do ends its turn; it does not wait again. Every `uak wait` timeout hands control back to the model, so a wait repeated while idle is a full model turn each time (UAK-100: a Codex session blocked on a human ran about 200 waits, 757 turns, about 129M cached tokens in 9 h).
+- `uak wait` counts consecutive empty timeouts per identity in the git dir. The third (`Idle-Stop-Waits` in PROJECT.md, default 3: about 27 min at the default timeout) prints `IDLE_STOP: nothing happened in N min. End your turn now and stop; a human or the lead restarts you with a message` and exits 5. When the agent's last message to `human` is still unanswered, the line names it.
+- A new message, an approval or reject, or a change in the identity's claims (a claim, a state, a verdict) resets the count.
+- The idle lines of `uak next` and the timeout line say to end the turn. One bounded wait for a specific event stays fine: `uak wait ID --for approve`.
+- A loop the human started on purpose (`/uak-loop`, `uak loop`, cron) keeps its own pacing: run its waits with `UAK_LOOP=1` and the cap does not apply. The loop's own budget (above) is what stops it.
 
 ## `uak loop`: autonomous runs (Ralph-style, but bounded)
 ```bash

@@ -8,8 +8,93 @@
 #   approve     your REVIEW task (or ID): exit 0 on approve or INTEGRATED, 3 on reject
 #   integrated  ID becomes INTEGRATED (a dependency): exit 0
 #   message     a new unread message for you: printed, exit 0
-# Timeout (default 540 s, under a 10-min tool limit): WAIT_TIMEOUT, exit 4. Rerun to keep waiting.
+# Timeout (default 540 s, under a 10-min tool limit): WAIT_TIMEOUT, exit 4. The third empty timeout in a row of one
+# identity (Idle-Stop-Waits) is IDLE_STOP, exit 5: the agent ends its turn instead of waiting again (UAK-100).
 wait_run() {
+  local wait_rc=0
+  wait_poll || wait_rc=$?
+  # Something happened (an event, an approval, a reject): the idle count starts over.
+  case "$wait_rc" in 0|3) wait_idle_reset;; esac
+  return "$wait_rc"
+}
+# Idle stop. Why (2026-11-19, the kit's own repo): a Codex session blocked on a human authorization ran about 200
+# `uak wait --for message --timeout 540` cycles over 9 h; each timeout handed control back to the model, which waited
+# again: 757 model turns, about 129M cached input tokens, the human's whole session. A wait is one bounded call for an
+# event, never a loop. The count lives in the git dir, per identity; a loop the human started (UAK_LOOP=1, /uak-loop,
+# docs/LOOPS.md) keeps its own pacing.
+wait_loop_mode() { case "${UAK_LOOP:-}" in ''|0|no|off|false) return 1;; *) return 0;; esac; }
+wait_idle_file() {
+  local gd
+  gd=$(cd "$ROOT" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd -P) || return 1
+  mkdir -p "$gd/uak-idle" 2>/dev/null || return 1
+  printf '%s/uak-idle/%s' "$gd" "$(printf '%s' "${AGENT:-anonymous}" | tr -c 'A-Za-z0-9._-' '_')"
+}
+wait_idle_reset() { local f; f=$(wait_idle_file) || return 0; rm -f "$f"; }
+# What this identity holds: a claim taken or released, a state or a verdict that moved resets the count.
+wait_idle_sig() {
+  local c id s=
+  for c in "$TX"/claims/*.md; do
+    [ -f "$c" ] && [ "$(field "$c" Owner)" = "$AGENT" ] || continue
+    id=$(field "$c" ID)
+    s="$s $id:$(field "$c" State):$(field "$TX/reviews/$id.md" Verdict)@$(field "$TX/reviews/$id.md" SHA)"
+  done
+  # A message to this identity from someone else, even one read with inbox --ack between two waits (review of 00a9fd3).
+  # Field 3 is "from → to": only the sender is compared, so the agent's own notes never reset it (review of ec326a3).
+  s="$s msg:$(msg_select all | awk -F' · ' -v me="$AGENT" '/^#[0-9]/ { split($3, p, " → ") } /^#[0-9]/ && p[1] != me { n = substr($1, 2) + 0; if (n > m) m = n } END { print m + 0 }')"
+  printf '%s' "$s"
+}
+# The last message this identity sent to human that no later message to it, to that task or to all answered.
+# Bytes (LC_ALL=C): a cut at 160 bytes then drops a trailing incomplete UTF-8 sequence (a lead byte without all of its
+# continuation bytes), so no character is split.
+wait_human_blocker() {
+  [ -f "$TX/$MSG_LOG" ] || return 0
+  LC_ALL=C awk -F' [|] ' -v me="$AGENT" -v now="$(date +%s)" '
+    function cut(s) {
+      if (match(s, /[\360-\367][\200-\277][\200-\277]$/) || match(s, /[\340-\367][\200-\277]$/) || match(s, /[\300-\367]$/))
+        return substr(s, 1, RSTART - 1)
+      return s
+    }
+    /^- [0-9]/ {
+      n = substr($1, 3) + 0; nt = split($4, t, ","); tohuman = 0; tome = 0
+      for (i = 1; i <= nt; i++) {
+        if (t[i] == "human") tohuman = 1
+        if (t[i] == "agent:" me || t[i] == "all" || (task != "" && t[i] == "task:" task)) tome = 1
+      }
+      if (b && $3 != me && tome) b = 0
+      if ($3 == me && tohuman) { b = n; bt = $2 + 0; task = ($6 == "-") ? "" : $6; txt = $7; sub(/\r$/, "", txt); if (length(txt) > 160) { txt = cut(substr(txt, 1, 160)) "..." } }
+    }
+    END { if (b) { m = int((now - bt) / 60); if (m < 0) m = 0; printf "#%d (%d min ago): %s", b, m, txt } }' "$TX/$MSG_LOG" |
+    LC_ALL=C tr -d '\000-\037\177'   # no escape sequence or tab from a message reaches the terminal
+}
+# The timeout: exit 4 with one line that never says to wait again, or IDLE_STOP (exit 5) at the cap.
+wait_idle_timeout() {
+  local f cnt= first= osig= sig max now blk mins
+  if wait_loop_mode; then
+    say "WAIT_TIMEOUT ${ID:+$ID }$WAIT_FOR after $WAIT_TIMEOUT s: nothing yet (UAK_LOOP: your loop paces the next iteration)."
+    return 4
+  fi
+  [ -d "${TX:-/nonexistent}" ] || { ATTEMPT=wait-end; fresh_state; }
+  now=$(date +%s); sig=$(wait_idle_sig)
+  if f=$(wait_idle_file); then
+    [ ! -f "$f" ] || { IFS= read -r cnt; IFS= read -r first; IFS= read -r osig; } < "$f"
+  fi
+  case "$cnt" in ''|*[!0-9]*) cnt=0;; esac
+  case "$first" in ''|*[!0-9]*) first=;; esac
+  [ "$osig" = "$sig" ] && [ -n "$first" ] || { cnt=0; first=$((now - WAIT_TIMEOUT)); }
+  cnt=$((cnt + 1))
+  [ -z "$f" ] || printf '%s\n%s\n%s\n' "$cnt" "$first" "$sig" > "$f" 2>/dev/null || true
+  coord_cfg Idle-Stop-Waits 3; max=$coord_v; case "$max" in ''|*[!0-9]*|0) max=3;; esac
+  if [ "$cnt" -ge "$max" ]; then
+    mins=$(( (now - first) / 60 )); blk=$(wait_human_blocker)
+    say "IDLE_STOP: nothing happened in $mins min. End your turn now and stop; a human or the lead restarts you with a message.${blk:+ Blocked on a human act: $blk}"
+    # A restarted agent keeps its one bounded wait, and "N min" counts from its new first wait.
+    [ -z "$f" ] || rm -f "$f"
+    return 5
+  fi
+  say "WAIT_TIMEOUT ${ID:+$ID }$WAIT_FOR after $WAIT_TIMEOUT s: nothing yet (empty wait $cnt of $max). Nothing else to do: end your turn; a human or the lead restarts you with a message. Only one bounded wait for a specific event: uak wait ID --for approve."
+  return 4
+}
+wait_poll() {
   local deadline last= tip n=0 rv st c left
   deadline=$(( $(date +%s) + WAIT_TIMEOUT ))
   if [ "$WAIT_FOR" = approve ] && [ -z "$ID" ]; then
@@ -65,7 +150,7 @@ wait_run() {
       esac
     fi
     left=$((deadline - $(date +%s)))
-    [ "$left" -gt 0 ] || { say "WAIT_TIMEOUT ${ID:+$ID }$WAIT_FOR after $WAIT_TIMEOUT s: nothing yet. Do other work, or run the same wait again."; return 4; }
+    [ "$left" -gt 0 ] || { wait_idle_timeout; return; }
     # Never past the deadline: --timeout 3 used to sleep the whole 15 s check interval.
     [ "$left" -ge "$WAIT_EVERY" ] || { sleep "$left"; continue; }
     sleep "$WAIT_EVERY"

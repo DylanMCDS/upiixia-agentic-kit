@@ -744,7 +744,7 @@ coord_next() {
   if [ "$coord_freeze" -gt 0 ] && [ "$NOW" -ge "$coord_freeze" ]; then
     say 'Idle after freeze: rehearse the demo (/uak-demo), check the submission, then stop. Do not poll uak next; a message will reach you.'
   else
-    say 'Idle: improve tests → polish demo → rehearse. Do not poll uak next in a loop; wait for a message or a new task.'
+    say 'Idle: improve tests → polish demo → rehearse. Do not poll uak next in a loop; with nothing left, end your turn: a human or the lead restarts you with a message.'
   fi
   coord_status_budget; [ -z "${CLOCK_NOTE:-}" ] || say "$CLOCK_NOTE"
 }
