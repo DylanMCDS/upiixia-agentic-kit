@@ -568,3 +568,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Acceptance:**
   - Team tab polish: no stale wait text above a 400 reason, tooltips on shortened tab labels, no wt new line in Technical details before the reviewer is registered
 - **Verify:** `python kit/.uak/tests/test_setup_team_tab.py`
+## UAK-100 · An idle agent stops instead of paying for empty waits
+
+- **Type:** fix
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/lib/wait.sh, kit/.uak/bin/lib/status.sh, kit/.uak/bin/uak-coordination, kit/.uak/tests/test_idle_stop.py, kit/.uak/docs/WHY.md, kit/.uak/docs/LOOPS.md
+- **Acceptance:** Evidence (2026-11-19, the kit's own repo): a Codex session told to "wait with uak wait --for message" while idle ran about 200 `uak wait --timeout 540` cycles over roughly 9 h, while it was blocked on a human authorization. Each timeout handed control back to the model and the model waited again, so every cycle was a full model turn: 757 turns, about 129M cached input tokens, and 77k output tokens of real work. It burned the human's whole Codex session and about 1000 credits. The kit itself pushes agents into this loop: `uak wait` prints "Rerun to keep waiting" on a timeout, and the idle lines of `uak next` say "wait for a message"., (1) `uak wait` counts consecutive empty timeouts per identity, stored in the git dir. After the third one in a row (Idle-Stop-Waits, default 3, about 27 min at the default timeout), it exits with a distinct code and prints `IDLE_STOP: nothing happened in N min. End your turn now and stop; a human or the lead restarts you with a message`. A real event, a claim or a verdict resets the counter. (2) No idle or timeout line printed by `uak next`, `uak wait` or the reviewer-only line tells an agent to wait again or to rerun a wait. The lines say to end the turn, and keep one bounded wait for a specific event (`uak wait ID --for approve`). (3) A loop the human started on purpose (`/uak-loop`, or `UAK_LOOP=1`, per LOOPS.md) keeps its own pacing, and the cap applies only when that mode is off. LOOPS.md says so. (4) When the agent is waiting on a human act (an allow, an amend or an authorization message it sent to human), the IDLE_STOP line names it, so the human sees why the agent stopped. (5) WHY.md cites this incident.
+- **Tests:** third_empty_wait_says_stop, event_resets_the_idle_count, idle_lines_never_say_wait_again, loop_mode_keeps_waiting, idle_stop_names_the_human_blocker
+- **Verify:** `python kit/.uak/tests/test_idle_stop.py`
+- **Next step:** read lib/wait.sh and the idle lines in uak-coordination and status.sh; write the tests (a fast timeout through UAK_WAIT_EVERY); they fail; implement.
