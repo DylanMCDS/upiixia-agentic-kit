@@ -149,9 +149,8 @@ lint_verify_scaffold() {
     done
   done
 }
-# `uak deploy --write` writes Dockerfile, .dockerignore and render.yaml together: a task whose Paths name Dockerfile
-# or render.yaml reserves the .dockerignore beside it, or its merge goes to the human queue for a file the kit wrote.
-# Why (UAK-097, turno-cafeteria-3): the walking skeleton listed two of the three files.
+# Dockerfile deployments write .dockerignore beside the Dockerfile; static deployments write only render.yaml.
+# Why (UAK-097/UAK-099): reserve generated Docker files without requiring nonexistent static-site outputs.
 lint_deploy_paths() {
   [ -s "$BACKLOG" ] || return 0
   local id tp d
@@ -159,12 +158,12 @@ lint_deploy_paths() {
     tp=$(ID=$id task_field Paths)
     normalize_paths "$tp" > "$TXROOT/lint-deploy" 2>/dev/null || continue
     # The .dockerignore beside each one (Paths are lower-cased by normalize_paths), one per line: a dir may hold a space.
-    awk '/(^|\/)(dockerfile|render\.yaml)$/ { sub(/(dockerfile|render\.yaml)$/, ""); print $0 ".dockerignore" }' \
+    awk '/(^|\/)dockerfile$/ { sub(/dockerfile$/, ""); print $0 ".dockerignore" }' \
       "$TXROOT/lint-deploy" | sort -u > "$TXROOT/lint-deploy-need"
     while IFS= read -r d; do
       printf '%s\n' "$d" > "$TXROOT/lint-deploy-one"
       ! overlaps "$TXROOT/lint-deploy-one" "$TXROOT/lint-deploy" || continue
-      say "LINT: $id's Paths name Dockerfile or render.yaml but not $d: uak deploy --write writes the three together, and the merge gate sends a file outside Paths to the human. Add $d (uak plan FILE --amend)." >&2
+      say "LINT: $id's Paths name Dockerfile but not $d: uak deploy --write writes both for Docker deployments, and the merge gate sends a file outside Paths to the human. Add $d (uak plan FILE --amend)." >&2
       LINT_ERRORS=$((LINT_ERRORS + 1))
     done < "$TXROOT/lint-deploy-need"
   done
