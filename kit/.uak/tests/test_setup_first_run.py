@@ -431,14 +431,16 @@ def views_answer_during_a_check(root, tmp):
             runner.check_gate.set()
         tp.wait_idle(srv)
         call = runner.starts[-1]
-        assert call["timeout"] <= 45 and call["group"] is True, "the check is bounded and stops its tree: %r" % call
+        assert call["timeout"] == MODULE.CHECK_TIMEOUT and 2 * 31 <= MODULE.CHECK_TIMEOUT <= 180 and call["group"] is True, \
+            "the check is bounded (at least twice a normal uak start, ~31 s measured) and stops its tree: %r" % call
         assert call["env"].get("GIT_HTTP_LOW_SPEED_LIMIT") == "1000" and call["env"].get("GIT_HTTP_LOW_SPEED_TIME") == "10", call
 
         before = tp.get(srv, "/api/status")[1]["checks"]
         runner.check_code = 124
         team.check(srv)
         state = tp.get(srv, "/api/status")[1]
-        assert "45 s" in state.get("error", "") and "origin" in state["error"], state.get("error")
+        assert "%d s" % MODULE.CHECK_TIMEOUT in state.get("error", "") and MODULE.check_step("") in state["error"], \
+            "the timeout names its bound and the step that was running: %r" % state.get("error")
         assert state["checks"] == before and state["phase"] == "setup", state
         assert team.translated(state["error"]), "the timeout has Spanish: %r" % state["error"]
         runner.check_code = None

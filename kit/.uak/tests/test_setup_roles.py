@@ -62,8 +62,10 @@ def expected(role, tool, home, worktree=None, task="APP-001", agent="claude-ana"
         start = "cd %s && UAK_HUMAN= bash .uak/bin/wt new %s --agent %s --human ana && cd %s && " % (
             q(home), task, agent, q(worktree))
         if tool == "claude":
-            return start + "UAK_HUMAN= claude 'Run /uak-start for %s. Work only in this worktree.'" % task
-        return start + "UAK_HUMAN= codex %s 'Run $uak-start for %s. Work only in this worktree.'" % (flags, task)
+            return start + ("UAK_HUMAN= claude 'Run /uak-start for %s. Work only in this worktree. When its checks pass, "
+                            "run /uak-ship until the task is in REVIEW, then take the next task.'" % task)
+        return start + ("UAK_HUMAN= codex %s 'Run $uak-start for %s. Work only in this worktree. When its checks pass, "
+                        "run $uak-ship until the task is in REVIEW, then take the next task.'" % (flags, task))
     if tool == "claude":
         return ("cd %s && UAK_HUMAN= UAK_AGENT=%s claude 'You are the reviewer %s. Run bash .uak/bin/uak next; when it "
                 "names a task to review, run /uak-review with that task ID. Never write code for a task.'" % (q(home), who, who))

@@ -1950,7 +1950,7 @@
               </fieldset>
               <p class="notice error" id="plan-remote-note" role="status" hidden></p>
               <div class="notice" id="plan-trust">
-                <p>
+                <p id="plan-trust-why">
                   Claude Code only: open it once in this folder and answer its trust question as shown below, then
                   close it. Until then it ignores this project's permissions and the plan stops early.
                 </p>
@@ -1958,6 +1958,10 @@
                   <code id="plan-trust-command" data-no-i18n></code>
                   <button type="button" class="secondary-button" id="copy-plan-trust">Copy</button>
                 </div>
+                <p class="hint new-terminal">Paste it in a new terminal, not inside Claude or Codex.</p>
+                <p class="hint" id="plan-trust-close">
+                  Then close that Claude Code session (type /exit) before you paste any other command.
+                </p>
                 <div class="trust-help" id="plan-trust-help" data-reload="plan" data-no-i18n hidden></div>
               </div>
               <button class="primary" type="button" id="plan-create" aria-describedby="plan-create-why">
@@ -1965,6 +1969,9 @@
               </button>
               <p class="hint blocked-reason" id="plan-create-why" hidden></p>
               <p class="action-result" id="plan-create-result" role="status" aria-live="polite" data-no-i18n></p>
+              <p class="hint" id="plan-duration">
+                Creating the plan usually takes about 5 minutes. The time so far shows below while it runs.
+              </p>
               <p class="hint" id="plan-progress" role="status" data-no-i18n hidden></p>
               <section id="plan-review" hidden aria-labelledby="plan-review-heading">
                 <h3 id="plan-review-heading">Proposed plan</h3>
@@ -2174,6 +2181,11 @@
             <code id="team-implement-command" data-no-i18n></code>
             <button type="button" class="secondary-button" id="copy-team-implement">Copy</button>
           </div>
+          <p class="hint new-terminal">Paste it in a new terminal, not inside Claude or Codex.</p>
+          <p class="hint" id="team-ships">
+            The agent takes the task through /uak-ship by itself: when its checks pass, the task moves to In review on
+            the dashboard without you doing anything.
+          </p>
           <p class="hint" data-tool="claude">
             It claims the task, creates its own folder (a worktree) and opens Claude Code there with its first prompt.
             The first time, Claude Code asks whether you trust the task folder.
@@ -2189,6 +2201,7 @@
             <code id="team-implement-resume" data-no-i18n></code>
             <button type="button" class="secondary-button" id="copy-team-resume">Copy</button>
           </div>
+          <p class="hint new-terminal">Paste it in a new terminal, not inside Claude or Codex.</p>
         </div>
         <div class="team-block" id="team-review" hidden>
           <h3 id="team-review-heading" data-no-i18n>3. Codex reviews</h3>
@@ -2197,6 +2210,7 @@
             <code id="team-review-command" data-no-i18n></code>
             <button type="button" class="secondary-button" id="copy-team-review">Copy</button>
           </div>
+          <p class="hint new-terminal">Paste it in a new terminal, not inside Claude or Codex.</p>
           <p class="hint" data-tool="codex">
             UAK_AGENT gives Codex the reviewer's name, so it acts as a second identity: it never reviews as the
             agent that wrote the code. It waits for work with uak next and reviews with $uak-review.
@@ -2349,6 +2363,7 @@
           dashboardLoading = false,
           dashboardAgain = false,
           checkRequested = false,
+          autoPending = false,
           lastStepTitle = "";
         function el(id) {
           return document.getElementById(id);
@@ -2564,9 +2579,13 @@
             !state.installed ||
             operationBusy() ||
             requestBusy ||
+            autoPending ||
+            checkRequested ||
             g.kind !== "todo"
           )
             return;
+          // UI-026 (d): one check at a time; the next minute's check waits until this one has ended.
+          autoPending = true;
           startCheck(false);
           lastButton = currentSection === "dashboard" ? "next-check" : "check";
           api("check", {})
@@ -2574,7 +2593,9 @@
               checkRequested = true;
               return refresh();
             })
-            .catch(function () {});
+            .catch(function () {
+              autoPending = false;
+            });
         }
         document.addEventListener("visibilitychange", autoCheck);
         setInterval(autoCheck, 60000);
@@ -2634,10 +2655,7 @@
           el("plan-remote-note").hidden = !planView || !planView.remote_note;
           el("plan-remote-note").textContent = planView && planView.remote_note ? UAKWorkspace.t(planView.remote_note) : "";
           technical(el("plan-remote-note"), (planView && planView.remote_note && planView.remote_technical) || "");
-          // The trust note is Claude Code's: shown only when Claude Code drafts the plan (D-1.1).
-          el("plan-trust").hidden = !planView || !planView.trust_command || selectedPlanner() !== "claude";
-          el("plan-trust-command").textContent = (planView && planView.trust_command) || "";
-          trustLine(el("plan-trust-help"), planView && planView.trust_command ? planView.trust : undefined);
+          drawPlanTrust();
           setWaiting(el("plan-change"), phase, !planView || selectedPlanner() ? null : planBlock(planView, ""));
           if (!busy && !planView) el("plan-change").disabled = true;
           // A plan with problems: the click says what to do first (a rule break: undo it; lint: ask for changes).
@@ -2653,6 +2671,20 @@
           if (!busy) el("plan-approve").disabled = blocked || (!why && !!planView.failed);
           setWaiting(el("idea-save"), phase);
           if (busy) el("approve-confirm").hidden = true;
+        }
+        // The trust note is Claude Code's: shown only when Claude Code drafts the plan (D-1.1). UI-026 (b): once Claude
+        // Code trusts the folder, only the ✓ line stays; the instruction to open it was still read as a step to do.
+        function drawPlanTrust() {
+          var trusted = !!planView && planView.trust === true;
+          el("plan-trust").hidden = !planView || !planView.trust_command || selectedPlanner() !== "claude";
+          el("plan-trust-why").hidden = trusted;
+          el("plan-trust-close").hidden = trusted;
+          el("plan-trust-command").closest(".next-command").hidden = trusted;
+          el("plan-trust").querySelectorAll(".new-terminal").forEach(function (line) {
+            line.hidden = trusted;
+          });
+          el("plan-trust-command").textContent = (planView && planView.trust_command) || "";
+          trustLine(el("plan-trust-help"), planView && planView.trust_command ? planView.trust : undefined);
         }
         async function loadPlan() {
           try {
@@ -3868,6 +3900,7 @@
           button.onclick = function () {
             var step = el(name === "schedule" ? "schedule-form" : name + "-step");
             step.setAttribute("data-open", "");
+            if (name === "publish") drawPublished(state);
             var first = step.querySelector(".step-body input, .step-body button");
             if (first) first.focus();
           };
@@ -4140,7 +4173,11 @@
               copy.setAttribute("aria-label", UAKWorkspace.format("Copy the command for {task}", { task: row.task }));
               copy.onclick = function () { copyText(row.resume, "team-copy-status"); };
               box.append(code, copy);
-              li.append(hint, box);
+              // UI-026 (e): a pasted launch command inside Claude Code ran as its tool call, in the wrong folder.
+              var fresh = document.createElement("p");
+              fresh.className = "hint new-terminal";
+              fresh.textContent = UAKWorkspace.t("Paste it in a new terminal, not inside Claude or Codex.");
+              li.append(hint, box, fresh);
             }
             el("team-claimed").append(li);
           });
@@ -4208,6 +4245,7 @@
             if (!shown) return;
             block.querySelectorAll(".next-command").forEach(function (box) { box.hidden = !byId[id]; });
             block.querySelectorAll(".resume-only").forEach(function (line) { line.hidden = !byId[id]; });
+            block.querySelectorAll(".new-terminal").forEach(function (line) { line.hidden = !byId[id]; });
             el("team-" + id + "-heading").textContent = UAKWorkspace.format(row[1], { tool: shown.tool });
             el("team-" + id + "-terminal").textContent = UAKWorkspace.t(byId[id] ? byId[id].terminal : TERMINAL[id]);
             el("team-" + id + "-command").textContent = byId[id] ? byId[id].command : "";
@@ -4638,6 +4676,16 @@
             setWaiting(el(id), data.phase);
           });
           setWaiting(el("publish-preview"), data.phase, nameBlock(data));
+          drawPublished(data);
+        }
+        // UI-026 (a): a published kit folds step 3 to its done line: no Review the files, no busy reason and no result
+        // line of the run that published it (they stayed beside "Published" in Dylan's live run). Change reopens it.
+        function drawPublished(data) {
+          var folded = stepsDone(data).publish && !el("publish-step").hasAttribute("data-open"),
+            line = el("publish-preview-result");
+          el("publish-preview").hidden = folded;
+          if (folded) el("publish-preview-why").hidden = true;
+          if (line) line.hidden = folded;
         }
         el("copy-terminal-cd").onclick = function () {
           var text = el("terminal-cd").textContent,
@@ -4895,6 +4943,7 @@
               if (control) setTimeout(function () { pointTo(control); }, 0);
             }
             checkRequested = false;
+            autoPending = false;
             // A check the page ran by itself never switches the tab or moves focus (A-F11): the landing chose it.
             var automatic = checkAuto;
             checkAuto = false;
@@ -4934,9 +4983,11 @@
           if (timer) clearTimeout(timer);
           if (gone) return;
           try {
-            var data = await api("status");
+            var data = await api("status"),
+              was = state && state.phase;
             render(data);
-            if (isBusy(data.phase))
+            // UI-026 (a): once more after an operation ends, for what it changed (the restore facts of the steps).
+            if (isBusy(data.phase) || isBusy(was))
               timer = setTimeout(refresh, 1200);
           } catch (e) {
             if (e.gone) return; // the banner says it once (UI-019)

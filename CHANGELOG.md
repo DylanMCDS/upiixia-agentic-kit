@@ -6,6 +6,19 @@ The human of this project found the terminal-only setup hard to follow. Now the 
 in the background; installing, the next step, planning and progress happen in the browser. The CLI path is unchanged.
 Guide: [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
+- **Fixes from the live run on turno-cafeteria-3 (UI-026).** A successful publish folds step 3 to "Published on main
+  (commit abc1234)" at once: the status that ends publishing already carries it, and the page reads the status once
+  more after any operation ends (it kept "Wait: the kit is being published.", "Done at 07:35." and Review the files).
+  With Claude Code's trust ✓ only the ✓ line shows. Create the plan says it usually takes about 5 minutes, above the
+  elapsed time. The check's bound is 120 s (a normal `uak start` took ~31 s against GitHub; 45 s stopped healthy
+  checks), its timeout names the step `uak start` was at instead of blaming origin, and the automatic check waits for
+  the previous one. Every launch command, the reopen commands included, says "Paste it in a new terminal, not inside Claude or Codex", and the trust
+  step says to close that Claude Code session. The implementer prompt carries the task through /uak-ship to REVIEW and
+  then the next task, and the Team tab says the task reaches In review by itself. A board card whose heartbeat is older
+  than the task branch's pushed commits shows those commits ("2 commit(s) pushed to feat/hack-001", counted against
+  the base the dashboard fetched); without a newer local copy of the branch it says when the agent counted ("0
+  commit(s) as of the agent's last report, at 08:11"). Evidence: Dylan's live run of 2026-11-19.
+
 - **The team has its own tab, and the top bar stays visible (UI-025).** Start your team (reviewer, tools and roles,
   the implement and review commands, the two-person note, trust) moved from the dashboard into a third tab, **Team**,
   between Configuration and Dashboard; it is offered once the plan is approved and says why before that. Dashboard

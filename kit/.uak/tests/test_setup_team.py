@@ -542,8 +542,10 @@ REVIEW_CODEX = ("You are the reviewer %s. Run bash .uak/bin/uak next; when it na
                 "that task ID. Never write code for a task.")
 REVIEW_CLAUDE = ("You are the reviewer %s. Run bash .uak/bin/uak next; when it names a task to review, run /uak-review with "
                  "that task ID. Never write code for a task.")
-IMPL_CLAUDE = "Run /uak-start for %s. Work only in this worktree."
-IMPL_CODEX = "Run $uak-start for %s. Work only in this worktree."
+IMPL_CLAUDE = ("Run /uak-start for %s. Work only in this worktree. When its checks pass, run /uak-ship until the task "
+               "is in REVIEW, then take the next task.")
+IMPL_CODEX = ("Run $uak-start for %s. Work only in this worktree. When its checks pass, run $uak-ship until the task "
+              "is in REVIEW, then take the next task.")
 WAITING_OUT = ("OK    1. kit installed\nOK    5. plan: 2 task(s), lint clean\n"
                "TODO  7. a claimable task: uak next offers none\n"
                "         · Waiting on APP-002: depends on APP-001 (CLAIMED)\n\n"
@@ -675,7 +677,8 @@ def codex_command_can_write_git(root, tmp):
     assert impl["command"] == ("cd %s && UAK_HUMAN= bash .uak/bin/wt new APP-001 --agent codex-ana --human ana && cd %s && "
                                "UAK_HUMAN= codex --sandbox workspace-write --add-dir %s "
                                "-c sandbox_workspace_write.network_access=true 'Run $uak-start for APP-001. Work only in "
-                               "this worktree.'" % (q(home), q(worktree), q(gitdir))), impl["command"]
+                               "this worktree. When its checks pass, run $uak-ship until the task is in REVIEW, then "
+                               "take the next task.'" % (q(home), q(worktree), q(gitdir))), impl["command"]
     stubs, log = stub_tools(tmp)
     for line in (review["command"], impl["command"]):
         done = run_line(line, stubs, tmp)
