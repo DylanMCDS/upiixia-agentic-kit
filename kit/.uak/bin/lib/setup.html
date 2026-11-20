@@ -4173,7 +4173,11 @@
               copy.setAttribute("aria-label", UAKWorkspace.format("Copy the command for {task}", { task: row.task }));
               copy.onclick = function () { copyText(row.resume, "team-copy-status"); };
               box.append(code, copy);
-              li.append(hint, box);
+              // UI-026 (e): a pasted launch command inside Claude Code ran as its tool call, in the wrong folder.
+              var fresh = document.createElement("p");
+              fresh.className = "hint new-terminal";
+              fresh.textContent = UAKWorkspace.t("Paste it in a new terminal, not inside Claude or Codex.");
+              li.append(hint, box, fresh);
             }
             el("team-claimed").append(li);
           });

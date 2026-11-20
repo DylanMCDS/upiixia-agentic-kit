@@ -2383,23 +2383,32 @@ HEARTBEAT_PROGRESS = re.compile(r"(\d+) commit\(s\) since the claim · .* · at 
 
 def pushed_progress(git, data):
     """UI-026 (g): a card read "0 commit(s) since the claim" (the agent's last heartbeat) while feat/hack-001 already had
-    2 pushed commits. When the task branch's copy on the remote (local refs only, never the network) is newer than the
-    heartbeat or has more commits, the card shows the branch's pushed commits instead. GIT runs git with its arguments
-    in the project and returns a CompletedProcess."""
+    2 pushed commits. Local refs only, never the network: when this clone's copy of the task branch is newer than the
+    heartbeat or has more commits, the card shows the branch's pushed commits, counted against the base the dashboard
+    fetched (refs/uak/dash-base) when it has one. Otherwise the branch may have moved without this clone knowing (a
+    teammate's clone never fetches it), so the line says when the agent counted instead of reading as current.
+    GIT runs git with its arguments in the project and returns a CompletedProcess."""
     remote, base = remote_and_base()
+    bases = ("refs/uak/dash-base", "refs/remotes/%s/%s" % (remote, base))
+    base_ref = next((r for r in bases if git("rev-parse", "-q", "--verify", r + "^{commit}").returncode == 0), "")
     for task in data.get("tasks") or []:
         found = HEARTBEAT_PROGRESS.match(str(task.get("progress") or ""))
+        if task.get("state") not in LIVE_STATES or not found:
+            continue
+        reported, at = int(found.group(1)), int(found.group(2))
+        task["progress"] = "%d commit(s) as of the agent's last report, at %s" % (
+            reported, time.strftime("%H:%M", time.localtime(at)))
         branch = "feat/" + str(task.get("id") or "").lower()
-        if task.get("state") not in LIVE_STATES or not found or not REF_NAME.fullmatch(branch):
+        if not base_ref or not REF_NAME.fullmatch(branch):
             continue
         ref = "refs/remotes/%s/%s" % (remote, branch)
         last = git("-c", "log.showSignature=false", "log", "-1", "--no-color", "--format=%ct %h %s (%cr)", ref, "--")
-        count = git("rev-list", "--count", "refs/remotes/%s/%s..%s" % (remote, base, ref), "--")
+        count = git("rev-list", "--count", "%s..%s" % (base_ref, ref), "--")
         stamp, _, line = (last.stdout or "").strip().partition(" ")
         if last.returncode or count.returncode or not stamp.isdigit() or not count.stdout.strip().isdigit():
             continue
         pushed = int(count.stdout.strip())
-        if int(stamp) > int(found.group(2)) or pushed > int(found.group(1)):
+        if int(stamp) > at or pushed > reported:
             task["progress"] = "%d commit(s) pushed to %s · last: %s" % (pushed, branch, line[:120].replace("|", "/"))
 
 

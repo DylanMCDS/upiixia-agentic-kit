@@ -1053,6 +1053,7 @@
     ["(.+) commit\\(s\\) since the claim · last: (.*?)(?: \\([^()]*\\)?)? · (.+) uncommitted tracked file\\(s\\)", "$1 commit(s) desde que se tomó · último: $2 · $3 archivo(s) con seguimiento sin commit"],
     ["(\\d+) commit\\(s\\) pushed to (\\S+) · last: (.*) \\((\\d+) (seconds?|minutes?|hours?|days?|weeks?|months?|years?) ago\\)", "$1 commit(s) subidos a $2 · último: $3 (hace $4 $5)"],
     ["(\\d+) commit\\(s\\) pushed to (\\S+) · last: (.*)", "$1 commit(s) subidos a $2 · último: $3"],
+    ["(\\d+) commit\\(s\\) as of the agent's last report, at (\\d\\d:\\d\\d)", "$1 commit(s) según el último reporte del agente, a las $2"],
   ];
   // One-word labels (a dashboard tag, git's time units in a pattern): translated only where the code asks, never in the
   // body translation, so page text that is just "day" or "reviewer" is left alone (review of 4af5789).

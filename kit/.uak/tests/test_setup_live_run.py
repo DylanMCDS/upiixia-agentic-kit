@@ -252,6 +252,23 @@ def commands_say_new_terminal(root, tmp):
             "#%s is followed by %r" % (command, NEW_TERMINAL)
         between = after[:follow.start()]
         assert "<code" not in between[5:], "the line belongs to #%s, not to a later command" % command
+    # The commands built at run time: every "Reopen your agent for TASK" box of a task already claimed.
+    out = run("""
+        var rows = [{task: "APP-001", state: "CLAIMED", owner: "claude-ana", resume: "cd '/p/a-wt/app-001' && claude"},
+                    {task: "APP-002", state: "REVIEW", owner: "codex-ana", resume: "cd '/p/a-wt/app-002' && codex"},
+                    {task: "APP-003", state: "BLOCKED", owner: "claude-ana-2"}];
+        drawClaimed({claimed: rows});
+        return el("team-claimed").querySelectorAll("li").map(function (li) {
+          var boxes = li.querySelectorAll(".next-command"), lines = li.querySelectorAll(".new-terminal");
+          return {boxes: boxes.length, lines: lines.map(function (l) { return l.textContent; }),
+                  after: boxes.length && lines.length ? li.children.indexOf(lines[0]) === li.children.indexOf(boxes[0]) + 1 : null};
+        });
+    """, ("drawClaimed",), language="es", extra="function copyText() {}")
+    if out is not None:
+        assert [o["boxes"] for o in out] == [1, 1, 0], out
+        for row in out[:2]:
+            assert row["lines"] == [NEW_TERMINAL_ES] and row["after"], "each reopen command says it: %r" % row
+        assert out[2]["lines"] == [], "no command, no line: %r" % out[2]
     trust = " ".join(re.sub(r"<[^>]+>", " ", tr.section(html, "plan-trust")).split())
     close = "Then close that Claude Code session (type /exit) before you paste any other command."
     assert close in trust and es.get(close), "the trust step says to close that session afterwards, with Spanish"
@@ -284,36 +301,65 @@ def implementer_prompt_ships(root, tmp):
 
 def card_counts_branch_commits(root, tmp):
     target, remote = team.ready_project(root, tmp)
+    # A teammate's clone (or the human's, when the agent pushed from elsewhere) that never fetched the task branch.
+    observer = tmp / "observer"
+    git(tmp, "clone", "-q", str(remote), str(observer))
     git(target, "checkout", "-q", "-b", "feat/app-001")
     report = int(time.time()) - 600
+    commits = []
     for n in (1, 2):
         (target / ("work%d.txt" % n)).write_text("x\n", encoding="utf-8")
         git(target, "add", "-A")
         git(target, "commit", "-q", "-m", "work %d" % n)
+        commits.append(git(target, "rev-parse", "HEAD").strip())
     git(target, "push", "-q", "origin", "feat/app-001")
     git(target, "checkout", "-q", "main")
     stale = "0 commit(s) since the claim · last: - · 0 uncommitted tracked file(s) · at %d" % report
-    fresh = "2 commit(s) since the claim · last: abc work 2 (1 minute ago) · 0 uncommitted tracked file(s) · at %d" % (
-        int(time.time()) + 60)
+    later = int(time.time()) + 60
+    fresh = "2 commit(s) since the claim · last: abc work 2 (1 minute ago) · 0 uncommitted tracked file(s) · at %d" % later
+    clock = time.strftime("%H:%M", time.localtime(report))
 
-    def runner(*args):
-        return subprocess.run([resolve_binary("git"), "-c", "color.ui=never", "-C", str(target)] + list(args),
-                              capture_output=True, text=True, encoding="utf-8", errors="replace")
+    def runner(folder):
+        def run_git(*args):
+            return subprocess.run([resolve_binary("git"), "-c", "color.ui=never", "-C", str(folder)] + list(args),
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
+        return run_git
 
-    data = {"tasks": [{"id": "APP-001", "state": "CLAIMED", "progress": stale},
-                      {"id": "APP-002", "state": "CLAIMED", "progress": fresh},
-                      {"id": "APP-003", "state": "AVAILABLE", "progress": ""}]}
+    def cards():
+        return {"tasks": [{"id": "APP-001", "state": "CLAIMED", "progress": stale},
+                          {"id": "APP-002", "state": "REVIEW", "progress": fresh},
+                          {"id": "APP-003", "state": "AVAILABLE", "progress": ""}]}
+
     assert hasattr(MODULE, "pushed_progress"), "setup reads the task branch's pushed commits"
-    MODULE.pushed_progress(runner, data)
+    data = cards()
+    MODULE.pushed_progress(runner(target), data)
     line = data["tasks"][0]["progress"]
     assert re.match(r"2 commit\(s\) pushed to feat/app-001 · last: [0-9a-f]{7,} work 2 \(\d+ (second|minute)s? ago\)$",
                     line), "the card shows the branch's pushed commits, not the older heartbeat: %r" % line
-    assert data["tasks"][1]["progress"] == fresh, "a heartbeat newer than the branch stays as it is"
+    assert data["tasks"][1]["progress"] == "2 commit(s) as of the agent's last report, at %s" % \
+        time.strftime("%H:%M", time.localtime(later)), "a newer heartbeat says when it was taken: %r" % data["tasks"][1]
     assert data["tasks"][2]["progress"] == "", "a free task has no line"
     assert team.translated(line), "the line has Spanish: %r" % line
-    out = run("return UAKWorkspace.t(%s);" % json.dumps(line), (), language="es")
+
+    # The base the dashboard fetched counts, not a stale local origin/main: here main has taken the first commit.
+    git(target, "update-ref", "refs/uak/dash-base", commits[0])
+    data = cards()
+    MODULE.pushed_progress(runner(target), data)
+    assert data["tasks"][0]["progress"].startswith("1 commit(s) pushed to feat/app-001"), data["tasks"][0]
+
+    data = cards()
+    MODULE.pushed_progress(runner(observer), data)
+    seen = data["tasks"][0]["progress"]
+    assert seen == "0 commit(s) as of the agent's last report, at %s" % clock, \
+        "a clone without the branch does not show the old count as current: %r" % seen
+    assert team.translated(seen), "the line has Spanish: %r" % seen
+    out = run("return [UAKWorkspace.t(%s), UAKWorkspace.t(%s)];" % (json.dumps(line), json.dumps(seen)), (), language="es")
     if out is not None:
-        assert out.startswith("2 commit(s) subidos a feat/app-001 · último: ") and "hace" in out, out
+        assert out[0].startswith("2 commit(s) subidos a feat/app-001 · último: ") and "hace" in out[0], out
+        assert out[1] == "0 commit(s) según el último reporte del agente, a las %s" % clock, out
+    dash = (root / ".uak/bin/lib/dash.html").read_text(encoding="utf-8")
+    strip = re.search(r"t\.progress\.replace\(/([^/]+)/", dash)
+    assert strip and not re.search(strip.group(1).replace("\\d", r"\d"), seen), "dash.html keeps the time: %r" % strip
 
 
 TESTS = [publish_step_says_published, trusted_hides_the_open_claude_note, plan_says_how_long,

@@ -431,7 +431,7 @@ def views_answer_during_a_check(root, tmp):
             runner.check_gate.set()
         tp.wait_idle(srv)
         call = runner.starts[-1]
-        assert call["timeout"] == MODULE.CHECK_TIMEOUT >= 2 * 31 and call["group"] is True, \
+        assert call["timeout"] == MODULE.CHECK_TIMEOUT and 2 * 31 <= MODULE.CHECK_TIMEOUT <= 180 and call["group"] is True, \
             "the check is bounded (at least twice a normal uak start, ~31 s measured) and stops its tree: %r" % call
         assert call["env"].get("GIT_HTTP_LOW_SPEED_LIMIT") == "1000" and call["env"].get("GIT_HTTP_LOW_SPEED_TIME") == "10", call
 
