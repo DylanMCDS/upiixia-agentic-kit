@@ -264,7 +264,7 @@ next_for_role() {
   BACKLOG=$saved_backlog
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in
-      "No eligible candidate"*) line="Nothing to review right now. $AGENT is a registered reviewer: it is offered reviews, never implementation work. Wait for one: bash .uak/bin/uak wait --for message";;
+      "No eligible candidate"*) line="Nothing to review right now. $AGENT is a registered reviewer: it is offered reviews, never implementation work. End your turn now: a human or the lead restarts you with a message when one arrives.";;
       "Why: the backlog has no tasks"*) continue;;
     esac
     out="$out$line"$'\n'
