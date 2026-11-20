@@ -579,3 +579,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** third_empty_wait_says_stop, event_resets_the_idle_count, idle_lines_never_say_wait_again, loop_mode_keeps_waiting, idle_stop_names_the_human_blocker
 - **Verify:** `python kit/.uak/tests/test_idle_stop.py`
 - **Next step:** read lib/wait.sh and the idle lines in uak-coordination and status.sh; write the tests (a fast timeout through UAK_WAIT_EVERY); they fail; implement.
+## UI-032 · The setup check bound is measured on Windows
+
+- **Type:** chore
+- **Priority:** P2
+- **Estimate:** 30 min
+- **Depends on:** UI-026
+- **Paths:** kit/.uak/bin/lib/setup.py, kit/.uak/docs/WHY.md
+- **Acceptance:** Evidence: UI-026 set CHECK_TIMEOUT to 120 s from macOS measurements only (about 31 s against GitHub); the Windows cost was estimated, not measured (reviews of UI-026 by gpt-Dylan-r and claude-Dylan-r; Dylan deferred it on 2026-11-19)., A human runs `time bash .uak/bin/uak start` in Git Bash on Windows in a clone of a real project against GitHub (3 runs); CHECK_TIMEOUT stays at or above 2× the slowest run (raised if needed); setup.py's comment and WHY.md record the three timings and the machine.
+- **Test-First:** no (a measurement; the bound is already asserted by test_setup_first_run)
+- **Verify:** `python kit/.uak/tests/test_setup_first_run.py`
+- **Next step:** Dylan runs the timing on his Windows machine and pastes real/user/sys.
