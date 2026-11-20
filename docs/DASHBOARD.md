@@ -188,9 +188,11 @@ offered once the plan is approved on main; before that the tab says why it is no
 the project ready and the reviewer is not registered yet, the page opens the Team tab; Dashboard keeps only progress
 (counters, the next step, the task list, the freeze banner, the app link), and its next step links to the Team tab
 with **Open the Team tab** instead of embedding it (the main button while the reviewer is not registered). If the
-server refuses the team step, the tab says why instead of staying blank. The top bar (logo, language, view, theme and
+server refuses the team step, the tab says why instead of staying blank (only the reason once the plan is approved,
+not the wait sentence). Until the reviewer is registered, Technical details never show a claim (`wt new`, `START READY`)
+or an agent launch line: the Team tab's lock reason stands in their place. The top bar (logo, language, view, theme and
 the three tabs) stays at the top of the window while you scroll; in a window 1080 px wide or less (half a screen beside
-the terminal), or whenever the bar wraps, only the tab row stays, on one line (long labels end in "…"), 60 px tall.
+the terminal), or whenever the bar wraps, only the tab row stays, on one line (long labels end in "…" and show their full text as a tooltip), 60 px tall.
 It stays after the first claim: when every task is taken the check says "Your team is working" and the step keeps the reviewer
 command and a line to reopen each of your claimed tasks.
 

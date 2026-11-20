@@ -6,6 +6,12 @@ The human of this project found the terminal-only setup hard to follow. Now the 
 in the background; installing, the next step, planning and progress happen in the browser. The CLI path is unchanged.
 Guide: [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
+- **Team tab polish (UI-031).** A 400 from `/api/team` with the plan approved shows only its reason, without "Your
+  team starts once the plan is approved… Finish Configuration first" above it. Tab labels shortened with "…" (390 px,
+  Spanish) carry their full text as a tooltip, in the page's language. Before the reviewer is registered, Technical
+  details replace the engine's claim and agent launch lines ("START READY · bash .uak/bin/wt new APP-001") with the Team
+  tab's lock reason. Evidence: the reviews of UI-025 (da6df3b) and UI-024.
+
 - **Fixes from the live run on turno-cafeteria-3 (UI-026).** A successful publish folds step 3 to "Published on main
   (commit abc1234)" at once: the status that ends publishing already carries it, and the page reads the status once
   more after any operation ends (it kept "Wait: the kit is being published.", "Done at 07:35." and Review the files).

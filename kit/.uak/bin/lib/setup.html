@@ -607,6 +607,13 @@
         /* Git messages carry long paths and URLs (a refused push names the remote): wrap, never scroll sideways. */
         overflow-wrap: anywhere;
       }
+      /* UI-031: the Team tab's notice holds the wait sentence and a refusal's reason, one paragraph each. */
+      #team-wait p {
+        margin: 0;
+      }
+      #team-wait-text:not([hidden]) + p {
+        margin-top: 8px;
+      }
       .notice.error {
         background: var(--error-bg);
         color: var(--error);
@@ -2099,11 +2106,14 @@
       </div>
     </div>
     <main class="dashboard-shell team-shell" id="team-shell" hidden aria-label="Team" data-i18n-aria="Team" tabindex="-1">
-      <p class="notice" id="team-wait" role="status" hidden>
-        Your team starts once the plan is approved. Finish Configuration first: install the kit, prepare the project
-        and approve the plan.
-      </p>
-      <p class="hint" id="team-why" data-no-i18n hidden></p>
+      <!-- UI-031: one notice; the wait sentence only while the plan is really not approved, the 400's reason alone. -->
+      <div class="notice" id="team-wait" role="status" hidden>
+        <p id="team-wait-text">
+          Your team starts once the plan is approved. Finish Configuration first: install the kit, prepare the project
+          and approve the plan.
+        </p>
+        <p class="hint" id="team-why" data-no-i18n hidden></p>
+      </div>
       <section id="team-step" class="team-step" hidden aria-labelledby="team-heading" tabindex="-1">
         <h2 id="team-heading" tabindex="-1">Start your team</h2>
         <p class="hint">
@@ -2422,12 +2432,14 @@
           return !!data.installed && (resume.plan_approved === true || !!data.ready || !!data.team ||
             resume.step === "team" || resume.step === "progress");
         }
-        // A plain refusal of /api/team (400) is said in the tab, under the reason it waits, never a blank tab.
+        // A plain refusal of /api/team (400) is said in the tab, never a blank tab; under the reason it waits only while
+        // the plan is really not approved (UI-031).
         var teamRefused = "";
         function drawTeamTab() {
           var open = teamAvailable(state),
             shown = open && !teamRefused;
           el("team-wait").hidden = shown;
+          el("team-wait-text").hidden = open; // UI-031: an approved plan refused by a 400 says only the reason
           el("team-why").hidden = !teamRefused;
           el("team-why").textContent = teamRefused ? UAKWorkspace.t(teamRefused) : "";
           if (shown) el("open-team").removeAttribute("aria-describedby");
@@ -2442,7 +2454,15 @@
           drawTeamTab();
         }
         // UI-025: the pinned part of the top bar is measured, so scrolling to a control never hides it under the bar.
+        // UI-031: a tab label shortened with "…" (390 px, Spanish) keeps its full text as a tooltip, in the page's language.
+        function tabTitles() {
+          var nav = document.querySelector(".workspace-nav");
+          if (nav) nav.querySelectorAll("button").forEach(function (button) {
+            button.setAttribute("title", button.textContent.replace(/\s+/g, " ").trim());
+          });
+        }
         function fitBar() {
+          tabTitles();
           var bar = document.querySelector(".header"),
             nav = bar && bar.querySelector(".workspace-nav"),
             root = document.documentElement;
@@ -2484,6 +2504,32 @@
         function reviewerReady() {
           return (state.reviewer || {}).registered === true ||
             !!(teamView && teamView.registered && teamView.registered.registered === true);
+        }
+        // UI-031: before the reviewer is registered, Technical details never offer a claim (wt new, START READY) or an
+        // agent launch: each such line becomes the lock reason the Team tab shows, once. Evidence: the collapsed #output
+        // showed the engine's raw "START READY · bash .uak/bin/wt new APP-001" (review of UI-025 at da6df3b).
+        function technicalDetails(data) {
+          var launch = /\bwt new\b|^\s*START READY\b|^\s*(?:\$\s*)?(?:claude|codex|cursor-agent|gemini)(?:\.exe)?(?:\s|$)/;
+          var text = (data && data.details) || "";
+          if (!text || reviewerReady()) return text;
+          var locked = teamView && teamView.locked && teamView.locked.reason,
+            reason = UAKWorkspace.t(
+              locked || (data.human ? "Register " + data.human + "-r first (step 1): agents start only once a reviewer " +
+                "can review their work." : "Next: register your reviewer in the Team tab."),
+            ),
+            said = false;
+          return text
+            .split("\n")
+            .map(function (line) {
+              if (!launch.test(line.replace(/\r$/, ""))) return line;
+              if (said) return null;
+              said = true;
+              return reason;
+            })
+            .filter(function (line) {
+              return line !== null;
+            })
+            .join("\n");
         }
         function teamGuide(g) {
           if (g.kind === "ready" && !reviewerReady())
@@ -4892,6 +4938,8 @@
           el("operation-status").classList.toggle("error", !!data.error);
           drawPlanProgress(data);
           el("output").textContent = data.details || UAKWorkspace.t("No technical output yet.");
+          // UI-031: before the reviewer is registered, no claim or agent launch line (the Team tab's lock reason instead).
+          if (data.details && !reviewerReady()) el("output").textContent = technicalDetails(data);
           drawChecks(data);
           // Preferences and Repair stay in place while an operation runs (hiding them made the page jump, UI-018).
           el("preferences").hidden = !data.installed;
