@@ -130,8 +130,56 @@ def idle_stop_names_the_human_blocker(r):
     return "blocker named"
 
 
+def message_between_waits_resets_the_count(r):
+    """Review of 00a9fd3 (claude-Dylan-r): a message that arrives between two waits, read with inbox --ack, is an event."""
+    f = r.fixture("idle-between", count=2)
+    for _ in range(2):
+        rc, text = empty_wait(r, f.clones[1])
+        expect(rc == 4, "empty wait: rc %d %s" % (rc, text[-400:]))
+    f.hack(0, "msg", "agent-2", "between the waits", now=int(time.time()))
+    r.run([r.bash, ".uak/bin/uak", "inbox", "--ack"], cwd=f.clones[1], env=env("agent-2"))
+    rc, text = empty_wait(r, f.clones[1])
+    expect(rc == 4 and "IDLE_STOP" not in text, "a message between waits restarts the count: rc %d %s" % (rc, text[-400:]))
+    return "reset by a message between waits"
+
+
+def idle_stop_starts_the_count_over(r):
+    """After IDLE_STOP a restarted agent keeps its bounded wait: the count starts over."""
+    f = r.fixture("idle-over", count=2)
+    got = [empty_wait(r, f.clones[1])[0] for _ in range(3)]
+    expect(got == [4, 4, 5], "4, 4, 5 first: %s" % got)
+    got = [empty_wait(r, f.clones[1]) for _ in range(3)]
+    expect([g[0] for g in got] == [4, 4, 5], "after IDLE_STOP the count starts over: %s" % [g[0] for g in got])
+    expect(re.search(r"nothing happened in 0 min", got[2][1]), "N min counts from the new first wait: " + got[2][1][-300:])
+    return "4, 4, 5, 4, 4, 5"
+
+
+def blocker_text_has_no_control_characters(r):
+    f = r.fixture("idle-ctrl", count=2)
+    r.run([r.bash, ".uak/bin/uak", "msg", "human", "allow \x1b[31mHACK-002\x1b[0m\tnow"], cwd=f.clones[1],
+          env=env("agent-2", UAK_NOW=str(int(time.time()))))
+    text = [empty_wait(r, f.clones[1]) for _ in range(3)][2][1]
+    line = [l for l in text.splitlines() if l.startswith("IDLE_STOP")]
+    expect(line and "HACK-002" in line[0], "IDLE_STOP names the blocker: " + text[-400:])
+    expect(not re.search(r"[\x00-\x1f\x7f]", line[0]), "no control characters in the line: %r" % line[0])
+    return "clean"
+
+
+def json_reports_idle_stop(r):
+    f = r.fixture("idle-json", count=2)
+    for _ in range(2):
+        empty_wait(r, f.clones[1])
+    out = r.run([r.bash, ".uak/bin/uak", "--json", "wait", "--for", "message", "--timeout", "2"], cwd=f.clones[1], env=env("agent-2"), allowed=None)
+    expect(out.returncode == 5 and '"result":"IDLE_STOP"' in out.stdout, "--json reports IDLE_STOP: rc %d %s" % (out.returncode, out.stdout[:400]))
+    cli = (r.package / ".uak/docs/CLI.md").read_text(encoding="utf-8")
+    expect("`5`" in cli and "IDLE_STOP" in cli, "CLI.md documents exit 5")
+    return "IDLE_STOP in json"
+
+
 TESTS = [third_empty_wait_says_stop, event_resets_the_idle_count, idle_lines_never_say_wait_again,
-         loop_mode_keeps_waiting, idle_stop_names_the_human_blocker]
+         loop_mode_keeps_waiting, idle_stop_names_the_human_blocker,
+         message_between_waits_resets_the_count, idle_stop_starts_the_count_over, blocker_text_has_no_control_characters,
+         json_reports_idle_stop]
 
 
 def main():
