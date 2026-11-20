@@ -7,3 +7,5 @@ Inputs only: the spec (`git fetch -q origin claims notes/handoff`; {TASK} in ori
 Check adversarially: every acceptance criterion with evidence; the named tests fail on origin/main's code; no existing test weakened or edited; files only within Paths; Bash 3.2 / BSD+GNU tools / Windows Git Bash; quoting and security. Severity P0-P3; reject for P0/P1/P2 or a real red CI. Record with `uak review {TASK} --sha <head> --verdict approve|reject` (with a note of the findings). Report verdict, SHA, findings, CI.
 
 SPEED NOTE (2026-11-17): CI runs the whole suite on Ubuntu and Windows on the PR head; do not rerun the full smoke locally unless the change touches kit/.uak/bin outside the setup page files — run the Verify, the related suites and the red check, and rely on the completed CI for the rest. Use UAK_BASE=next only on uak commands, never exported in the shell running tests.
+
+COST RULE (2026-11-19): never loop on `uak wait` or poll. Use at most one bounded wait for a specific event (for example your own task's approval). If there is nothing to do, or you are blocked on a human, report it and stop.
