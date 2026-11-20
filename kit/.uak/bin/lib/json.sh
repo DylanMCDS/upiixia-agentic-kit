@@ -30,7 +30,7 @@ json_run() {
       while ((getline l < meta) > 0) { k = l; sub(/\t.*/, "", k); v = substr(l, length(k) + 2); m[k] = v }
       rc = m["exit"] + 0
       # The result: a refusal on stderr, else the last result line on stdout (wait prints WAITING, then APPROVED).
-      tok = "^(OK|CONFLICT|ERROR|GIT_ERROR|RED_OK|RED_WRONG|RED_PASSED|APPROVED|REJECTED|INTEGRATED|WAIT_TIMEOUT|MERGE_WAIT|MERGE_BUSY|MERGED|SKIP|LINT_OK|LINT_FAILED|PACE|START)([ :]|$)"
+      tok = "^(OK|CONFLICT|ERROR|GIT_ERROR|RED_OK|RED_WRONG|RED_PASSED|APPROVED|REJECTED|INTEGRATED|WAIT_TIMEOUT|IDLE_STOP|MERGE_WAIT|MERGE_BUSY|MERGED|SKIP|LINT_OK|LINT_FAILED|PACE|START)([ :]|$)"
       while ((getline l < err) > 0) if (res == "" && l ~ /^(CONFLICT|ERROR|GIT_ERROR):/) { res = l; ecls = l }
       close(err)
       while ((getline l < out) > 0) { if (l ~ tok && ecls == "") res = l; if (l ~ /^Next: /) nx = substr(l, 7) }

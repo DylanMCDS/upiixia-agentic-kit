@@ -38,7 +38,9 @@ wait_idle_sig() {
     id=$(field "$c" ID)
     s="$s $id:$(field "$c" State):$(field "$TX/reviews/$id.md" Verdict)@$(field "$TX/reviews/$id.md" SHA)"
   done
-  printf '%s' "${s:- none}"
+  # A message to this identity from someone else, even one read with inbox --ack between two waits (review of 00a9fd3).
+  s="$s msg:$(msg_select all | awk -F' · ' -v me="$AGENT" '/^#[0-9]/ && $3 != me { n = substr($1, 2) + 0; if (n > m) m = n } END { print m + 0 }')"
+  printf '%s' "$s"
 }
 # The last message this identity sent to human that no later message to it (or to that task) answered.
 wait_human_blocker() {
@@ -53,7 +55,8 @@ wait_human_blocker() {
       if (b && $3 != me && tome) b = 0
       if ($3 == me && tohuman) { b = n; bt = $2 + 0; task = ($6 == "-") ? "" : $6; txt = $7; sub(/\r$/, "", txt); txt = substr(txt, 1, 160) }
     }
-    END { if (b) { m = int((now - bt) / 60); if (m < 0) m = 0; printf "#%d (%d min ago): %s", b, m, txt } }' "$TX/$MSG_LOG"
+    END { if (b) { m = int((now - bt) / 60); if (m < 0) m = 0; printf "#%d (%d min ago): %s", b, m, txt } }' "$TX/$MSG_LOG" |
+    LC_ALL=C tr -d '\000-\037\177'   # no escape sequence or tab from a message reaches the terminal
 }
 # The timeout: exit 4 with one line that never says to wait again, or IDLE_STOP (exit 5) at the cap.
 wait_idle_timeout() {
@@ -76,6 +79,8 @@ wait_idle_timeout() {
   if [ "$cnt" -ge "$max" ]; then
     mins=$(( (now - first) / 60 )); blk=$(wait_human_blocker)
     say "IDLE_STOP: nothing happened in $mins min. End your turn now and stop; a human or the lead restarts you with a message.${blk:+ Blocked on a human act: $blk}"
+    # A restarted agent keeps its one bounded wait, and "N min" counts from its new first wait.
+    [ -z "$f" ] || rm -f "$f"
     return 5
   fi
   say "WAIT_TIMEOUT ${ID:+$ID }$WAIT_FOR after $WAIT_TIMEOUT s: nothing yet (empty wait $cnt of $max). Nothing else to do: end your turn; a human or the lead restarts you with a message. Only one bounded wait for a specific event: uak wait ID --for approve."
