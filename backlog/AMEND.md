@@ -999,3 +999,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-031 · Team tab polish: no stale wait text above a 400 reason, tooltips on shortened tab labels, no wt new line in Technical details before the reviewer is registered (follow-up of UI-025)
+
+- **Type:** follow-up
+- **Priority:** P1
+- **Estimate:** 1 h
+- **Depends on:** UI-026
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_team_polish.py, docs/DASHBOARD.md, CHANGELOG.md
+- **Acceptance:** Evidence (claude-Dylan-r's P3s on UI-025 at da6df3b and on UI-024): when /api/team answers a 400, the Team tab shows "Tu equipo empieza cuando el plan esté aprobado… termina Configuración primero" above the real reason, even though the plan is approved; at 390 px and below the tab labels end in "…" with no tooltip; the collapsed Technical details (#output) shows the engine's raw "START READY · bash .uak/bin/wt new APP-001" before the reviewer is registered., (1) a 400 from /api/team shows only its reason (the wait text appears only when the plan is really not approved); (2) every shortened tab label has a title with its full text in the page's language; (3) before the reviewer is registered, the Technical details never contain a `wt new` or agent launch command (they are replaced by the same lock reason the Team tab shows); every new string has its Spanish pair.
+- **Tests:** team_400_shows_only_its_reason, short_tabs_have_full_titles, technical_details_hide_claims_before_reviewer
+- **Verify:** `python kit/.uak/tests/test_setup_team_polish.py`
+- **Next step:** fake-DOM tests like test_setup_team_tab.py, in a new file; they fail; fix.
