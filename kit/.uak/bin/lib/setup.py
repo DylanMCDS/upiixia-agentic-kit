@@ -705,6 +705,43 @@ def truthful(data):
 
 
 PR_URL = re.compile(r"https://[^\s\"'<>\\`]+\Z")
+# The host of a URL: scheme://[user@]host[:port]/… or Git's scp form [user@]host:path (no slash before the colon).
+URL_HOST = re.compile(r"(?i)[a-z][a-z0-9+.-]*://(?:[^@/?#]*@)?(\[[^\]/]*\]|[^/:?#]*)")
+SCP_HOST = re.compile(r"(?:[^@/:]+@)?([^/:@]+):(?!//)")
+LOCAL = object()  # a remote on this disk or a shared folder: no forge
+
+
+def url_host(url):
+    """The lowercase host of a remote or PR URL; LOCAL for a path or file:// remote; "" when there is none."""
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if re.match(r"(?i)file://", url) or re.match(r"[A-Za-z]:[\\/]", url) or url[0] in "/.\\~":
+        return LOCAL
+    found = URL_HOST.match(url)
+    if found:
+        return found.group(1).lower().rstrip(".")
+    found = SCP_HOST.match(url)
+    return found.group(1).lower().rstrip(".") if found else LOCAL
+
+
+def remote_url(git, remote):
+    """The URL of REMOTE as Git would use it (`git remote get-url`, insteadOf applied; local, no network); None when
+    there is no such remote."""
+    got = git("remote", "get-url", remote)
+    if got.returncode:
+        return None
+    return ((got.stdout or "").strip().splitlines() or [""])[0].strip()
+
+
+def pr_on_forge(pr, origin):
+    """UI-033 (claude-Dylan-r's P3 on UI-027): an https PR link is offered only on the origin remote's own host, so a
+    link an agent stored in claims cannot point anywhere else. A remote on this disk has no forge to compare with: the
+    https rule alone applies there."""
+    if not PR_URL.match(pr or ""):
+        return False
+    forge = url_host(origin)
+    return forge is LOCAL or (bool(forge) and url_host(pr) == forge)
 WAIT_APPROVAL = "Wait for the reviewer's approval before you merge."
 
 
@@ -725,9 +762,9 @@ def same_commit(one, two):
     return len(one) >= 7 and len(two) >= 7 and (one.startswith(two) or two.startswith(one))
 
 
-def human_queue(records, root, name, queue=None):
+def human_queue(records, root, name, queue=None, origin=""):
     """UI-027 (b, c): each merge in the human queue with its steps: the reason as a plain sentence, the PR (an https
-    link), whether the reviewer approved the task's current SHA, and only then the exact `uak integrate` command for a
+    link on ORIGIN's host, the origin remote's URL; otherwise `pr_elsewhere`, UI-033), whether the reviewer approved the task's current SHA, and only then the exact `uak integrate` command for a
     normal terminal. QUEUE (task, reason) defaults to RECORDS' own queue (read_claims); everything else is data."""
     if queue is None:
         queue = [{"task": task, "reason": without_paths(q.get("reason"))}
@@ -740,8 +777,9 @@ def human_queue(records, root, name, queue=None):
         record, review = tasks.get(task) or {}, reviews.get(task) or {}
         approved = review.get("verdict") == "approve" and same_commit(review.get("sha"), record.get("tip"))
         pr = record.get("pr") or ""
+        shown = pr_on_forge(pr, origin)
         item = {"task": task, "reason": entry.get("reason", ""), "plain": plain_reason(entry.get("reason", "")),
-                "pr": pr if PR_URL.match(pr) else "", "approved": approved, "wait": "" if approved else WAIT_APPROVAL,
+                "pr": pr if shown else "", "pr_elsewhere": bool(pr) and not shown, "approved": approved, "wait": "" if approved else WAIT_APPROVAL,
                 "integrate": ""}
         if approved and DEPENDENCY.fullmatch(task) and HUMAN_NAME.fullmatch(name or "") and home and quotable(home):
             item["integrate"] = "cd %s && UAK_HUMAN=%s bash .uak/bin/uak integrate %s" % (shell_quote(home), name, task)
@@ -1366,7 +1404,9 @@ class SetupHandler(BaseHTTPRequestHandler):
                         self.server.identity_run, home, *args, timeout=10), DASH_CLAIMS)
                     with self.server.lock:
                         name = self.server.state.get("human") or ""
-                    data["needs_human"] = human_queue(records or {}, home, name, data["needs_human"])
+                    origin = remote_url(lambda *args: self.server.planning.git(
+                        self.server.identity_run, home, *args, timeout=10), remote_and_base()[0]) if records and data["needs_human"] else ""
+                    data["needs_human"] = human_queue(records or {}, home, name, data["needs_human"], origin or "")
                 except (OSError, ValueError, subprocess.SubprocessError):
                     pass  # the queue keeps its plain reasons; only the steps are missing
                 with self.server.lock:
@@ -2288,7 +2328,8 @@ def read_remote(server, root, remote, base):
     def git(*args):
         return planning.git(server.run, root, *args, timeout=60)
 
-    if git("remote", "get-url", remote).returncode:
+    origin = remote_url(git, remote)
+    if origin is None:
         return {"state": "none", "detail": "", "at": now}
     # --symref HEAD: the remote's default branch too (UI-020: GitHub made claims the default), in the same call.
     listed = net_git(server, root, "ls-remote", "--symref", remote, "HEAD", "refs/heads/" + base, "refs/heads/claims")
@@ -2299,7 +2340,7 @@ def read_remote(server, root, remote, base):
     pointed = re.search(r"^ref: refs/heads/(\S+)\s+HEAD\r?$", listed.stdout or "", re.M)
 
     result = {"state": "ok", "detail": "", "kit": False, "reviewers": {}, "retired": [], "claims": {}, "files": [],
-              "at": now, "default": pointed.group(1) if pointed else ""}
+              "at": now, "default": pointed.group(1) if pointed else "", "origin": origin}
     # What setup already holds in its private refs (one process); one fetch for every branch that moved.
     held = {}
     for line in git("for-each-ref", "--format=%(refname) %(objectname)", "refs/uak/").stdout.splitlines():
@@ -2331,7 +2372,7 @@ def read_claims(git, result, ref=SETUP_CLAIMS):
     # UI-027: task records, the human queue and reviews too (their PR, tip, reason and verdict).
     folders = ("roles/reviewers", "claims", "meta/agents", "tasks", "queue", "reviews")
     found = git("grep", "--no-color", "--no-line-number", "--no-column", "--full-name", "-E",
-                "^(Reviewer|Registered-By|ID|State|Owner|Role|PR|Task-Tip|Reason|Verdict|SHA): ", ref, "--", *folders)
+                "^(Reviewer|Registered-By|ID|State|Owner|Role|PR|Task-Tip|Reason|Verdict|SHA|Updated): ", ref, "--", *folders)
     records = {}
     prefix = ref + ":"
     for line in (found.stdout or "").splitlines() if found.returncode == 0 else []:
@@ -2352,7 +2393,9 @@ def read_claims(git, result, ref=SETUP_CLAIMS):
             result.setdefault("humans", []).append(stem)
         elif folder == "tasks" and fields.get("ID", stem) == stem:
             result.setdefault("tasks", {})[stem] = {"state": fields.get("State", ""), "owner": fields.get("Owner", "")[:64],
-                                                    "pr": fields.get("PR", "")[:300], "tip": fields.get("Task-Tip", "")[:64]}
+                                                    "pr": fields.get("PR", "")[:300], "tip": fields.get("Task-Tip", "")[:64],
+                                                    "updated": int(fields["Updated"]) if re.fullmatch(
+                                                        r"[0-9]{1,12}", fields.get("Updated", "")) else 0}
         elif folder == "queue" and fields.get("ID", stem) == stem:
             result.setdefault("queue", {})[stem] = {"state": fields.get("State", ""), "reason": fields.get("Reason", "")[:600]}
         elif folder == "reviews" and fields.get("ID", stem) == stem:
@@ -2885,7 +2928,7 @@ def team_view(server):
         view["note"] = "Publish the kit to main first (Prepare: Publish the kit to main): agents read the kit from there."
         return view
     view["registered"] = reviewer_record(known, who, name)
-    view["human_queue"] = human_queue(known, root, name)  # UI-027 (b, c)
+    view["human_queue"] = human_queue(known, root, name, origin=known.get("origin", ""))  # UI-027 (b, c), UI-033
     tools = tool_view(server, root)
     available = {t["id"] for t in tools if t["available"]}
     roles = effective_roles(read_roles(gitdir).get(name), available)
@@ -2988,10 +3031,14 @@ def team_view(server):
         commands = []
     if any(c["id"] == "implement" for c in commands):
         # UI-027 (d): the agent of an integrated task still sits in that task's folder; the next task is a new session.
-        done = sorted(t for t, r in (known.get("tasks") or {}).items() if r.get("state") == "INTEGRATED"
-                      and owner.fullmatch(r.get("owner", "")) and TEAM_TASK.fullmatch(t))
-        if done and not any(owner.fullmatch(c["owner"]) for c in claims.values() if c["state"] in LIVE_STATES):
-            view["next_after"] = {"done": done[-1], "task": view["task"]}
+        # UI-033: the project's latest integration by time (Updated), not by ID (APP-999 sorts after APP-1000); once
+        # anyone integrates something later, or the person claims again, the note is old news and goes.
+        done = [(r.get("updated") or 0, int(t.rpartition("-")[2]), t, r) for t, r in (known.get("tasks") or {}).items()
+                if r.get("state") == "INTEGRATED" and TEAM_TASK.fullmatch(t)]
+        latest = max(done, key=lambda d: d[:2]) if done else None
+        if latest and owner.fullmatch(latest[3].get("owner", "")) and \
+                not any(owner.fullmatch(c["owner"]) for c in claims.values() if c["state"] in LIVE_STATES):
+            view["next_after"] = {"done": latest[2], "task": view["task"]}
     view["commands"] = commands
     return view
 
