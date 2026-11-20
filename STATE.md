@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1795139687
+Updated: 1795139830
 AVAILABLE: UAK-001 UAK-002 UAK-003 UAK-004 UAK-005 UAK-006 UAK-007 UAK-008 UI-027 UI-028 UI-029 UAK-098 UI-030 UI-031 UI-032 
 CLAIMED: UAK-100 UI-026 
 BLOCKED: -
@@ -15,11 +15,11 @@ UI-026 | CLAIMED | claude-Dylan-3 | until 1795224103
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1795136600 | plan | Dylan/Dylan | tasks added: UAK-100 | Why: backlog without PR (Plan-Channel: claims)
 - 1795136604 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
 - 1795138606 | plan --amend | Dylan/Dylan | amended: UI-026 | Why: scope or criteria fixed before review
 - 1795138610 | plan | Dylan/Dylan | tasks added: UI-032 | Why: backlog without PR (Plan-Channel: claims)
 - 1795138615 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1795139830 | allow | Dylan | test change: UAK-100 | Why: UAK-100 replaces the idle line that tells agents to wait (the Codex wait-loop incident): update the expected golden strin
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.

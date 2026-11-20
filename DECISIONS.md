@@ -122,3 +122,4 @@ Coordination decisions on the claims branch.
 - 1795138606 | plan --amend | Dylan/Dylan | amended: UI-026 | Why: scope or criteria fixed before review
 - 1795138610 | plan | Dylan/Dylan | tasks added: UI-032 | Why: backlog without PR (Plan-Channel: claims)
 - 1795138615 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1795139830 | allow | Dylan | test change: UAK-100 | Why: UAK-100 replaces the idle line that tells agents to wait (the Codex wait-loop incident): update the expected golden string at test_claims_read.py:218 only; the golden check itself is unchanged
