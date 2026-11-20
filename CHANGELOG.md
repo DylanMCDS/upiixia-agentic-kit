@@ -6,6 +6,15 @@ The human of this project found the terminal-only setup hard to follow. Now the 
 in the background; installing, the next step, planning and progress happen in the browser. The CLI path is unchanged.
 Guide: [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
+- **Each hand-off of the first task, on the page (UI-027).** Publishing sets main's upstream (an upstream the person
+  set is kept), so a plain `git pull` works afterwards. A merge in the human queue shows, on the board and in the Team
+  tab, its reason and the steps in order with Copy buttons: open the pull request (link), merge it there, then the
+  exact `uak integrate ID` command for a new terminal. Until the reviewer approves the task's current SHA the card says
+  "Wait for the reviewer's approval before you merge" and offers no integrate command. When a task of the person's
+  implementer is integrated and another is free, the Team tab says the old session can be closed (/exit) and the next
+  task starts in a new terminal. A freeze that is past or less than an hour away is asked on the page itself, with its
+  time, before anything is saved (a browser dialog was never seen). Evidence: Dylan's live run on turno-cafeteria-3.
+
 - **Team tab polish (UI-031).** A 400 from `/api/team` with the plan approved shows only its reason, without "Your
   team starts once the plan is approved… Finish Configuration first" above it. Tab labels shortened with "…" (390 px,
   Spanish) carry their full text as a tooltip, in the page's language. Before the reviewer is registered, Technical

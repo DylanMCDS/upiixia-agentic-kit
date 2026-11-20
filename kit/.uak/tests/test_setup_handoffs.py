@@ -228,7 +228,7 @@ def no_integrate_before_approval(root, tmp):
         assert "uak integrate" not in json.dumps(dash.get("guidance")), dash.get("guidance")
     es = tf.catalog()
     assert es.get(WAIT) == WAIT_ES, "the wait line has its Spanish pair: %r" % es.get(WAIT)
-    out = draw_handoff((seen[0][0].get("human") or [{}])[0])
+    out = draw_handoff((seen[0][0].get("human_queue") or [{}])[0])
     if out is not None:
         assert WAIT_ES in out["text"], "the card says to wait for the approval: %r" % out["text"]
         assert "uak integrate" not in out["text"] and es["Merge it there, on GitHub."] not in out["text"], \
