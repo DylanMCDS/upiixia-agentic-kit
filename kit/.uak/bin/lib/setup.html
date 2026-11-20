@@ -2572,7 +2572,6 @@
           var command = (g.commands || []).join("\n");
           el("next-command").textContent = command;
           el("next-command-box").hidden = !command;
-          drawHandoff(el("next-handoff"), g.kind === "human" ? g.handoff : null, "copy-status");
           el("next-team").hidden = !g.team; // UI-025: the team step is a tab of its own, linked from here
           // Registering the reviewer is the step itself: its link is the one primary action (review of 014c577).
           var register = g.team === "register";
@@ -3139,6 +3138,7 @@
           var advanced = document.body.dataset.profile === "advanced";
           // Advanced keeps the same next step as Beginner (its guidance), above the dashboard frame.
           drawAdvancedNext(data.guidance || state.guidance || {});
+          drawHandoffs(data.guidance || state.guidance || {});
           if (teamFor !== [state.target, state.human, state.ready, state.team].join(":")) {
             teamFor = [state.target, state.human, state.ready, state.team].join(":");
             loadTeam();
@@ -3389,6 +3389,7 @@
           "publish-kit": "Publishing…",
           "human-save": "Saving…",
           "schedule-save": "Saving…",
+          "schedule-confirm-save": "Saving…",
           "idea-save": "Saving…",
           save: "Saving…",
           "plan-create": "Creating the plan…",
@@ -4158,7 +4159,6 @@
           el("advanced-next-description").textContent = UAKWorkspace.t(guide.detail || "");
           el("advanced-next-command").textContent = (guide.commands || []).join("\n");
           el("advanced-next-box").hidden = !(guide.commands || []).length;
-          drawHandoff(el("advanced-next-handoff"), guide.kind === "human" ? guide.handoff : null, "copy-status");
           el("advanced-next-team").hidden = !guide.team;
           el("advanced-next-team").className = guide.team === "register" ? "primary" : "secondary-button";
         }
@@ -4300,6 +4300,12 @@
             copyRow(code, item.integrate, "Copy the command for {task}");
           } else line(UAKWorkspace.format("Then record the merge: save your name in this page and come back for the command of {task}.", { task: item.task }));
         }
+        // The board's next step (Beginner and Advanced) of a merge in the human queue.
+        function drawHandoffs(guide) {
+          var item = guide && guide.kind === "human" ? guide.handoff : null;
+          drawHandoff(el("next-handoff"), item, "copy-status");
+          drawHandoff(el("advanced-next-handoff"), item, "copy-status");
+        }
         function drawHumanQueue(items) {
           el("team-human").hidden = !items.length;
           el("team-human-list").replaceChildren();
@@ -4403,6 +4409,7 @@
           var guide = (latestDashboard && latestDashboard.guidance) || state.guidance || {};
           drawNext(guide);
           drawAdvancedNext(guide);
+          drawHandoffs(guide);
         }
         // UI-019: the team step asks for what it needs (the name, A-F2) instead of hiding; only these blocks show then.
         function teamAsk(need, message) {

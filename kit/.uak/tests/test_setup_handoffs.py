@@ -174,8 +174,10 @@ def human_queue_shows_steps(root, tmp):
     html = tf.page()
     es = tf.catalog()
     script = tf.script(html)
-    assert re.search(r"drawHandoff\(el\(\"next-handoff\"\)", tf.page_function(script, "drawNext")), \
+    assert re.search(r"drawHandoff\(el\(\"next-handoff\"\)", tf.page_function(script, "drawHandoffs")), \
         "the board's next step draws the hand-off"
+    for caller in ("drawDashboard", "drawTeam"):
+        assert "drawHandoffs(" in tf.page_function(script, caller), "%s draws the board's hand-off" % caller
     assert "drawHumanQueue(" in tf.page_function(script, "drawTeam"), "the team step draws the human queue"
     assert 'id="team-human"' in html and 'id="next-handoff"' in html, "both places have a hand-off box"
     for line in ("Open the pull request:", "Merge it there, on GitHub.",
