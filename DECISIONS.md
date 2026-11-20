@@ -119,3 +119,4 @@ Coordination decisions on the claims branch.
 - 1795136059 | allow | Dylan | test change: UAK-099 | Why: UAK-099 reverses UAK-097's render.yaml-only rule: test_skeleton_scope.py:90 expected a static render.yaml task to fail lint; it now must pass, and a Dockerfile without .dockerignore must still fail
 - 1795136600 | plan | Dylan/Dylan | tasks added: UAK-100 | Why: backlog without PR (Plan-Channel: claims)
 - 1795136604 | plan --amend | Dylan/Dylan | amended: UAK-006 | Why: scope or criteria fixed before review
+- 1795138606 | plan --amend | Dylan/Dylan | amended: UI-026 | Why: scope or criteria fixed before review
