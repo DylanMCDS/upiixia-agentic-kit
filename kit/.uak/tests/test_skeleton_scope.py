@@ -87,8 +87,27 @@ def dockerfile_paths_need_dockerignore(r):
     push_tasks(f, lambda t: t.replace("app.py, Dockerfile, .dockerignore, render.yaml", "app.py, render.yaml", 1))
     static = hack(f, 0, "lint", allowed=None)
     text = static.stdout + static.stderr
-    expect(static.returncode != 0 and ".dockerignore" in text, "render.yaml alone asks for it too: " + text[-1500:])
+    expect(static.returncode == 0 and ".dockerignore" not in text,
+           "static render.yaml alone passes without .dockerignore: " + text[-1500:])
     return "refused without it, quiet with it"
+
+
+def dockerfile_only_and_nested_paths_need_dockerignore(r):
+    """Dockerfile alone still requires its sibling ignore file, including paths with spaces and accents."""
+    for index, directory in enumerate(("", "café service/")):
+        dockerfile = directory + "Dockerfile"
+        ignore = directory + ".dockerignore"
+        f = r.fixture("dockerfile-only-%d" % index, paths={"HACK-001": "app.py, " + dockerfile}, count=1)
+        out = hack(f, 0, "lint", allowed=None)
+        text = out.stdout + out.stderr
+        expect(out.returncode != 0 and ignore in text,
+               "Dockerfile alone requires its sibling ignore file: " + text[-1500:])
+        push_tasks(f, lambda t: t.replace("app.py, " + dockerfile, "app.py, " + dockerfile + ", " + ignore, 1))
+        out = hack(f, 0, "lint", allowed=None)
+        text = out.stdout + out.stderr
+        expect(out.returncode == 0 and ".dockerignore" not in text,
+               "Dockerfile with its sibling ignore file passes: " + text[-1500:])
+    return "root and nested Dockerfiles require their own ignore files"
 
 
 def skeleton_adds_the_smoke_adapter(r):
@@ -136,7 +155,7 @@ def adapter_outside_paths_still_needs_a_human(r):
     return "%d cases refused" % (len(cases) + 1)
 
 
-TESTS = [dockerfile_paths_need_dockerignore, skeleton_adds_the_smoke_adapter, editing_the_adapter_still_needs_a_human,
+TESTS = [dockerfile_paths_need_dockerignore, dockerfile_only_and_nested_paths_need_dockerignore, skeleton_adds_the_smoke_adapter, editing_the_adapter_still_needs_a_human,
          adapter_outside_paths_still_needs_a_human]
 
 
