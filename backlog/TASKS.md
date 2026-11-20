@@ -590,3 +590,15 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Test-First:** no (a measurement; the bound is already asserted by test_setup_first_run)
 - **Verify:** `python kit/.uak/tests/test_setup_first_run.py`
 - **Next step:** Dylan runs the timing on his Windows machine and pastes real/user/sys.
+
+## UI-033 · Hand-off polish: PR link host must match the origin remote's forge; reason said once on the board; close-old-session note picks the newest integration by time and hides after the next claim (follow-up of UI-027)
+
+- **Type:** follow-up
+- **Priority:** P1
+- **Depends on:** UI-027
+- **Follow-up of:** UI-027
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_handoffs.py, CHANGELOG.md
+- **Freeze-Allowed:** no
+- **Acceptance:**
+  - Hand-off polish: PR link host must match the origin remote's forge; reason said once on the board; close-old-session note picks the newest integration by time and hides after the next claim
+- **Verify:** `python kit/.uak/tests/test_setup_handoffs.py`
