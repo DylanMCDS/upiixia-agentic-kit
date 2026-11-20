@@ -645,6 +645,7 @@
     ["Wait for the reviewer's approval before you merge.", "Espera la aprobación del revisor antes de hacer merge."],
     ["Open the pull request:", "Abre el pull request:"],
     ["Open its pull request on GitHub (its link is not recorded yet).", "Abre su pull request en GitHub (su enlace aún no está registrado)."],
+    ["Open its pull request on your forge (the recorded link does not point to this project's remote, so it is not shown).", "Abre su pull request en tu forja (el enlace registrado no apunta al remoto de este proyecto, así que no se muestra)."],
     ["Merge it there, on GitHub.", "Haz merge ahí, en GitHub."],
     ["Then record the merge: paste this in a new terminal, not inside Claude or Codex.", "Luego registra la integración: pega esto en una terminal nueva, no dentro de Claude ni Codex."],
     ["Then record the merge: save your name in this page and come back for the command of {task}.", "Luego registra la integración: guarda tu nombre en esta página y vuelve por el comando de {task}."],

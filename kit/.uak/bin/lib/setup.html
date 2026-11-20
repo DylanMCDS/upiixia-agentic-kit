@@ -4290,7 +4290,8 @@
             link.setAttribute("rel", "noopener noreferrer");
             link.textContent = item.pr;
             copyRow(link, item.pr, "Copy the pull request link of {task}");
-          } else line("Open its pull request on GitHub (its link is not recorded yet).");
+          } else if (item.pr_elsewhere) line("Open its pull request on your forge (the recorded link does not point to this project's remote, so it is not shown).");
+          else line("Open its pull request on GitHub (its link is not recorded yet).");
           if (!item.approved) return;
           line("Merge it there, on GitHub.");
           if (item.integrate) {
@@ -4300,9 +4301,10 @@
             copyRow(code, item.integrate, "Copy the command for {task}");
           } else line(UAKWorkspace.format("Then record the merge: save your name in this page and come back for the command of {task}.", { task: item.task }));
         }
-        // The board's next step (Beginner and Advanced) of a merge in the human queue.
+        // The board's next step (Beginner and Advanced) of a merge in the human queue. Its description already says the
+        // reason, so the box does not say it again (UI-033, A-F15: one place per reason).
         function drawHandoffs(guide) {
-          var item = guide && guide.kind === "human" ? guide.handoff : null;
+          var item = guide && guide.kind === "human" && guide.handoff ? Object.assign({}, guide.handoff, { plain: "" }) : null;
           drawHandoff(el("next-handoff"), item, "copy-status");
           drawHandoff(el("advanced-next-handoff"), item, "copy-status");
         }

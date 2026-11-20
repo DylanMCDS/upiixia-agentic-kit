@@ -15,6 +15,14 @@ Guide: [docs/DASHBOARD.md](docs/DASHBOARD.md).
   task starts in a new terminal. A freeze that is past or less than an hour away is asked on the page itself, with its
   time, before anything is saved (a browser dialog was never seen). Evidence: Dylan's live run on turno-cafeteria-3.
 
+- **Hand-off polish (UI-033).** The pull request link of a merge in the human queue is offered only when its host is
+  the origin remote's host (`git remote get-url`, https, ssh or `git@host:` forms; no network call); a link to any
+  other host is not sent to the page, and the card says to open the pull request on your forge instead. On the board
+  the merge's reason is said once, in the next step, not again in the hand-off box. The "close the old session" note
+  in the Team tab names the task integrated most recently by time (not by ID: APP-999 sorted after APP-1000), and
+  goes once anyone integrates something later or the person claims again. Evidence: claude-Dylan-r's review of UI-027
+  (6285def).
+
 - **Team tab polish (UI-031).** A 400 from `/api/team` with the plan approved shows only its reason, without "Your
   team starts once the plan is approved… Finish Configuration first" above it. Tab labels shortened with "…" (390 px,
   Spanish) carry their full text as a tooltip, in the page's language. Before the reviewer is registered, Technical
