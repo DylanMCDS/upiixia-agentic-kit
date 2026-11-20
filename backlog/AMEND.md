@@ -1033,3 +1033,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 scripts/claims_diff.py && python3 kit/.uak/tests/test_claims_perf.py`
 - **Next step:** reuse the guard differential of v5.9.2 (docs/perf-windows.md)
 
+## UI-033 · Hand-off polish: PR link host must match the origin remote's forge; reason said once on the board; close-old-session note picks the newest integration by time and hides after the next claim (follow-up of UI-027)
+
+- **Type:** follow-up
+- **Priority:** P2
+- **Estimate:** 1 h
+- **Depends on:** UI-027
+- **Paths:** kit/.uak/bin/lib/setup.html, kit/.uak/bin/lib/setup.py, kit/.uak/bin/lib/workspace.js, kit/.uak/tests/test_setup_handoffs_polish.py, CHANGELOG.md
+- **Acceptance:** Evidence (claude-Dylan-r's P3s on UI-027 at 6285def): the PR link accepts any https host (an agent could store a phishing link in claims); on the board the human-queue reason appears twice (next step and hand-off box), against the "said once" rule A-F15; the close-old-session note picks the newest integrated task by string sort (wrong with 4-digit IDs) and stays after later integrations while nothing is claimed., (1) the PR link is offered only when its host equals the origin remote's host (https), otherwise the card shows the plain "open the PR on your forge" text with no link; (2) the human-queue reason appears once on the board; (3) the close-old-session note names the task integrated most recently by time and disappears once the person claims again or after the next integration it already announced; every new string has its Spanish pair.
+- **Tests:** pr_link_must_match_origin_host, queue_reason_said_once, close_note_uses_latest_integration
+- **Verify:** `python kit/.uak/tests/test_setup_handoffs_polish.py`
+- **Next step:** new test file with fake claims records; tests fail; fix.
