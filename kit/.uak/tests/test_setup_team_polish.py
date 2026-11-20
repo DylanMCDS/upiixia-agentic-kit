@@ -100,7 +100,10 @@ def short_tabs_have_full_titles(root, tmp):
     assert re.search(r"tabTitles\(\)", tf.page_function(script, "fitBar")), \
         "the titles follow every redraw of the bar (resize, language, the bar's own size)"
     out = run("""
-        UAKWorkspace.apply(document.body);
+        // The fake DOM has no TreeWalker: the labels are translated as UAKWorkspace.apply() does, one text at a time.
+        ["open-setup", "open-team", "open-dashboard"].forEach(function (id) {
+          el(id).textContent = "\\n  " + UAKWorkspace.t(el(id).textContent.trim()) + "\\n";
+        });
         tabTitles();
         var es = ["open-setup", "open-team", "open-dashboard"].map(function (id) {
           return {title: el(id).getAttribute("title"), text: el(id).textContent.replace(/\\s+/g, " ").trim()};
@@ -117,8 +120,8 @@ def short_tabs_have_full_titles(root, tmp):
 
 def technical_details_hide_claims_before_reviewer(root, tmp):
     render = tf.page_function(code(), "render")
-    assert re.search(r'el\("output"\)\.textContent = technicalDetails\(data\)', render), \
-        "Technical details are written only through technicalDetails()"
+    assert re.search(r'if \(data\.details && !reviewerReady\(\)\) el\("output"\)\.textContent = technicalDetails\(data\);',
+                     render), "before the reviewer, Technical details are written through technicalDetails()"
     raw = ("OK    1. kit installed (sprint, uak 6.4.0)\\n"
            "\\nSTART READY · bash .uak/bin/wt new APP-001\\n"
            "NOTE  or let another agent take it: bash .uak/bin/wt new APP-002 --agent claude-ana\\n"
