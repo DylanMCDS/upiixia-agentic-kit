@@ -6,8 +6,61 @@ The human of this project found the terminal-only setup hard to follow. Now the 
 in the background; installing, the next step, planning and progress happen in the browser. The CLI path is unchanged.
 Guide: [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
+- **The team step leads a beginner through the first run (UI-024).** Claude Code's trust question is explained before
+  it is asked: it starts on "No, exit", so press ↓ until "Yes, proceed" and then Enter; the English "Ignoring …
+  permissions.allow entries" warning before it is expected. Setup reads only whether Claude Code already trusts the
+  folder, from Claude Code's own config, and never changes it: a ✓ or ✗ (or "could not read") beside each Claude Code
+  command, with **Check again**. Launch commands appear only once the reviewer is registered (the ready line points
+  there too). A running check keeps the last result on screen, dimmed, instead of emptying it; the check stops after
+  45 s (a stalled HTTP transfer after 10 s) and keeps the old result with a plain error; the dashboard and the team
+  step keep answering during a check instead of "An operation is running". A blocked reason is said once; the wizard
+  rail no longer numbers a second 1-5 and hides after install; "Set up my project" is above the fold; buttons waiting
+  for an operation say what they wait for; a planning run that broke a rule reads "Finished with problems" with one
+  undo instruction and its command; a note says who runs what when two or more people share the project. Evidence:
+  QA rounds of 2026-11-14 (A-F6, A-F7, A-F11, A-F15, A-F16, A-F19, B-10, D-1, D-3, D-6, D-7, D-9, D-10).
+
 - **Light CI on pull requests (UAK-090).** Pull requests run the Ubuntu suite and the Windows per-file job; main and
   workflow_dispatch keep macOS. Approved PRs #19-#21 waited hours for macOS arm64 runners GitHub could not provide.
+
+- **The dashboard tells the truth and is accessible (UI-023).** A task waiting on a dependency that is not integrated
+  is its own "Waiting on dependencies" bucket, never available (nor suggested to claim); an approved review has an
+  "approved" badge; only the human queue counts as "Needs a human", and a merge waiting there is setup's next step
+  first, in a plain translated sentence with no absolute path. Past the freeze setup says frozen everywhere, also
+  before the dashboard was opened and when only `.uak/PROJECT.md` has the freeze. Offline, the dashboard falls back to
+  the last claims this clone read, marked stale with their age. Row labels are singular; muted text is 4.5:1 or more
+  in light and dark; task-ID and small buttons are 24 px; the view tabs are ARIA tabs with arrow keys, wrap at 390 px
+  and carry their count as a separate word; every view has a heading (and an h1 when embedded); the online dot is grey
+  at 0; an offer to everyone reads "todos"; the Advanced next step is a card. Evidence: QA rounds of 2026-11-14 (A-F9;
+  B-06, B-07, B-08, B-12, B-13, B-15; D WCAG 1.4.3, 2.5.3, 2.5.8, 1.3.1, tabs, 390 tab strip, green dot at 0).
+
+- **Forms say what is wrong next to the field, and the page speaks plain Spanish all the way (UI-021, absorbs UI-022).**
+  A refused or empty field (project folder, name, schedule, idea) shows its reason under it with `aria-invalid` and
+  `aria-describedby` and takes the focus; the forms use the page's own translated messages instead of the browser's
+  bubbles. A made-up time zone (`Mars/Base`) is refused (zoneinfo, or the IANA areas where Python has no zone
+  database) and the zone list starts with the browser's zone; the schedule confirmation gives dates in the order they
+  happen; a relative folder asks for the full path; the schedule fields no longer overlap and "Save the idea" has its
+  gap. Every refusal of setup and of the planning module, the readiness hints, the freeze lines and the claim states
+  have Spanish; a failed network Git is one plain sentence with the advice that fits (address, sign-in, connection,
+  timeout) and Git's words under Technical details; the beginner view has a glossary; the header's controls have one
+  visible label each; the plan cards say "Tests first"; the planner writes titles, criteria and test names in the
+  idea's language. Evidence: QA rounds of 2026-11-14 (D top 1, 2, 7, 9 and other findings; A-F10, F13, F14, F20;
+  B-11).
+
+- **Branches and publishing never leave a dead end (UI-020).** Inspect warns and Install or Repair stop when the folder
+  has commits and is not on `main` (a clone of a remote whose default branch is `claims` landed on `claims` and the kit
+  was installed there), with the exact command (`git switch main`, or `git branch -m master main` when there is no
+  `main`); the page says when the remote's default branch is `claims` and how to change it on GitHub (Settings,
+  General, Default branch). The way out of unrelated history adds a second command, `git push origin main`, for a
+  folder with its own commits; publish refusals carry their exact command and read in Spanish; "the command below" is
+  only said when there is one; a quote mark in the project path no longer blocks the way out. Evidence: Dylan's live
+  run (GitHub's default branch became `claims`) and QA round B of 2026-11-14 (B-01, B-03, B-09, B-16).
+
+- **Coming back to a project restores where you were (UI-019).** A restart on an installed project opens on its furthest
+  real step from local Git (the team step for an approved plan), finished Prepare steps fold into a done line, an
+  approved plan is never offered again, the readiness check runs by itself once per inspect, re-picking keeps the last
+  check (10 min), a reload keeps the tab and drafts, the name is remembered per project in `.git/uak-setup/human.json`
+  and the team step asks for it inline (`/api/team` 400s now say `need`), and a closed setup shows one translated
+  banner and backs off instead of polling forever. Evidence: Dylan's live run and QA rounds of 2026-11-14.
 
 - **The setup page says what it is doing (UI-018).** Every request shows a busy label and spinner inside its button and a
   result line next to it ("Checked at 21:04 · nothing changed · 2 things to do"); a blocked button shows not-allowed

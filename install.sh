@@ -6,7 +6,7 @@
 # Never overwrites your files: if AGENTS.md, CLAUDE.md, settings.json… already exist and differ,
 # the kit's version is written as <file>.uak-new for you to merge. A file that is an earlier kit version nobody
 # edited (its hash is in .uak/settings/known-files.txt) is simply updated.
-# --update replaces only the engine (.uak/bin, docs, modes, templates, tests, settings, stacks, skills, media)
+# --update replaces only the engine (.uak/bin, docs, modes, templates, settings, stacks, skills, media)
 # and keeps PROJECT.md, TASKS.md and OWNERS.md.
 # Harnesses: Claude Code (.claude), Codex (.codex), Cursor (.cursor), Gemini CLI (.gemini) all get
 # tiered subagents (fast / balanced / strong) and, where the harness has hooks, the same guard.
@@ -136,16 +136,21 @@ kit_snapshot() {
 kit_snapshot > "$keep/kit-before"
 for f in smoke-project .smoke-project.provenance; do [ ! -f "$target/.uak/bin/$f" ] || cp -p "$target/.uak/bin/$f" "$keep/$f"; done
 # media: the demo video the setup page shows (UI-016), refreshed with the engine.
-for part in bin docs modes templates tests settings stacks skills media; do
+for part in bin docs modes templates settings stacks skills media; do
   rm -rf "$target/.uak/$part"
   cp -R "$kit/.uak/$part" "$target/.uak/$part"
 done
+# The kit's own test suite stays in the kit (UAK-096): nothing in a project reads it. The merge gate runs the product
+# smoke, doctor and garden never look at it, and only `smoke --package-only|--full` (testing the kit itself) does; run
+# that from the kit's clone. An --update takes out the copy an earlier version placed. Why (QA 2026-11-14, A-F18):
+# publishing a 3-hour project committed 532 files, the kit's own .uak/tests among them.
+rm -rf "$target/.uak/tests"
 for f in smoke-project .smoke-project.provenance; do [ ! -f "$keep/$f" ] || { cp -p "$keep/$f" "$target/.uak/bin/$f"; say "  = .uak/bin/$f kept (project adapter)"; }; done
 cp "$kit/.uak/VERSION" "$target/.uak/VERSION"
 # Coach templates: copied on install; on --update they are refreshed too (they are engine text, not project data).
 cp "$kit/.uak/reminders.md" "$target/.uak/reminders.md"
 chmod +x "$target"/.uak/bin/* 2>/dev/null || true
-say "  + .uak/ (engine, modes, templates, docs, tests, skill library, demo video)"
+say "  + .uak/ (engine, modes, templates, docs, skill library, demo video)"
 [ -f "$target/.uak/PROJECT.md" ] || { cp "$kit/.uak/templates/PROJECT.$mode.md" "$target/.uak/PROJECT.md"; say "  + .uak/PROJECT.md"; }
 [ -f "$target/.uak/OWNERS.md" ] || { cp "$kit/.uak/templates/OWNERS.template.md" "$target/.uak/OWNERS.md"; say "  + .uak/OWNERS.md"; }
 if [ "$blackbox" = off ] && grep -q '^Blackbox: on' "$target/.uak/PROJECT.md"; then
@@ -361,6 +366,16 @@ case "$cur_hooks" in
   ''|.githooks|.githooks/|.uak/githooks|.uak/githooks/) git -C "$target" config core.hooksPath "$hooks_path";;
   *) say "  ~ core.hooksPath is $cur_hooks (another hook manager): kept. Add the secret scan to its pre-commit: bash .uak/githooks/pre-commit";;
 esac
+# The kit clone that installed this checkout, for uak start's update hint and doctor's skills (local Git config: per
+# clone, never committed, so a teammate never reads another machine's path). Only a Git clone of the kit, which can
+# pull. Why (QA rounds 2026-11-14, A-F1; UAK-091): the hint named ~/.uak-kit, another clone, as the kit to update from.
+kit_top=$(git -C "$here" rev-parse --show-toplevel 2>/dev/null || true)
+if [ -n "$kit_top" ] && [ -f "$here/install.sh" ] && [ "$(cd "$kit_top" 2>/dev/null && pwd -P)" = "$(cd "$here" && pwd -P)" ]; then
+  kit_rec=$here
+  # Git Bash: record C:/... (Git, Bash and Python all read it), not /c/...
+  if command -v cygpath >/dev/null 2>&1; then kit_rec=$(cygpath -m "$here"); fi
+  git -C "$target" config uak.kitHome "$kit_rec"
+fi
 
 # The manifest: what changed or appeared now, what disappeared (the installer removes only its own stale copies), and
 # the previous manifest's entries, so an --update before the first publish keeps every kit file listed.

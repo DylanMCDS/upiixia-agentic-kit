@@ -76,7 +76,9 @@ After installing, the steps the gate asks for come in order in **Get ready**, an
 1. **Your name**: some steps only a person may do (publishing the kit, approving the plan). Setup records them with
    this name, so you never type `UAK_HUMAN=...` into a command.
 2. **Event schedule**: start, end and time zone. It writes `Freeze-Epoch` exactly as
-   `uak clock START DEADLINE ZONE --write` does and shows when new work stops and the time of the first claim.
+   `uak clock START DEADLINE ZONE --write` does and shows, with their dates and in the order they happen, when to take
+   the first task and when new work stops. The time zone list starts with your browser's zone; a zone this computer
+   does not know (for example `Mars/Base`) is refused at the field.
 3. **Publish the kit to main**: *Review the files* lists every kit file that will be committed; *Publish* commits
    exactly those, as your Git identity, and pushes that verified commit to `main`. A kit file is one the installer
    placed: `install.sh` records them in `.uak/installed-files.txt`, so a file of yours under `.github/` or `.uak/` is
@@ -108,6 +110,27 @@ right (full width at the bottom on a phone) with what to do next and **Go there*
 hides by itself, but not while the pointer or the keyboard focus is on it. Polling never hides or rebuilds sections, so
 the page does not jump while a check runs. Everything follows the page's language and the reduced-motion setting.
 
+A form never sends you elsewhere to read what went wrong: an empty or refused field (the project folder, your name,
+the schedule, the idea) shows the reason right under it, is marked invalid for screen readers and gets the focus. A
+relative folder such as `my-app` asks for the full path. The page writes these messages itself, in its language, never
+the browser's own bubbles. When Git cannot reach the remote, the page says why in one plain sentence with the advice
+that fits (the address, the sign-in, the connection or a timeout); Git's own words stay folded under **Technical
+details**.
+
+## Coming back to a project
+
+Setup restores where the project is, from the project's own Git (never the network): run the command again on an
+installed project and the page opens on the furthest real step (the team step once the plan is approved on main), not
+on Welcome. Finished Prepare steps show one done line ("Published on main (commit 9e6debb).") with **Change** to open
+them again, and an approved plan is never offered again ("Plan approved on main (commit …)."). The readiness check runs
+by itself once after you open or re-pick a project, without switching tabs or moving the focus; `uak start` stays the
+only gate. Your name is remembered per project in `.git/uak-setup/human.json` (never committed, shared by the
+project's worktrees); if it is missing, the team step asks for it there. Re-picking the same project within ten minutes
+keeps its last check. A reload keeps the tab you had open and what you were typing (in this browser only; a restart is
+a new address, so only the project's Git carries over). If setup closes, the page says once, in your language, "Setup
+has closed: run the command again and open the new link.", stops every button that was waiting, and asks a few more
+times (2, 4, 8, 16, 30, 30 s) before it stops; **Retry** asks once more.
+
 ## Beginner and Advanced
 
 A choice of presentation, kept in your browser only. It never changes permissions, the mode or any gate.
@@ -117,6 +140,20 @@ A choice of presentation, kept in your browser only. It never changes permission
   fix you made in the terminal advances on its own. When the project is ready, it opens project progress.
 - **Advanced** shows the full dashboard (board, agents, messages, black box, memory, tokens) and opens Technical
   details. Above it, the same next step as Beginner, with its Copy button.
+
+What the progress view counts is what can really happen (UI-023): a task whose dependencies are not integrated yet
+is **Waiting on dependencies**, not available; a review approved for its current commit says **approved**; only a
+merge the gate handed to a person counts as **Needs a human**, and that merge is the next step before anything else,
+in one plain sentence with no path on your disk. Past the freeze every view says the project is frozen (setup reads
+the freeze from `.uak/PROJECT.md` too). When the remote stops answering, the dashboard shows the last claims this
+computer read, labelled with their age, instead of the plan with every task free. The board's tabs are ARIA tabs (arrow
+keys, Home, End) that wrap on a phone, each view has a heading, small buttons are at least 24 px and text keeps a
+contrast of 4.5:1 or more in light and dark.
+
+In Spanish the whole page speaks to you as *tú*, the lines the engine prints (the readiness checks and their hints,
+the freeze, the claim states) and every refusal have a Spanish version, and each control has one name. Beginner adds
+**Words you will see** beside the steps: what a claim, the freeze, lint, a wave, a worktree, a PR, `origin` and MCP
+mean. The planner writes the task titles, criteria and test names in the language of your idea.
 
 Choosing coding tools explains the roles: one tool implements, the other reviews as a second identity. Claude Code +
 Codex is the recommended pair. "I'm the only human on this repository" means your agents review each other under a
@@ -182,6 +219,24 @@ chosen tools, the project folder and its Git folder), start with `UAK_HUMAN=` so
 and are not offered when the folder name holds a quote mark or a control character. On Windows, paste them in Git
 Bash, not PowerShell. The first time, each tool asks to approve the project's uak server (MCP): approve it.
 
+**The first run (UI-024).** Agents start only once the reviewer is registered: before that both blocks show what each
+terminal will run, with no command to copy, and one line says to register `NAME-r` first (`/api/team` answers
+`commands: []`, `locked: {reason, target}` and `waiting: [{id, harness, tool}]`; the ready line of the check points to
+the team step instead of the claim command). Claude Code's trust question starts on "No, exit": press ↓ until "Yes,
+proceed" and then Enter; an English "Ignoring … permissions.allow entries" warning before it is expected the first
+time. Setup reads only whether Claude Code already trusts a folder, from Claude Code's own config
+(`$CLAUDE_CONFIG_DIR/.claude.json`, else `~/.claude.json`, read-only, booleans only) and never changes it: `/api/team`
+has `trust: {project, worktree}` when a command starts Claude Code and `/api/plan` has `trust` (`true`, `false`, or
+`null` when it could not be read; on Windows best effort). **Check again** reads it again after you accept.
+`/api/team` also has `people` (from IDEA.md's team size): with two or more, each person runs their own page on their
+own computer and never pastes a teammate's commands. While a check runs, `/api/status` keeps the last `checks` with
+`checks_stale: true` (the page dims them), the check stops after 45 s (a stalled HTTP transfer after 10 s) and keeps
+the old result with an error, `/api/dashboard` answers with the last good dashboard (`stale`, `checking`) or one built
+from local copies (`connection: "checking"`), and `/api/team` with its last view or a view with no command
+(`checking: true`). A planning run that broke a rule sets `outcome: "problems"` and `problem` in `/api/status`, and
+`/api/plan` has `undo: {text, command}` (a `git reset`/`git restore` line when Git can restore everything, else
+words); setup never runs it.
+
 **Network.** Setup reads the remote (ls-remote, then a fetch into its own refs `refs/uak/setup-base` and
 `refs/uak/setup-claims`, never `FETCH_HEAD`) with a 30 s timeout per command, outside the lock the status poll uses:
 the page keeps answering while Git waits. One slow request can take up to two tool probes (20 s each) and three
@@ -194,7 +249,16 @@ license, it shares no history with your folder. Publishing then shows one exact 
 renamed to `NAME.mine` (the command stops if that name is taken). When setup cannot make it safe, it only suggests
 publishing to a new empty repository. A file you track and changed without committing (for example a `.gitignore`
 the installer added lines to) gets no pull: the page asks you to commit it first, because Git would refuse to merge over
-it; a tracked file on both sides ends in a conflict the page tells you how to resolve. Setup never runs it.
+it; a tracked file on both sides ends in a conflict the page tells you how to resolve. Setup never runs it. When your
+folder has commits of its own, a second command (`git push origin main`) sends them after the pull, so publishing then
+sends only the kit. A quote mark in the project path is fine: the commands quote it.
+
+**The right branch.** The kit lives on `main`. A folder with commits on another branch (a clone that opened on
+`claims`, a detached HEAD, a project whose only branch is `master`) gets a warning when you check it, and Install
+stops, with the one command that fixes it (`git switch main`, or `git branch -m master main`). When GitHub made
+`claims` the repository's default branch (the first branch pushed to an empty repository), new clones open on
+`claims`: the page says so and how to change it (on GitHub: Settings, General, Default branch, choose `main`, Update;
+then `git remote set-head origin -a` in each clone).
 
 ## Your app
 

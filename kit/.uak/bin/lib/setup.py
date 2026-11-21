@@ -8,6 +8,7 @@ project name, and only the reviewed plan files are committed and pushed (WHY.md,
 import argparse
 import hmac
 import importlib.util
+import io
 import json
 import os
 import re
@@ -17,6 +18,7 @@ import signal
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import threading
 import time
@@ -200,17 +202,31 @@ def redact(text):
     return text[-18000:]
 
 
+class FieldError(ValueError):
+    """A refusal about one form field: the page shows it under that field and moves the focus there (UI-021)."""
+
+    def __init__(self, message, field):
+        super().__init__(message)
+        self.field = field
+
+
 def project_root(target):
     if not isinstance(target, str) or not target.strip() or len(target) > 4096 or "\x00" in target:
-        raise ValueError("Enter the full path to an existing Git repository.")
-    path = Path(target).expanduser().resolve()
+        raise FieldError("Enter the full path to an existing Git repository.", "target")
+    given = Path(target.strip()).expanduser()
+    # UI-021 (QA round D): "my-app" said "does not exist" (it was looked up next to setup). A path from the root of a
+    # drive (/c/Users/… in Git Bash) is still a full path.
+    if not given.is_absolute() and not target.strip().startswith(("/", "\\")):
+        raise FieldError("Use the full path of the folder, not a relative one: for example /Users/you/my-app or "
+                         "C:\\Projects\\my-app.", "target")
+    path = given.resolve()
     if not path.is_dir():
-        raise ValueError("This folder does not exist. Choose an existing project folder.")
+        raise FieldError("This folder does not exist. Choose an existing project folder.", "target")
     result = run_command(["git", "-C", str(path), "rev-parse", "--show-toplevel"], timeout=10)
     if result.returncode or Path(result.stdout.strip()).resolve() != path:
-        raise ValueError("Choose the root of a Git repository. Create the repository first if needed.")
+        raise FieldError("Choose the root of a Git repository. Create the repository first if needed.", "target")
     if (path / ".uak").is_symlink():
-        raise ValueError("The kit folder must be local to this project, not a symbolic link.")
+        raise FieldError("The kit folder must be local to this project, not a symbolic link.", "target")
     return path
 
 
@@ -293,18 +309,22 @@ def save_settings(target, settings):
     return True
 
 
-def read_config(target):
+def read_config(target, keys=None):
+    """The page's four settings, or the raw values of `keys` (UI-019 reads Freeze-Epoch) through the same reader."""
     path = Path(target) / ".uak/PROJECT.md"
     if not path.is_file():
         return {}
     # Use the engine's reader, including its Markdown and first-match semantics.
-    keys = ("Mode", "Blackbox", "Pace", "Live-URL")
+    settings = keys is None
+    keys = ("Mode", "Blackbox", "Pace", "Live-URL") if settings else tuple(keys)
     script = '. "$1"; file=$2; for key in %s; do uak_cfg "$file" "$key"; done' % " ".join(keys)
     result = run_command([bash_binary(), "-c", script, "uak-setup-config",
                           str(Path(__file__).with_name("config.sh")), str(path)], timeout=10)
     if result.returncode:
         raise ValueError("Could not read the project configuration. Check technical details in the terminal.")
     values = dict(zip(keys, result.stdout.splitlines()))
+    if not settings:
+        return values
     # Only a link the dashboard would render is shown back; "-" or anything invalid reads as no link.
     values["Live-URL"] = dashboard_module().live_url(values.get("Live-URL")) or ""
     return values
@@ -369,6 +389,53 @@ BUSY = ("installing", "checking", "planning", "approving", "publishing", "regist
 HUMAN_NAME = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
 
 
+def zone_database():
+    """True when this computer can tell a real time zone from a made-up one (Python's zoneinfo or the system files)."""
+    try:
+        import zoneinfo
+        if zoneinfo.available_timezones():
+            return True
+    except ImportError:  # Python 3.8: the system's zone files only
+        pass
+    return any(os.path.isfile(os.path.join(folder, "Etc", "UTC")) for folder in ZONE_DIRS)
+
+
+def real_zone(zone):
+    """An IANA time zone this computer knows; without a zone database, one in an IANA area."""
+    if zone not in ("UTC", "GMT") and not (TIME_ZONE.fullmatch(zone) and zone.split("/")[0] in ZONE_AREAS):
+        return False
+    try:
+        import zoneinfo
+        if zoneinfo.available_timezones():
+            zoneinfo.ZoneInfo(zone)
+            return True
+    except ImportError:
+        pass
+    except (ValueError, OSError, LookupError):  # ZoneInfoNotFoundError is a KeyError
+        return False
+    folders = [folder for folder in ZONE_DIRS if os.path.isfile(os.path.join(folder, "Etc", "UTC"))]
+    return not folders or any(os.path.isfile(os.path.join(folder, *zone.split("/"))) for folder in folders)
+
+
+def dated(shown, start, end, last=False):
+    """The engine's "Tue 11:55" (a weekday and a time in the event's zone) with its date inside the event: the first
+    such day from the start, or the last one up to the end (UI-021: "stops Wed 06:24; take the first task by Tue 11:55"
+    read in reverse). "" when it is not that shape."""
+    import datetime
+    match = re.fullmatch(r"(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (\d\d):(\d\d)", shown.strip())
+    if not match:
+        return ""
+    begin, finish = (datetime.datetime.strptime(t, "%Y-%m-%d %H:%M") for t in (start, end))
+    days = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    day = finish.date() if last else begin.date()
+    for _ in range(8):
+        moment = datetime.datetime(day.year, day.month, day.day, int(match.group(2)), int(match.group(3)))
+        if days[moment.weekday()] == match.group(1) and (moment <= finish if last else moment >= begin):
+            return "%s %s" % (match.group(1), moment.strftime("%Y-%m-%d %H:%M"))
+        day += datetime.timedelta(days=-1 if last else 1)
+    return ""
+
+
 def signed_line(field, name):
     """The human line of a commit setup makes (Approved-By, Published-By): one wording, the page's name (UI-012)."""
     return "%s: %s (from the setup page; committed as the local Git identity, unverified)" % (field, name)
@@ -376,6 +443,11 @@ def signed_line(field, name):
 
 SCHEDULE_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}\Z")
 TIME_ZONE = re.compile(r"(UTC|[A-Za-z]+(/[A-Za-z0-9_+-]+){1,2})\Z")
+# The IANA areas: without a zone database (Python on Windows has none unless tzdata is installed) a zone must at least
+# start with one of them (UI-021, QA round D: "Mars/Base" was accepted and a Freeze-Epoch computed).
+ZONE_AREAS = ("Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Europe", "Indian",
+              "Pacific", "Etc")
+ZONE_DIRS = ("/usr/share/zoneinfo", "/usr/lib/zoneinfo", "/usr/share/lib/zoneinfo")
 # `uak start`'s READY line when a task is free: the command, then the engine's note after spaces.
 # The first prompts of the two agents the team step starts (UI-006). Constants with no shell metacharacters, and they
 # start with a word: Git Bash rewrites an argument that starts with / into a Windows path.
@@ -407,10 +479,39 @@ REF_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}\Z")
 CLAIM_FILE = re.compile(r"[A-Za-z0-9_.-]+\.md\Z")
 SAFE_PATH = re.compile(r"[A-Za-z0-9._][A-Za-z0-9._/-]{0,199}\Z")
 LIVE_STATES = ("CLAIMED", "BLOCKED", "REVIEW")
+# UI-019: a re-picked project keeps its last check this long (seconds); later the page checks again by itself.
+CHECK_KEEP = 600
+# UI-024 (B-10): a hanging remote made the check take 75 s while every view answered 409. The check stops after 45 s
+# (its whole tree), and a stalled HTTP transfer ends after 10 s below 1 kB/s. GIT_SSH_COMMAND is never set: it would
+# override the person's core.sshCommand.
+CHECK_TIMEOUT = 45
+CHECK_ENV = {"GIT_HTTP_LOW_SPEED_LIMIT": "1000", "GIT_HTTP_LOW_SPEED_TIME": "10"}
+CHECK_TIMEOUT_ERROR = ("The check stopped: %s did not answer within %d s. Your last result is still shown. Check your "
+                       "connection, then press Check again.")
+CHECKING_NOTE = "Checking your project… the commands come back when it ends."
+BUSY_NOTE = "An operation is running… the commands come back when it ends."
+CHECKING_WARNING = "Setup is checking your project. Showing the last known state until it ends."
+# UI-024 (D-3.2, A-F11): no launch command before the reviewer can review the agents' work.
+LOCK_REASON = "Register %s first (step 1): agents start only once a reviewer can review their work."
+# UI-024 (A-F6): Claude Code's own record of the folders it trusts; read-only, only booleans leave claude_trust().
+CLAUDE_CONFIG_MAX = 32 * 1024 * 1024
+TEAM_SIZE = re.compile(r"^- Team size: (\d{1,2}) ", re.M)
+# UI-024 (D-7.1): a planning run that broke a rule did not finish well, and the page says how to undo it.
+PLAN_PROBLEM = "The planner changed things only you may change."
+UNDO_COMMAND_TEXT = "Undo it with this command, then press Create the plan again:"
+UNDO_BY_HAND_TEXT = "Undo these changes by hand, then press Create the plan again."
 
 
 class Busy(Exception):
     """A worker runs: the request answers 409 (or the last view) instead of touching the network or the engine."""
+
+
+class Need(ValueError):
+    """A team-step refusal that names what the page should ask for first: "human" (the name) or "check" (UI-019)."""
+
+    def __init__(self, message, need):
+        super().__init__(message)
+        self.need = need
 
 
 class WayOut(ValueError):
@@ -454,8 +555,12 @@ def guidance(state, dashboard=None, now=None):
         return step("busy", "Working in the background", "Keep this window and the terminal open.")
     if state.get("phase") == "error" and state.get("error"):
         return step("error", "Something needs your attention", state["error"])
-    freeze = dashboard.get("freeze") or state.get("freeze") or 0
-    if freeze and freeze <= now:
+    # UI-023 (B-07): a merge in the human queue is the first thing a person does; the reason is a plain sentence
+    # with no path (the engine's own words stay in the Advanced view's conversation).
+    human = dashboard["needs_human"] if "needs_human" in dashboard else state.get("needs_human") or []
+    if human and state.get("installed"):
+        return step("human", "%s needs a person to finish its merge" % human[0]["task"], plain_reason(human[0]["reason"]))
+    if frozen_since(state, dashboard, now):
         return step("frozen", "Project changes are frozen",
                     "The change window has closed. Review the project with the responsible human before starting new work.")
     if not state.get("installed"):
@@ -466,7 +571,7 @@ def guidance(state, dashboard=None, now=None):
                     steps=[l for l in todo.get("text", "").split("\n")[1:] if l])
     if state.get("ready"):
         claim = CLAIM_COMMAND.match(state.get("next_command") or "")
-        tasks = {t.get("id"): t.get("state") for t in dashboard.get("tasks") or []}
+        tasks = {t.get("id"): "WAITING" if t.get("waiting_on") else t.get("state") for t in dashboard.get("tasks") or []}
         if claim and tasks.get(claim.group(1), "AVAILABLE") != "AVAILABLE":
             return step("check", "Check what's next",
                         "The task suggested by the last check is no longer available.")
@@ -505,6 +610,113 @@ def guidance(state, dashboard=None, now=None):
                 "The readiness check lists what is missing before agents can start, in order.")
 
 
+FROZEN_NOTE = "The change window has closed. Review the project with the responsible human before starting new work."
+
+
+def frozen_since(state, dashboard=None, now=None):
+    """The freeze epoch when it has passed, else 0. Claims' config, the last dashboard read, or the project's own
+    PROJECT.md (UI-023, B-06: a project past its freeze read "Your team is working" until the dashboard was opened)."""
+    now = time.time() if now is None else now
+    freeze = (dashboard or {}).get("freeze") or state.get("freeze") or (state.get("resume") or {}).get("freeze") or 0
+    return freeze if 0 < freeze <= now else 0
+
+
+DEPENDENCY = re.compile(r"[A-Z][A-Z0-9]*-\d+")
+# An absolute path (POSIX or a Windows drive) in an engine reason, and the gate's "(log: …)" note.
+ABSOLUTE_PATH = re.compile(r"(?<![\w.:/\\])(?:[A-Za-z]:[\\/]|/)[^\s;,()]+")
+LOG_NOTE = re.compile(r"\s*\(log: [^)]*\)")
+
+
+def without_paths(text):
+    """UI-023 (B-07): a reason shown on the page names files, never where they are on someone's disk."""
+    text = LOG_NOTE.sub("", str(text or ""))
+    return ABSOLUTE_PATH.sub(lambda m: re.split(r"[\\/]", m.group(0).rstrip("/\\"))[-1] or "…", text).strip()
+
+
+# Why the merge gate handed a task to a person, as one plain sentence each (Spanish pairs in workspace.js).
+HUMAN_REASONS = (
+    (r"PRODUCT_UNVERIFIED|[Ss]moke", "The product check (smoke) failed or does not exist yet, so the merge stopped."),
+    (r"FREEZE", "The project is frozen: a person must allow this task before it merges."),
+    (r"Review-Independence|same human",
+     "The reviewer and the author belong to the same person: another person's agent must review."),
+    (r"[Aa]pprov", "The merge needs a current approval from a reviewer."),
+    (r"[Cc]onflict|[Vv]erify|[Cc]andidate|tree hash|not on ",
+     "Checking the merged result failed: the task needs a look before it can merge."),
+)
+
+
+def plain_reason(reason):
+    for pattern, sentence in HUMAN_REASONS:
+        if re.search(pattern, reason or ""):
+            return sentence
+    return "The merge stopped and needs a person. The Advanced view's conversation has the details."
+
+
+def truthful(data):
+    """UI-023 (A-F9, B-07, B-13): what the page shows as available can really be claimed, an approved review is
+    marked, and only the human queue counts as work for a person; reasons carry no absolute path."""
+    tasks = data.get("tasks") or []
+    states = {t.get("id"): t.get("state") for t in tasks}
+    for t in tasks:
+        deps = re.sub(r"\([^)]*\)", "", t.get("depends") or "")
+        t["waiting_on"] = [d for d in dict.fromkeys(DEPENDENCY.findall(deps))
+                           if d != t.get("id") and states.get(d) != "INTEGRATED"] if t.get("state") == "AVAILABLE" else []
+    progress = data.setdefault("progress", {})
+    progress["waiting"] = sum(1 for t in tasks if t["waiting_on"])
+    progress["available"] = sum(1 for t in tasks if t.get("state") == "AVAILABLE" and not t["waiting_on"])
+    verdicts = {}
+    for review in sorted(data.get("reviews") or [], key=lambda r: r.get("at") or 0):
+        verdicts[review.get("task")] = review.get("verdict")
+    offered = {o.get("task") for o in data.get("offers") or []}
+    for t in tasks:
+        t["approved"] = t.get("state") == "REVIEW" and verdicts.get(t.get("id")) == "approve" and t.get("id") not in offered
+    for q in data.get("queue") or []:
+        q["reason"] = without_paths(q.get("reason"))
+    data["needs_human"] = [{"task": q.get("task", ""), "reason": q["reason"]} for q in data.get("queue") or []
+                           if q.get("state") == "HUMAN"]
+    return data
+
+
+def last_claims(server, root, module):
+    """UI-023 (B-08): the remote does not answer: the newest local copy of claims this clone has (the dashboard's,
+    setup's or Git's tracking ref), built like a live read and marked stale; None when there is none."""
+    remote, base = remote_and_base()
+    newest = None
+    for ref in (DASH_CLAIMS, SETUP_CLAIMS, "refs/remotes/%s/claims" % remote):
+        shown = server.planning.git(server.identity_run, root, "log", "-1", "--format=%ct", ref, "--", timeout=10)
+        at = (shown.stdout or "").strip() if shown.returncode == 0 else ""
+        if at.isdigit() and (not newest or int(at) > newest[1]):
+            newest = (ref, int(at))
+    if not newest:
+        return None
+    backlog = None
+    for ref in ("refs/uak/dash-base", SETUP_BASE, "refs/remotes/%s/%s" % (remote, base)):
+        shown = server.planning.git(server.identity_run, root, "show", ref + ":.uak/TASKS.md", timeout=10)
+        if shown.returncode == 0:
+            backlog = shown.stdout
+            break
+    if backlog is None:
+        backlog = module.read(Path(root) / ".uak/TASKS.md")
+    folder = Path(tempfile.mkdtemp(prefix="uak-last-claims-"))
+    try:
+        with tarfile.open(fileobj=io.BytesIO(module.git("archive", newest[0], cwd=str(root)))) as archive:
+            for member in archive.getmembers():
+                # Plain files and directories only, inside the folder (the same rule as dash.py's live read).
+                if member.name.startswith("/") or ".." in Path(member.name).parts or not (member.isfile() or member.isdir()):
+                    continue
+                if hasattr(tarfile, "data_filter"):
+                    archive.extract(member, str(folder), filter="data")
+                else:
+                    archive.extract(member, str(folder))
+        data = module.build(folder, backlog, Path(root).name)
+    finally:
+        shutil.rmtree(str(folder), ignore_errors=True)
+    data.update(source="cache", connection="unreachable", stale=True, claims_at=newest[1], refresh=20,
+                warning="Coordination could not refresh. Showing the last known state of the team.",
+                live_url=module.project_live_url(module.read(Path(root) / ".uak/PROJECT.md")))
+    return data
+
+
 def planning_module():
     spec = importlib.util.spec_from_file_location("uak_planning", Path(__file__).with_name("planning.py"))
     module = importlib.util.module_from_spec(spec)
@@ -530,12 +742,18 @@ class SetupServer(ThreadingHTTPServer):
         # it; /api/status never does. Order: slow, then lock; never the reverse.
         self.slow = threading.Lock()
         self.remote_cache, self.tools_cache, self.team_cache, self.plan_known = {}, {}, {}, {}
+        # UI-024: the last trust read of Claude Code's config (size 1, keyed by its mtime and size) and the last good
+        # dashboard of each project, shown (stale) while a check runs instead of a 409 (B-10).
+        self.trust_cache, self.dash_cache = {}, {}
         self.worker = None
         self.plan_started, self.plan_last = 0, ""
         self.target = ""
         self.failed_target = ""
+        # UI-019: the last finished check of each project (kept 10 minutes, so re-picking a project keeps it).
+        self.checks_kept = {}
         self.state = {"phase": "welcome", "target": str(target), "ready": False, "checks": [], "details": "",
-                      "installed": False, "human": ""}
+                      "installed": False, "human": "", "human_source": "", "resume": {}, "inspect": 0,
+                      "checked": False}
         super().__init__(("127.0.0.1", 0), SetupHandler)
 
     def config(self):
@@ -562,13 +780,74 @@ class SetupServer(ThreadingHTTPServer):
             for key in [k for k in cache if k[0] == root]:
                 del cache[key]
 
+    def open_target(self):
+        """On start (main(), never make_server): an installed project on the command line opens where it is, from
+        local Git only (UI-019: a restart landed on Welcome). Anything else keeps the welcome screen. Never raises."""
+        try:
+            root = project_root(self.state.get("target") or "")
+            if not kit_present(root) or install_unfinished(root):
+                return
+            identity = signing_identity(self.identity_run, root)
+            resume, saved = project_progress(self, root, "")
+            branch = branch_state(self, root)
+            with self.lock:
+                self.target = str(root)
+                self.state["branch"] = branch
+                self.state.update(target=str(root), installed=resume["installed"], can_repair=(root / ".uak").exists(),
+                                  phase="setup", identity=identity, human=saved, human_source="project" if saved else "",
+                                  resume=resume, inspect=self.state.get("inspect", 0) + 1, checked=False, ready=False,
+                                  checks=[], next_command="", next_note="", freeze=0, needs_human=[], details="", error="")
+                self.plan_known.setdefault(str(root), ([], bool(resume["kit_on_main"]), "", ""))
+        except (OSError, ValueError, subprocess.SubprocessError):
+            return
+
+    def refresh_progress(self):
+        """Recompute the restore facts of the current project (after a worker, a schedule, an idea or a name)."""
+        with self.lock:
+            target, human = self.target, self.state.get("human") or ""
+        if not target:
+            return
+        resume, _ = project_progress(self, Path(target), human)
+        branch = branch_state(self, Path(target))
+        with self.lock:
+            if self.target == target:
+                self.state["resume"] = resume
+                self.state["branch"] = branch
+
+    def keep_check(self, at=None):
+        """Remember the current project's finished check (caller holds the lock)."""
+        state = self.state
+        if not self.target or not state.get("checked") or state.get("error") or state.get("phase") not in ("setup", "ready"):
+            return
+        key = os.path.normcase(self.target)
+        old = self.checks_kept.get(key) or {}
+        self.checks_kept[key] = {"ready": state.get("ready", False), "checks": list(state.get("checks") or []),
+                                 "next_command": state.get("next_command", ""), "next_note": state.get("next_note", ""),
+                                 "details": state.get("details", ""), "phase": state["phase"],
+                                 "freeze": state.get("freeze", 0), "installed": state.get("installed", False),
+                                 "at": at if at is not None else old.get("at", time.monotonic())}
+
+    def kept_check(self, root, installed):
+        """The kept check of ROOT when it is recent, for the same installation and not a failed one; else None."""
+        kept = self.checks_kept.get(os.path.normcase(str(root)))
+        if not kept or time.monotonic() - kept["at"] > CHECK_KEEP or kept["installed"] != installed or not installed \
+                or self.failed_target == str(root):
+            return None
+        return kept
+
     def start_worker(self, work):
         """Start the one background operation. It waits for the slow lane to drain first, so no request-side network
         section overlaps the engine; the thread is assigned and started under one lock (amendment 3)."""
         def drained():
             with self.slow:
                 pass
-            work()
+            try:
+                work()
+            finally:
+                try:
+                    self.refresh_progress()  # UI-019: what the operation changed, for the page's restored steps
+                except Exception:  # noqa: BLE001 - the restore facts are a hint; the operation's result stands
+                    pass
 
         with self.lock:
             self.worker = threading.Thread(target=drained, daemon=True)
@@ -578,16 +857,18 @@ class SetupServer(ThreadingHTTPServer):
         self.forget()
         output = redact(result.stdout + "\n" + result.stderr)
         self.state.update(readiness(output, result.returncode))
-        self.state.update(phase="ready" if self.state["ready"] else "setup", details=output)
+        self.state.update(phase="ready" if self.state["ready"] else "setup", details=output, checked=True,
+                          checks_stale=False)
         if not self.state["checks"] and not self.state["ready"]:
             self.state["error"] = "The readiness check could not complete. Check connection and technical details, then retry."
+        self.keep_check(at=time.monotonic())
 
     def plan_run(self, harness, command, note):
         """The planning run, then the server's own check of what changed and its own lint."""
         planning, root, uak = self.planning, Path(self.target), self.engine()
         with self.lock:
             self.plan = None
-            self.state.update(phase="planning", error="", details="")
+            self.state.update(phase="planning", error="", details="", outcome="", problem="")
             self.plan_started, self.plan_last = time.time(), ""
 
         def seen(line):  # the last readable line of the tool's output, for the page (UI-010)
@@ -615,6 +896,9 @@ class SetupServer(ThreadingHTTPServer):
                 plan = {"harness": harness, "violations": found, "lint": checked, "cards": planning.cards(text),
                         "digest": planning.digest(root), "head": after["head"], "exit": result.returncode,
                         "failed": missing}
+                if found:
+                    # UI-024 (D-7.1): one instruction to undo what the planner did, with its command when Git can.
+                    plan["undo"] = undo_instruction(self.run, root, before, after, found)
                 output = (result.stdout or "") + "\n" + (result.stderr or "")
                 # An untrusted folder (UI-008): the tool ran, wrote no plan, and said why; name that cause.
                 untrusted = not tasks.is_file() and planning.UNTRUSTED in output
@@ -626,6 +910,8 @@ class SetupServer(ThreadingHTTPServer):
                                       error=planning.UNTRUSTED_ERROR if untrusted else
                                       planning.MISSING_PLAN_ERROR if missing and result.returncode == 0 else
                                       "The coding tool stopped with an error. Check Technical details, then try again." if failed else "")
+                    # A written plan after a rule break is not "done": the page reads "Finished with problems".
+                    self.state.update(outcome="problems" if found else "", problem=PLAN_PROBLEM if found else "")
                     self.plan_started = 0
             except Exception as exc:
                 with self.lock:
@@ -796,16 +1082,29 @@ class SetupServer(ThreadingHTTPServer):
         self.start_worker(work)
 
     def launch(self, operation, command):
+        checking = operation == "checking"
         with self.lock:
-            self.state.update(phase=operation, ready=False, checks=[], next_command="", next_note="", details="", error="")
+            # UI-024 (A-F7): a check keeps the last list (dimmed by the page) until the new one arrives; emptying it
+            # made the page jump 1,014 px. An install still starts from an empty list.
+            self.state.update(phase=operation, ready=False, next_command="", next_note="", details="", error="",
+                              checked=False, checks_stale=checking)
+            if not checking:
+                self.state["checks"] = []
 
         def work():
             try:
-                result = self.run(command, cwd=self.target, timeout=120)
+                if checking:
+                    result = self.run(command, cwd=self.target, timeout=CHECK_TIMEOUT, group=True, env=dict(CHECK_ENV))
+                else:
+                    result = self.run(command, cwd=self.target, timeout=120)
                 output = redact(result.stdout + "\n" + result.stderr)
                 with self.lock:
                     installed = kit_present(self.target)
-                    if operation == "installing":
+                    if checking and result.returncode == 124:
+                        # B-10: the remote did not answer in time; the last result stays, marked current again.
+                        self.state.update(phase="setup", checks_stale=False, details=output,
+                                          error=CHECK_TIMEOUT_ERROR % (remote_and_base()[0], CHECK_TIMEOUT))
+                    elif operation == "installing":
                         success = result.returncode == 0 and installed
                         self.failed_target = "" if success else self.target
                         error = "Installation did not finish. Check details, correct the issue, and retry."
@@ -823,7 +1122,8 @@ class SetupServer(ThreadingHTTPServer):
                     if operation == "installing":
                         self.failed_target = self.target
                         self.state["installed"] = False
-                    self.state.update(phase="error", ready=False, error="The operation stopped. Correct the issue and retry.", details=redact(exc))
+                    self.state.update(phase="error", ready=False, checks_stale=False,
+                                      error="The operation stopped. Correct the issue and retry.", details=redact(exc))
 
         self.start_worker(work)
 
@@ -940,21 +1240,38 @@ class SetupHandler(BaseHTTPRequestHandler):
                     busy = self.server.worker and self.server.worker.is_alive()
                 if not root:
                     raise ValueError("Choose a project first.")
-                if busy:
-                    self.reply(409, {"error": "An operation is running. Wait for it to finish."})
-                    return
                 spec = importlib.util.spec_from_file_location("uak_dashboard", Path(__file__).with_name("dash.py"))
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
+                if busy:
+                    # UI-024 (B-10): while the engine runs the dashboard still answers, from what is known here.
+                    self.reply(200, self.dashboard_meanwhile(root, module))
+                    return
                 data = module.workspace_data(root)
+                if data.get("source") == "local" and data.get("connection") == "unreachable":
+                    # UI-023 (B-08): offline, the last claims this clone read, marked stale, not "everything free".
+                    try:
+                        data = last_claims(self.server, root, module) or data
+                    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError, tarfile.TarError):
+                        pass  # no readable copy: the plainly labelled local plan stays
                 try:
                     name_the_team(self.server, Path(root), data)
                 except (OSError, ValueError, subprocess.SubprocessError):
                     pass  # the dashboard still shows who has acted; only the extra names are missing
-                data["mode"] = read_config(root).get("Mode", "")
+                config = read_config(root)
+                data["mode"] = config.get("Mode", "")
+                if not data.get("freeze"):
+                    # UI-023 (B-06): claims' config has no freeze until the engine writes one; PROJECT.md has it.
+                    try:
+                        data["freeze"] = max(0, int(read_config(root, ("Freeze-Epoch",)).get("Freeze-Epoch") or 0))
+                    except ValueError:
+                        data["freeze"] = 0
+                truthful(data)
                 with self.server.lock:
                     self.server.state["freeze"] = data.get("freeze") or 0
+                    self.server.state["needs_human"] = data["needs_human"]
                     data["guidance"] = guidance(self.server.state, data)
+                    self.server.dash_cache[os.path.normcase(root)] = data
                 self.reply(200, data)
             except (ValueError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
                 self.reply(400, {"error": redact(exc)})
@@ -983,6 +1300,7 @@ class SetupHandler(BaseHTTPRequestHandler):
                     running = state.get("phase") == "planning" and s.plan_started
                     progress = {"elapsed": max(0, int(time.time() - s.plan_started)), "last": s.plan_last} if running else {}
                 self.reply(200, dict(state, plan_progress=progress, settings=read_config(target) if target else {},
+                                     branch=remote_default(s, target, state.get("branch") or {}),
                                      guidance=guidance(state), completed=completed_steps(state), team=team_phase(state),
                                      demo=media_available(),
                                      reviewer=reviewer_status(s, target, state.get("human") or "")))
@@ -1070,13 +1388,51 @@ class SetupHandler(BaseHTTPRequestHandler):
         return view
 
     def cached_team(self):
-        """While the engine runs: the last view of this project and name, marked stale; never a fetch."""
+        """While the engine runs: the last view of this project and name, marked stale; never a fetch. Without one, a
+        view with no command that says why (UI-024, B-10: a 409 here left the team step blank during a check)."""
         key = self.team_key()
         with self.server.lock:
             view = self.server.team_cache.get(key)
-        if not view:
-            raise Busy()
-        return dict(view, stale=True)
+            checking = self.server.state.get("phase") == "checking"
+        if view:
+            return dict(view, stale=True)
+        target, name = key
+        if not HUMAN_NAME.fullmatch(name):
+            raise Need("Tell setup your name first (Your name, in Prepare): registering the reviewer is a human act.", "human")
+        who = name + "-r"
+        return {"task": "", "human": name, "reviewer": who, "phase": "", "stale": True, "checking": checking,
+                "remote": {"state": "", "detail": ""}, "commands": [], "review_note": "", "claimed": [], "tools": [],
+                "note": CHECKING_NOTE if checking else BUSY_NOTE,
+                "roles": effective_roles(None, set()), "retry": False, "can_check": False,
+                "people": team_size(target) if target else 0,
+                "registered": {"name": who, "registered": None, "registered_by": "", "retired": False, "message": ""}}
+
+    def dashboard_meanwhile(self, root, module):
+        """GET /api/dashboard while a worker runs: the last good dashboard of this project marked stale, or one built
+        from local copies only (the last claims this clone read, else the local plan). Never the network."""
+        s = self.server
+        with s.lock:
+            cached = s.dash_cache.get(os.path.normcase(root))
+        if cached:
+            return dict(cached, stale=True, checking=True)
+        try:
+            data = last_claims(s, root, module)
+        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError, tarfile.TarError):
+            data = None
+        if not data:
+            with tempfile.TemporaryDirectory(prefix="uak-local-dashboard-") as folder:
+                data = module.build(Path(folder), module.read(Path(root) / ".uak/TASKS.md"), Path(root).name)
+            data["source"] = "local"
+        data.update(connection="checking", stale=True, checking=True, warning=CHECKING_WARNING, refresh=20)
+        data["mode"] = read_config(root).get("Mode", "")
+        try:
+            data["freeze"] = data.get("freeze") or max(0, int(read_config(root, ("Freeze-Epoch",)).get("Freeze-Epoch") or 0))
+        except ValueError:
+            data["freeze"] = 0
+        truthful(data)
+        with s.lock:
+            data["guidance"] = guidance(s.state, data)
+        return data
 
     def plan_view(self, probe=True):
         """The planning page: what can plan here, the idea, and the last proposed plan with its check and lint. Without
@@ -1084,22 +1440,24 @@ class SetupHandler(BaseHTTPRequestHandler):
         s, planning = self.server, self.server.planning
         with s.lock:
             target, plan = s.target, dict(s.plan or {})
+            resume = dict(s.state.get("resume") or {})
         if not target:
             raise ValueError("Choose a project first.")
         root = project_root(target)
-        remote_note = ""
+        remote_note, remote_technical = "", ""
         if probe:
             offers = planners(s, root)
             known = remote_state(s, root) if kit_present(root) else {}
             kit = bool(known.get("kit"))
             if known.get("state") == "offline":
                 # Offline is not "publish the kit" (review of 993e112): the same words as POST /api/plan.
-                remote_note = "Could not reach %s: %s" % (remote_and_base()[0], known["detail"])
+                failure = unreachable(remote_and_base()[0], known["failure"])
+                remote_note, remote_technical = str(failure), failure.technical
             with s.lock:
-                s.plan_known[str(root)] = (offers, kit, remote_note)
+                s.plan_known[str(root)] = (offers, kit, remote_note, remote_technical)
         else:
             with s.lock:
-                offers, kit, remote_note = s.plan_known.get(str(root), ([], False, ""))
+                offers, kit, remote_note, remote_technical = s.plan_known.get(str(root), ([], False, "", ""))
 
         def text(name):
             path = planning.regular_file(root, name)
@@ -1111,9 +1469,14 @@ class SetupHandler(BaseHTTPRequestHandler):
                 "digest": plan.get("digest", ""), "failed": bool(plan.get("failed")),
                 "tasks": text(".uak/TASKS.md") if plan else "",
                 "owners": text(".uak/OWNERS.md") if plan else "", "planned": bool(plan) and not plan.get("failed"),
-                "kit_on_main": kit, "remote_note": remote_note,
+                "kit_on_main": kit, "remote_note": remote_note, "remote_technical": remote_technical,
+                # UI-019: an approved plan is shown done, never offered again (from the last local copy of main).
+                "approved": resume.get("plan_approved") is True, "approved_sha": resume.get("base_sha") or "",
                 # Only Claude Code has the one-time folder trust (UI-008); a Codex-only project shows no notice.
-                "trust_command": planning.trust_command(root) if (root / ".claude").is_dir() else ""}
+                "trust_command": planning.trust_command(root) if (root / ".claude").is_dir() else "",
+                # UI-024 (A-F6): whether Claude Code already trusts the project folder (None: could not read).
+                "trust": claude_trust((str(root),), s)[str(root)] if (root / ".claude").is_dir() else None,
+                "undo": plan.get("undo") or {"text": "", "command": ""}}
 
     def do_POST(self):
         if not self.authorized(write=True):
@@ -1181,12 +1544,16 @@ class SetupHandler(BaseHTTPRequestHandler):
             raise ValueError("Give the event's start, end and time zone.")
         if set(data) != {"start", "end", "zone"} or not all(isinstance(v, str) for v in data.values()):
             raise ValueError("Give the event's start, end and time zone.")
-        if not SCHEDULE_TIME.fullmatch(data["start"]) or not SCHEDULE_TIME.fullmatch(data["end"]):
-            raise ValueError("Write dates as YYYY-MM-DD HH:MM (for example 2026-11-12 10:00).")
+        for field in ("start", "end"):
+            if not SCHEDULE_TIME.fullmatch(data[field]):
+                raise FieldError("Write dates as YYYY-MM-DD HH:MM (for example 2026-11-12 10:00).", field)
         if data["end"] <= data["start"]:
-            raise ValueError("The event must end after it starts.")
+            raise FieldError("The event must end after it starts.", "end")
         if not TIME_ZONE.fullmatch(data["zone"]):
-            raise ValueError("Choose a time zone such as America/Mexico_City or UTC.")
+            raise FieldError("Choose a time zone such as America/Mexico_City or UTC.", "zone")
+        if not real_zone(data["zone"]):
+            raise FieldError("%s is not a time zone this computer knows. Choose one from the list, such as "
+                             "America/Mexico_City or UTC." % data["zone"], "zone")
         uak = s.engine()
         root = project_root(s.target)
         # The engine computes the schedule; setup writes Freeze-Epoch itself, never through a symlinked PROJECT.md or
@@ -1199,15 +1566,20 @@ class SetupHandler(BaseHTTPRequestHandler):
         first = re.search(r"(?m)^first claim by\s+(\S+ \S+)", output)
         if result.returncode or not freeze:
             raise ValueError("The schedule could not be set: %s" % redact(output.strip())[-400:])
+        # The page shows dates, in the order they happen (UI-021); "freeze"/"first_claim" stay the engine's words.
+        freeze_at = dated(freeze.group(1), data["start"], data["end"], last=True)
+        first_at = dated(first.group(1), data["start"], data["end"]) if first else ""
         if preview:
-            self.reply(200, {"freeze": freeze.group(1).strip(), "epoch": int(freeze.group(2)),
+            self.reply(200, {"freeze": freeze.group(1).strip(), "epoch": int(freeze.group(2)), "freeze_at": freeze_at,
                              "soon": int(freeze.group(2)) < time.time() + 3600})
             return
         s.planning.set_freeze(root, int(freeze.group(2)))
         with s.lock:
-            s.state.update(phase="setup", ready=False, checks=[], next_command="", next_note="", error="")
+            s.state.update(phase="setup", ready=False, checks=[], next_command="", next_note="", error="", checked=False)
+        s.refresh_progress()
         self.reply(200, {"freeze": freeze.group(1).strip(), "epoch": int(freeze.group(2)),
-                         "first_claim": first.group(1) if first else "", "details": redact(output.strip())})
+                         "first_claim": first.group(1) if first else "", "freeze_at": freeze_at,
+                         "first_claim_at": first_at, "details": redact(output.strip())})
 
     def recheck_plan(self):
         """Lint, cards and digest of the current plan files again, without running the planner (UI-005)."""
@@ -1250,13 +1622,28 @@ class SetupHandler(BaseHTTPRequestHandler):
             installed = kit_present(root) and s.failed_target != str(root)
             repair = (root / ".uak").exists()
             with s.lock:
+                session = s.state.get("human") or ""
+            # UI-019: where the project is, from local Git only, outside the lock.
+            resume, saved = project_progress(s, root, session)
+            branch = branch_state(s, root)  # UI-020: on the base branch? the remote's default branch?
+            with s.lock:
+                s.keep_check()  # the project being left keeps its last check
                 previous = dict(s.state) if s.failed_target == str(root) else {}
+                kept = None if previous else s.kept_check(root, installed)
                 s.target = str(root)
                 s.forget(root)
                 s.tools_cache.pop(str(root), None)
                 if self.identity is not None:
                     s.state["identity"] = self.identity
-                s.state.update(target=str(root), installed=installed, can_repair=repair, phase="error" if previous else "setup" if repair else "options", ready=False, checks=[], next_command="", next_note="", freeze=0, details=previous.get("details", ""), error=previous.get("error", ""))
+                human = saved or s.state.get("human") or ""
+                s.state.update(target=str(root), installed=installed, can_repair=repair, phase="error" if previous else "setup" if repair else "options", ready=False, checks=[], next_command="", next_note="", freeze=0, needs_human=[], details=previous.get("details", ""), error=previous.get("error", ""),
+                               human=human, human_source="project" if saved else "session" if human else "",
+                               resume=resume, inspect=s.state.get("inspect", 0) + 1, checked=False, branch=branch)
+                if kept:
+                    s.state.update(ready=kept["ready"], checks=list(kept["checks"]), next_command=kept["next_command"],
+                                   next_note=kept["next_note"], details=kept["details"], phase=kept["phase"],
+                                   freeze=kept["freeze"], checked=True)
+                s.plan_known.setdefault(str(root), ([], bool(resume["kit_on_main"]), "", ""))
                 state = dict(s.state)
             self.reply(200, dict(state, settings=s.config()))
         elif self.path in ("/api/install", "/api/repair"):
@@ -1264,7 +1651,11 @@ class SetupHandler(BaseHTTPRequestHandler):
             cmd = install_command(s.installer, s.target, data)
             if not s.target:
                 raise ValueError("Check the project folder before installing.")
-            project_root(s.target)
+            wrong = branch_state(s, project_root(s.target))
+            with s.lock:
+                s.state["branch"] = wrong
+            if wrong["wrong"]:
+                raise ValueError(wrong["message"])  # B-01: never install the kit on claims or any other branch
             if self.path == "/api/repair":
                 existing_mode = s.config().get("Mode")
                 if existing_mode and existing_mode != data["mode"]:
@@ -1299,6 +1690,7 @@ class SetupHandler(BaseHTTPRequestHandler):
             s.planning.save_idea(root, data, read_config(root).get("Mode", ""))
             with s.lock:
                 s.plan = None
+            s.refresh_progress()
             self.reply(200, {"saved": True})
         elif self.path == "/api/plan":
             if set(data) - {"harness", "note"} or "harness" not in data:
@@ -1312,7 +1704,7 @@ class SetupHandler(BaseHTTPRequestHandler):
                 raise ValueError("Describe what you are building first.")
             known = remote_state(s, root, fresh=True)
             if known["state"] == "offline":
-                raise ValueError("Could not reach %s: %s" % (remote_and_base()[0], known["detail"]))
+                raise unreachable(remote_and_base()[0], known["failure"])
             if not known.get("kit"):
                 raise ValueError("Publish the kit to main first (Prepare: Publish the kit to main), then create the plan. "
                                  "The plan's checks read the kit from main.")
@@ -1325,10 +1717,27 @@ class SetupHandler(BaseHTTPRequestHandler):
             self.approve(data)
         elif self.path == "/api/human":
             if set(data) != {"name"} or not isinstance(data["name"], str) or not HUMAN_NAME.fullmatch(data["name"]):
-                raise ValueError("Use a short name in lowercase letters, digits, - or _ (for example: ana).")
+                raise FieldError("Use a short name in lowercase letters, digits, - or _ (for example: ana).", "name")
+            name = data["name"]
             with s.lock:
-                s.state["human"] = data["name"]
-            self.reply(200, {"human": data["name"]})
+                s.state["human"] = name
+                target = s.target
+            # UI-019: remembered for this project in its Git folder; never blocked by that file.
+            persisted, note = False, ""
+            if target:
+                try:
+                    _, common = git_dirs(s, Path(target), s.identity_run)
+                    if not common:
+                        raise ValueError("no Git folder")
+                    write_human(s.planning, common, name)
+                    persisted = True
+                except (OSError, ValueError, subprocess.SubprocessError):
+                    note = HUMAN_NOT_KEPT
+            with s.lock:
+                if s.target == target:
+                    s.state["human_source"] = "project" if persisted else "session"
+            s.refresh_progress()
+            self.reply(200, {"human": name, "persisted": persisted, "note": note})
         elif self.path == "/api/schedule":
             self.schedule(data)
         elif self.path == "/api/publish-kit":
@@ -1343,8 +1752,10 @@ class SetupHandler(BaseHTTPRequestHandler):
             root, name, who = registration_checks(s, data)
             # Read fresh from claims (never the cache) before the engine runs; the slow lane, not the state lock.
             known = remote_state(s, root, fresh=True)
+            if known["state"] == "offline":
+                raise unreachable(remote_and_base()[0], known["failure"])
             if known["state"] != "ok":
-                raise ValueError("Could not reach %s: %s" % (remote_and_base()[0], known.get("detail") or "no such remote"))
+                raise ValueError("This project has no remote named %s. Add one, then press Retry." % remote_and_base()[0])
             found = reviewer_record(known, who, name)
             if found["retired"]:
                 raise ValueError(found["message"])
@@ -1374,7 +1785,8 @@ def approval_checks(server, data):
     if not plan or plan.get("failed"):
         raise ValueError("Create the plan first, then review it.")
     if plan["violations"]:
-        raise ValueError("The last planning run changed files it may not change. Undo those changes, then create the plan again.")
+        raise ValueError("The last planning run changed things only you may change. Undo them with the instruction "
+                         "under Proposed plan, then create the plan again.")
     if data["confirm"] != root.name:
         raise ValueError("Type the project folder name exactly as shown: %s" % root.name)
     for name in planning.PLAN_FILES:
@@ -1398,12 +1810,12 @@ def approval_checks(server, data):
                          % (", ".join(staged[:5]), " ".join(staged[:5])))
     remote, base = remote_and_base()
     if git("symbolic-ref", "--short", "-q", "HEAD").stdout.strip() != base:
-        raise ValueError("The plan is published on %s. Switch to it first: git switch %s" % (base, base))
+        raise ValueError(switch_advice(server, root, "approve the plan again"))
     # Into setup's own ref, never FETCH_HEAD (the engine reads its own), with the network timeout (UI-011).
     fetched = net_git(server, root, "fetch", "-q", "--no-tags", "--no-write-fetch-head", remote,
                       "+refs/heads/%s:%s" % (base, SETUP_BASE))
     if fetched.returncode:
-        raise ValueError("Could not reach %s: %s" % (remote, offline_detail(fetched)))
+        raise unreachable(remote, git_failure(fetched))
     head = git("rev-parse", "HEAD").stdout.strip()
     upstream = git("rev-parse", SETUP_BASE).stdout.strip()
     if head != upstream:
@@ -1435,19 +1847,19 @@ def publish_checks(server):
                          % (", ".join(staged[:5]), " ".join(staged[:5])))
     remote, base = remote_and_base()
     if git("symbolic-ref", "--short", "-q", "HEAD").stdout.strip() != base:
-        raise ValueError("The kit is published on %s. Switch to it first: git switch %s" % (base, base))
+        raise ValueError(switch_advice(server, root, "publish again"))
     if git("remote", "get-url", remote).returncode:
         raise ValueError("This project has no remote named %s. Create an empty repository and run: "
                          "git remote add %s <its URL>" % (remote, remote))
     head = git("rev-parse", "-q", "--verify", "HEAD").stdout.strip()
     listed = net_git(server, root, "ls-remote", "--heads", remote, "refs/heads/" + base)
     if listed.returncode:
-        raise ValueError("Could not reach %s: %s" % (remote, offline_detail(listed)))
+        raise unreachable(remote, git_failure(listed))
     if heads_of(listed.stdout).get("refs/heads/" + base):
         fetched = net_git(server, root, "fetch", "-q", "--no-tags", "--no-write-fetch-head", remote,
                           "+refs/heads/%s:%s" % (base, SETUP_BASE))
         if fetched.returncode:
-            raise ValueError("Could not read %s/%s: %s" % (remote, base, offline_detail(fetched)))
+            raise unreachable("%s/%s" % (remote, base), git_failure(fetched), read=True)
         upstream = git("rev-parse", SETUP_BASE).stdout.strip()
         if head != upstream:
             if head and git("merge-base", "--is-ancestor", head, upstream).returncode == 0:
@@ -1455,8 +1867,12 @@ def publish_checks(server):
                                  % (remote, base, remote, base))
             if not head or not git("merge-base", head, upstream).stdout.strip():
                 raise unrelated_history(server, root, head, remote, base)
-            raise ValueError("This branch has commits that are not on %s/%s. Push or move them first, so publishing "
-                             "sends only the kit." % (remote, base))
+            # B-03: after the way-out's git pull this branch is ahead; a refusal always carries its exact command.
+            if git("merge-base", "--is-ancestor", upstream, head).returncode == 0:
+                raise ValueError("This branch has commits that are not on %s/%s yet. Send them first with git push %s %s, "
+                                 "then publish again: publishing sends only the kit." % (remote, base, remote, base))
+            raise ValueError("This branch and %s/%s both have new commits. Join them first with git pull --no-rebase %s %s "
+                             "and then git push %s %s, then publish again." % (remote, base, remote, base, remote, base))
     elif head:
         raise ValueError("This branch has commits and %s has no %s yet. Push them yourself first "
                          "(git push -u %s HEAD:%s), then publish the kit." % (remote, base, remote, base))
@@ -1499,7 +1915,7 @@ def unrelated_history(server, root, head, remote, base):
         else:
             collide.append(path)
     text = root.as_posix()
-    if changed or unsafe or len(collide) > 8 or not quotable(text) or any(
+    if changed or unsafe or len(collide) > 8 or not printable(text) or any(
             not SAFE_PATH.fullmatch(p) or ".." in p.split("/") or os.path.lexists(str(root / (p + ".mine")))
             for p in collide):
         command = ""
@@ -1510,6 +1926,9 @@ def unrelated_history(server, root, head, remote, base):
             # mv -n would exit 0 without moving: the tests stop the chain before git pull instead (amendment 8).
             parts += ["test ! -e " + mine, "test ! -L " + mine, "mv -- %s %s" % (shell_quote(p), mine)]
         command = " && ".join(parts + ["git pull --no-rebase --no-edit --allow-unrelated-histories %s %s" % (remote, base)])
+    # B-03: with commits of its own, this folder is ahead after the pull: the second command sends them (a separate
+    # command, so the first never pushes anything; an unborn folder simply becomes the remote's history).
+    push = "cd %s && git push %s %s" % (shell_quote(text), remote, base) if command and head else ""
     steps = []
     if changed:
         names = " ".join(shell_quote(p) for p in changed[:8])
@@ -1522,6 +1941,9 @@ def unrelated_history(server, root, head, remote, base):
     if command:
         steps.append("If Git reports a conflict, open the files it names, keep what you need from both, then run git add "
                      "on them and git commit.")
+        if push:
+            steps.append("Then run the second command: git push %s %s sends your own commits to %s/%s, so publishing "
+                         "sends only the kit. Then press Review the files again." % (remote, base, remote, base))
         if collide:
             steps.append("Your copies are kept with .mine added to their names: %s. Choose Repair or update kit so the kit "
                          "adds its lines to .gitignore again, then compare and delete the .mine files."
@@ -1535,14 +1957,22 @@ def unrelated_history(server, root, head, remote, base):
         steps.append("Setup cannot write a safe command for the files this folder and %s/%s both have. Publish to a new "
                      "empty repository instead (no README, no .gitignore, no license): git remote set-url %s <its URL>"
                      % (remote, base, remote))
-    return WayOut("%s/%s already has its own first commits (for example a README or .gitignore created on GitHub), and they "
-                  "do not share history with this folder. Nothing was changed. The command below runs git pull to join "
-                  "both histories; read it before you run it." % (remote, base),
-                  {"command": command, "renamed": collide if command else [], "steps": steps})
+    first = ("%s/%s already has its own first commits (for example a README or .gitignore created on GitHub), and they "
+             "do not share history with this folder. Nothing was changed. " % (remote, base))
+    # B-09: "the command below" only when there is one.
+    first += ("The command below runs git pull to join both histories; read it before you run it." if command else
+              "Setup cannot write a safe git pull command to join them here: follow the steps below.")
+    return WayOut(first, {"command": command, "push": push, "renamed": collide if command else [], "steps": steps})
 
 
 def refusal(exc):
     body = {"error": redact(exc)}
+    if getattr(exc, "field", ""):
+        body["field"] = exc.field  # UI-021: the page shows it under that field (setup's or the planning module's)
+    if getattr(exc, "technical", ""):
+        body["technical"] = redact(exc.technical)  # git's own words, under Technical details
+    if isinstance(exc, Need):
+        body["need"] = exc.need
     if isinstance(exc, WayOut):
         body["way_out"] = exc.way_out
     return body
@@ -1554,8 +1984,99 @@ def shell_quote(path):
 
 
 def quotable(text):
-    """A path setup shows inside a command: no quote mark and no control character (it never escapes them)."""
-    return "'" not in text and not any(ord(c) < 32 or ord(c) == 127 for c in text)
+    """A path setup shows inside an agent's launch command: no quote mark and no control character."""
+    return "'" not in text and printable(text)
+
+
+def printable(text):
+    """A path shell_quote makes one exact Bash word: any quote mark, no control character (B-16)."""
+    return not any(ord(c) < 32 or ord(c) == 127 for c in text)
+
+
+def switch_step(head, base, has_base, born):
+    """The one command that puts this folder on the base branch, or "" when setup cannot write it exactly."""
+    if has_base:
+        return "git switch " + base
+    if not head or not born:
+        return "git switch -c " + base  # detached, or no commit yet: the new branch starts here
+    return "git branch -m %s %s" % (head, base) if valid_ref_name(head) else ""
+
+
+def branch_state(server, root, then="check the project folder again"):
+    """UI-020 (B-01, Dylan's live run): the branch this folder is on and its remote's default branch, from local Git
+    only (setup's own reader, never the operation runner). `wrong` when the folder has commits and HEAD is not the base
+    branch: a clone of a remote whose default branch is claims lands on claims, and the kit was installed there."""
+    remote, base = remote_and_base()
+
+    def git(*args):
+        return server.planning.git(server.identity_run, root, *args, timeout=10)
+
+    head = git("symbolic-ref", "-q", "HEAD").stdout.strip()
+    head = head[len("refs/heads/"):] if head.startswith("refs/heads/") else ""
+    tracking, origin_head = "refs/remotes/%s/%s" % (remote, base), "refs/remotes/%s/HEAD" % remote
+    wanted = ["refs/heads/" + base, tracking, origin_head] + (["refs/heads/" + head] if head else [])
+    refs = {}
+    for line in git("for-each-ref", "--format=%(refname) %(symref)", *wanted).stdout.splitlines():
+        name, _, points = line.strip().partition(" ")
+        refs[name] = points.strip()  # for-each-ref also matches refs below a name: only exact names are read
+    pointed = refs.get(origin_head, "")
+    prefix = "refs/remotes/%s/" % remote
+    view = {"head": head, "base": base, "wrong": False, "message": "", "command": "", "step": "",
+            "remote_default": pointed[len(prefix):] if pointed.startswith(prefix) else "", "remote_note": ""}
+    view["remote_note"] = default_note(remote, base, view["remote_default"])
+    if head == base:
+        return view
+    born = ("refs/heads/" + head) in refs if head else git("rev-parse", "-q", "--verify", "HEAD").returncode == 0
+    step = switch_step(head, base, ("refs/heads/" + base) in refs or tracking in refs, born)
+    if not head:
+        message = ("This folder is not on any branch (detached HEAD), and the kit lives on %s. Switch first with %s, then "
+                   "%s." % (base, step, then))
+    elif step.startswith("git branch -m"):
+        message = ("This folder is on the branch %s and has no branch %s, where the kit lives. Rename this branch with "
+                   "%s, then %s." % (head, base, step, then))
+    elif step:
+        message = ("This folder is on the branch %s, not %s, and the kit lives on %s. Switch first with %s, then %s."
+                   % (head, base, base, step, then))
+    else:
+        message = ("This folder is on another branch, not %s, and the kit lives on %s. Switch to %s yourself, then %s."
+                   % (base, base, base, then))
+    view.update(step=step, message=message)
+    if not born:
+        return view  # no commit yet: nothing to stop at inspect; publishing names the step
+    text = root.as_posix()
+    if step and printable(text):
+        view["command"] = "cd %s && %s" % (shell_quote(text), step)
+    view["wrong"] = True
+    return view
+
+
+def switch_advice(server, root, then):
+    """The publish and approval refusal off the base branch: the exact step, never a command that cannot work."""
+    return branch_state(server, root, then)["message"]
+
+
+def default_note(remote, base, default):
+    """Dylan's live run: GitHub made claims the default branch (the first branch pushed), so clones open on claims."""
+    if default != "claims" or default == base:
+        return ""
+    return ("The default branch of %s is claims, so new clones open the coordination branch instead of %s. Change it on "
+            "GitHub: Settings, General, Default branch, choose %s and press Update. Then run git remote set-head %s -a "
+            "in each clone that already exists." % (remote, base, base, remote))
+
+
+def remote_default(server, target, branch):
+    """/api/status's branch: what inspect saw, plus the remote's default branch from setup's last read of the remote."""
+    if not target or not branch:
+        return branch
+    try:
+        remote, base = remote_and_base()
+    except ValueError:
+        return branch
+    with server.lock:
+        known = server.remote_cache.get((target, remote, base)) or {}
+    # The remote itself wins over this clone's refs/remotes/origin/HEAD, which stays stale after GitHub is fixed.
+    default = known["default"] if "default" in known else branch.get("remote_default") or ""
+    return dict(branch, remote_default=default, remote_note=default_note(remote, base, default))
 
 
 def codex_flags(gitdir):
@@ -1583,11 +2104,68 @@ def net_git(server, root, *args):
                       group=True)
 
 
+# UI-021 (QA round D-4.1): offline, the page showed git's stderr ("fatal: '…/gone.git' does not appear to be a git
+# repository …") followed by "check your connection", which was wrong advice. The common failures are one plain
+# sentence each, with the advice that fits; git's own words go under Technical details. Order matters: a timeout says
+# "timed out" and a refused key says "Could not read from remote repository" too.
+GIT_FAILURES = (
+    ("timeout", r"timed out|time-?out"),
+    ("network", r"could not resolve host|nodename nor servname|name or service not known|temporary failure in name "
+                r"resolution|getaddrinfo|failed to connect|connection refused|network is unreachable|no route to host|"
+                r"could not connect to server"),
+    ("auth", r"authentication failed|permission denied|could not read (username|password)|terminal prompts disabled|"
+             r"invalid username or password|returned error: 40[13]|publickey"),
+    ("repo", r"does not appear to be a git repository|not a git repository|repository not found|repository '[^']*' "
+             r"not found|no such file or directory"),
+)
+GIT_REASON = {
+    "timeout": "it timed out after %d s" % NET_TIMEOUT,
+    "network": "this computer cannot reach its server (no internet, or a wrong address)",
+    "auth": "it refused the sign-in",
+    "repo": "its address does not point to a repository you can read",
+    "other": "Git could not talk to it",
+}
+GIT_ADVICE = {
+    "timeout": "Check your connection, then try again.",
+    "network": "Check your connection, then try again.",
+    "auth": "Sign in with gh auth login (or check your SSH key), then try again.",
+    "repo": "Check the address with git remote -v and that you are signed in (gh auth login), then try again.",
+    "other": "Read Technical details, then try again.",
+}
+
+
+def git_failure(result):
+    """A failed network Git as {"reason", "advice", "technical"}: a plain clause, what to do, and git's own words."""
+    technical = redact((result.stderr or result.stdout or "").strip())[-1200:]
+    kind = "timeout" if result.returncode == 124 else "other"
+    if kind == "other":
+        for name, pattern in GIT_FAILURES:
+            if re.search(pattern, technical, re.I):
+                kind = name
+                break
+    if result.returncode == 124 and not technical:
+        technical = "git was stopped after %d s" % NET_TIMEOUT
+    return {"kind": kind, "reason": GIT_REASON[kind], "advice": GIT_ADVICE[kind], "technical": technical}
+
+
+class GitFailure(ValueError):
+    """A refusal caused by network Git: one plain sentence for the page, git's own words as `technical`."""
+
+    def __init__(self, message, technical=""):
+        super().__init__(message)
+        self.technical = technical
+
+
+def unreachable(remote, failure, read=False):
+    """The refusal for a remote that did not answer: "Could not reach origin: <reason>. <advice>" (UI-021)."""
+    if read:
+        return GitFailure("Could not read %s: %s. %s" % (remote, failure["reason"], failure["advice"]), failure["technical"])
+    return GitFailure("Could not reach %s: %s. %s" % (remote, failure["reason"], failure["advice"]), failure["technical"])
+
+
 def offline_detail(result):
-    if result.returncode == 124:
-        return "timed out after %d s" % NET_TIMEOUT
-    text = " ".join(redact((result.stderr or result.stdout or "").strip()).split())[-300:].rstrip(". ")
-    return text or "(no message)"
+    """The plain reason a network Git failed (its words stay in git_failure's technical)."""
+    return git_failure(result)["reason"]
 
 
 def heads_of(text):
@@ -1610,13 +2188,16 @@ def read_remote(server, root, remote, base):
 
     if git("remote", "get-url", remote).returncode:
         return {"state": "none", "detail": "", "at": now}
-    listed = net_git(server, root, "ls-remote", "--heads", remote, "refs/heads/" + base, "refs/heads/claims")
+    # --symref HEAD: the remote's default branch too (UI-020: GitHub made claims the default), in the same call.
+    listed = net_git(server, root, "ls-remote", "--symref", remote, "HEAD", "refs/heads/" + base, "refs/heads/claims")
     if listed.returncode:
-        return {"state": "offline", "detail": offline_detail(listed), "at": now}
+        failure = git_failure(listed)
+        return {"state": "offline", "detail": failure["reason"], "failure": failure, "at": now}
     heads = heads_of(listed.stdout)
+    pointed = re.search(r"^ref: refs/heads/(\S+)\s+HEAD\r?$", listed.stdout or "", re.M)
 
     result = {"state": "ok", "detail": "", "kit": False, "reviewers": {}, "retired": [], "claims": {}, "files": [],
-              "at": now}
+              "at": now, "default": pointed.group(1) if pointed else ""}
     # What setup already holds in its private refs (one process); one fetch for every branch that moved.
     held = {}
     for line in git("for-each-ref", "--format=%(refname) %(objectname)", "refs/uak/").stdout.splitlines():
@@ -1629,7 +2210,8 @@ def read_remote(server, root, remote, base):
     if moved:
         got = net_git(server, root, "fetch", "-q", "--no-tags", "--no-write-fetch-head", remote, *moved)
         if got.returncode:
-            return {"state": "offline", "detail": offline_detail(got), "at": now}
+            failure = git_failure(got)
+            return {"state": "offline", "detail": failure["reason"], "failure": failure, "at": now}
     for branch, ref in present:
         if ref == SETUP_BASE:
             result["kit"] = git("cat-file", "-e", SETUP_BASE + ":.uak/PROJECT.md").returncode == 0
@@ -1688,6 +2270,77 @@ def remote_state(server, root, fresh=False):
 
 
 DASH_CLAIMS = "refs/uak/dash-claims"
+
+
+def project_progress(server, root, session=""):
+    """Where a project is (UI-019: a restart, a reload or re-picking it landed on Welcome or Prepare): (resume, the
+    name saved for this clone). Local Git only (at most seven processes, 10 s each), never the network, the engine or a
+    coding tool, and through the identity runner, never the operation runner. A hint from the last local copy of main
+    and claims ("source": "local"); None means "no local copy to read", never done. `uak start` stays the only gate."""
+    root = Path(root)
+    resume = {"step": "install", "installed": False, "main_checkout": None, "human": False, "freeze": 0, "idea": False,
+              "kit_on_main": None, "plan_approved": None, "base_sha": "", "reviewer": None, "claims": None,
+              "source": "local"}
+    saved = ""
+
+    def git(*args):
+        return server.planning.git(server.identity_run, root, *args, timeout=10)
+
+    try:
+        resume["installed"] = kit_present(root) and server.failed_target != str(root)
+        git_dir, common = git_dirs(server, root, server.identity_run)
+        resume["main_checkout"] = bool(git_dir and common) and git_dir == common
+        saved = read_human(common) if common else ""
+        human = saved or session
+        resume["human"] = bool(human)
+        if resume["installed"]:
+            try:
+                resume["freeze"] = max(0, int(read_config(root, ("Freeze-Epoch",)).get("Freeze-Epoch") or 0))
+            except ValueError:
+                resume["freeze"] = 0
+        try:
+            idea = server.planning.regular_file(root, "IDEA.md")
+            resume["idea"] = idea.is_file() and idea.stat().st_size > 0
+        except ValueError:
+            resume["idea"] = False
+        remote, base = remote_and_base()
+        refs = {}
+        listed = git("for-each-ref", "--format=%(refname) %(objectname)", "refs/uak/", "refs/remotes/%s/" % remote)
+        for line in (listed.stdout or "").splitlines() if listed.returncode == 0 else []:
+            name, _, sha = line.strip().partition(" ")
+            refs[name] = sha
+        tracking = "refs/remotes/%s/%s" % (remote, base)
+        base_ref = next((r for r in (SETUP_BASE, tracking) if r in refs), None)
+        # Setup's own copy is read first; a push from this clone moves only the tracking ref, so the newer one wins.
+        if base_ref == SETUP_BASE and tracking in refs and refs[tracking] != refs[SETUP_BASE] and \
+                git("merge-base", "--is-ancestor", SETUP_BASE, tracking).returncode == 0:
+            base_ref = tracking
+        if base_ref:
+            shown = git("show", base_ref + ":.uak/PROJECT.md")
+            resume["kit_on_main"] = shown.returncode == 0
+            approved = re.search(r"(?m)^Backlog-Approved:[ \t]*(\S+)", shown.stdout or "") if shown.returncode == 0 else None
+            resume["plan_approved"] = bool(approved and approved.group(1) == "yes")
+            resume["base_sha"] = refs[base_ref][:7]
+        claims_ref = next((r for r in (SETUP_CLAIMS, DASH_CLAIMS, "refs/remotes/%s/claims" % remote) if r in refs), None)
+        if claims_ref:
+            known = {"reviewers": {}, "retired": [], "claims": {}, "files": []}
+            read_claims(git, known, claims_ref)
+            resume["claims"] = len(known["files"])
+            who = human + "-r"
+            resume["reviewer"] = (who in known["reviewers"] and who not in known["retired"]) if human else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    if not resume["installed"]:
+        resume["step"] = "install"
+    elif resume["claims"]:
+        resume["step"] = "progress"
+    elif resume["plan_approved"] is True:
+        resume["step"] = "team"
+    elif resume["kit_on_main"] is True:
+        resume["step"] = "plan"
+    else:
+        resume["step"] = "prepare"
+    return resume, saved
 
 
 def name_the_team(server, root, data):
@@ -1773,17 +2426,18 @@ def team_context(server):
         state = dict(server.state)
     name = state.get("human") or ""
     if not HUMAN_NAME.fullmatch(name):
-        raise ValueError("Tell setup your name first (Your name, in Prepare): registering the reviewer is a human act.")
+        raise Need("Tell setup your name first (Your name, in Prepare): registering the reviewer is a human act.", "human")
     phase = team_phase(state)
     if not phase:
-        raise ValueError("Press Check what's next first: the team starts after the readiness check says Ready.")
+        raise Need("Press Check what's next first: the team starts after the readiness check says Ready.", "check")
     server.engine()
     return project_root(server.target), name, phase
 
 
-def git_dirs(server, root):
+def git_dirs(server, root, run=None):
     """(this checkout's Git dir, the common Git dir), physical; the main checkout is where they are the same."""
-    lines = server.planning.git(server.run, root, "rev-parse", "--absolute-git-dir", "--git-common-dir").stdout.splitlines()
+    lines = server.planning.git(run or server.run, root, "rev-parse", "--absolute-git-dir",
+                                "--git-common-dir").stdout.splitlines()
     paths = [(Path(t.strip()) if os.path.isabs(t.strip()) else root / t.strip()).resolve() if t.strip() else None
              for t in lines[:2]]
     return tuple(paths + [None] * (2 - len(paths)))
@@ -1795,17 +2449,52 @@ def main_checkout(server, root):
     return bool(git_dir and common) and git_dir == common
 
 
+def private_read(gitdir, name, limit):
+    """The JSON of <git common dir>/uak-setup/NAME, or None: a link (folder or file), not a regular file, larger than
+    LIMIT bytes or not JSON reads as nothing. Per clone, inside .git: never committed or shared."""
+    folder = Path(gitdir) / "uak-setup"
+    path = folder / name
+    try:
+        if folder.is_symlink() or path.is_symlink() or not path.is_file() or path.stat().st_size > limit:
+            return None
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def private_write(planning, gitdir, name, data, refused):
+    """Replace <git common dir>/uak-setup/NAME atomically; `refused` when the folder or the file is a link or not
+    what setup writes there."""
+    folder = Path(gitdir) / "uak-setup"
+    path = folder / name
+    if folder.is_symlink() or (os.path.lexists(str(folder)) and not folder.is_dir()):
+        raise refused
+    folder.mkdir(exist_ok=True)
+    if path.is_symlink() or (os.path.lexists(str(path)) and not path.is_file()):
+        raise refused
+    planning.write_atomic(path, data)
+
+
+HUMAN_NOT_KEPT = ("Setup could not remember your name for this project (.git/uak-setup/human.json is a link or not a "
+                  "regular file). It is kept until you close setup.")
+
+
+def read_human(gitdir):
+    """The person's name for this clone (UI-019: a restart forgot it), or "" for anything unexpected."""
+    data = private_read(gitdir, "human.json", 4096)
+    name = data.get("name") if isinstance(data, dict) else None
+    return name if isinstance(name, str) and HUMAN_NAME.fullmatch(name) else ""
+
+
+def write_human(planning, gitdir, name):
+    private_write(planning, gitdir, "human.json", (json.dumps({"version": 1, "name": name}) + "\n").encode("utf-8"),
+                  ValueError(HUMAN_NOT_KEPT))
+
+
 def read_roles(gitdir):
     """Each person's saved picks in <git common dir>/uak-setup/roles.json: per clone, never committed or shared.
     Anything unexpected (a link, too big, not JSON, an unknown tool or name) is ignored."""
-    folder = Path(gitdir) / "uak-setup"
-    path = folder / "roles.json"
-    try:
-        if folder.is_symlink() or path.is_symlink() or not path.is_file() or path.stat().st_size > 16384:
-            return {}
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+    data = private_read(gitdir, "roles.json", 16384)
     people = data.get("people") if isinstance(data, dict) else None
     if not isinstance(people, dict):
         return {}
@@ -1816,18 +2505,12 @@ def read_roles(gitdir):
 
 
 def write_roles(planning, gitdir, name, implement, review):
-    folder = Path(gitdir) / "uak-setup"
-    path = folder / "roles.json"
     refused = ValueError("Setup keeps your choice in .git/uak-setup/roles.json, and that is a link or not a regular "
                          "file. Remove it, then choose again.")
-    if folder.is_symlink() or (os.path.lexists(str(folder)) and not folder.is_dir()):
-        raise refused
-    folder.mkdir(exist_ok=True)
-    if path.is_symlink() or (os.path.lexists(str(path)) and not path.is_file()):
-        raise refused
     people = read_roles(gitdir)  # other people's picks are kept
     people[name] = {"implement": implement, "review": review}
-    planning.write_atomic(path, (json.dumps({"version": 1, "people": people}, indent=2, sort_keys=True) + "\n").encode("utf-8"))
+    private_write(planning, gitdir, "roles.json",
+                  (json.dumps({"version": 1, "people": people}, indent=2, sort_keys=True) + "\n").encode("utf-8"), refused)
 
 
 def effective_roles(saved, available):
@@ -1911,6 +2594,107 @@ def checkout_agent_note(root, who):
     return ""
 
 
+def claude_config_path():
+    """Claude Code's own config: $CLAUDE_CONFIG_DIR/.claude.json, else .claude.json in the home folder."""
+    return Path(os.environ.get("CLAUDE_CONFIG_DIR") or str(Path.home())) / ".claude.json"
+
+
+def trust_key(text):
+    """A folder as Claude Code's config names it; on Windows compared leniently (separators, case)."""
+    if os.name == "nt":
+        text = text.replace("\\", "/").casefold()
+    return text.rstrip("/") or "/"
+
+
+def trust_candidates(folder):
+    """The folder and each of its parents, as given and physical (macOS /var is /private/var)."""
+    found = []
+    for text in (os.path.abspath(str(folder)), os.path.realpath(str(folder))):
+        path = Path(text)
+        for one in [path] + list(path.parents):
+            key = trust_key(one.as_posix())
+            if key not in found:
+                found.append(key)
+    return found
+
+
+def claude_trust(folders, server=None):
+    """{folder: True|False|None}. Reads Claude Code's own config, never writes it, keeps only booleans."""
+    unknown = {folder: None for folder in folders}
+    try:
+        path = claude_config_path()
+        info = os.stat(str(path))
+        if not stat.S_ISREG(info.st_mode) or info.st_size > CLAUDE_CONFIG_MAX:
+            return unknown
+        # One read per version of the file (its mtime and size), whichever folders the view asks about.
+        key = (str(path), info.st_mtime_ns, info.st_size)
+        trusted = None
+        if server is not None:
+            with server.lock:
+                trusted = server.trust_cache.get(key)
+        if trusted is None:
+            with open(str(path), "rb") as handle:
+                data = json.loads(handle.read(CLAUDE_CONFIG_MAX + 1).decode("utf-8"))
+            projects = data.get("projects") if isinstance(data, dict) else None
+            if not isinstance(projects, dict):
+                return unknown
+            # Only which folders are trusted is kept (their names, one flag each): no other value of the file.
+            trusted = frozenset(trust_key(name) for name, entry in projects.items() if isinstance(name, str)
+                                and isinstance(entry, dict) and entry.get("hasTrustDialogAccepted") is True)
+            del data, projects
+            if server is not None:
+                with server.lock:
+                    server.trust_cache = {key: trusted}
+        return {folder: any(c in trusted for c in trust_candidates(folder)) for folder in folders}
+    except Exception:  # noqa: BLE001 - unreadable, not JSON, a race with Claude Code writing it: "could not read"
+        return unknown
+
+
+def team_size(root):
+    """IDEA.md's "- Team size: N people" (UI-024, A-F19), or 0 when there is none."""
+    path = Path(root) / "IDEA.md"
+    try:
+        if path.is_symlink() or not path.is_file():
+            return 0
+        found = TEAM_SIZE.search(path.read_text(encoding="utf-8", errors="replace")[:200000])
+    except OSError:
+        return 0
+    return int(found.group(1)) if found else 0
+
+
+def undo_instruction(run, root, before, after, found):
+    """How to undo what a planning run changed beyond the plan (UI-024, D-7.1): a command when Git can restore every
+    change from the commit before the run, otherwise words. Setup only shows it, never runs it."""
+    by_hand = {"text": UNDO_BY_HAND_TEXT, "command": ""}
+    head = before.get("head") or ""
+    if not found or not head or before["config"] != after["config"] or before["hooks"] != after["hooks"]:
+        return by_hand
+    plan_files = (".uak/TASKS.md", ".uak/OWNERS.md", ".uak/plan-request.md")  # the plan is never restored
+    changed = sorted(name for name in set(before["files"]) | set(after["files"])
+                     if name not in plan_files and before["files"].get(name, "absent") != after["files"].get(name, "absent"))
+    for name in changed:
+        # Only plain paths: no quote mark, control character, glob or pathspec magic in a pasted git restore; a file
+        # the planner created is not Git's to restore.
+        if not quotable(name) or re.search(r"[*?\[\]\\]", name) or name.startswith(":") or \
+                before["files"].get(name, "absent") == "absent":
+            return by_hand
+    if changed:
+        listed = run(["git", "-c", "core.fsmonitor=false", "-c", "core.quotePath=false", "--literal-pathspecs", "-C",
+                      str(root), "ls-tree", "-r", "--name-only", "-z", head, "--"] + changed, cwd=str(root), timeout=60)
+        tracked = set(n for n in (listed.stdout or "").split("\0") if n) if listed.returncode == 0 else set()
+        if set(changed) - tracked:
+            return by_hand
+    parts = []
+    if before["head"] != after["head"] or before["index"] != after["index"]:
+        parts.append("git reset -q %s" % head)
+    if changed:
+        parts.append("git restore --source=%s --worktree -- %s" % (head, " ".join(shell_quote(n) for n in changed)))
+    home = Path(root).resolve().as_posix()
+    if not parts or not quotable(home):
+        return by_hand
+    return {"text": UNDO_COMMAND_TEXT, "command": " && ".join(["cd %s" % shell_quote(home)] + parts)}
+
+
 def team_view(server):
     """GET /api/team: who implements and who reviews (per person), the reviewer's state in this project's claims, the
     tasks already claimed, and the Copy commands. Commands are built only from server values (the READY line's task,
@@ -1920,7 +2704,8 @@ def team_view(server):
     view = {"task": "", "human": name, "reviewer": who, "phase": phase, "stale": False,
             "remote": {"state": "", "detail": ""}, "commands": [], "note": "", "review_note": "", "claimed": [], "tools": [],
             "roles": effective_roles(None, set()), "retry": False, "can_check": False,
-            "registered": {"name": who, "registered": False, "registered_by": "", "retired": False, "message": ""}}
+            "registered": {"name": who, "registered": False, "registered_by": "", "retired": False, "message": ""},
+            "people": team_size(root)}
     text = root.as_posix()
     if not quotable(text) or root.parent == root:
         view["note"] = ("Rename the project folder (no quote mark or control character, and not a drive's root), then "
@@ -1939,9 +2724,10 @@ def team_view(server):
     known = remote_state(server, root)
     view["remote"] = {"state": known["state"], "detail": known.get("detail", "")}
     if known["state"] == "offline":
+        failure = known["failure"]
         view.update(retry=True, registered=dict(view["registered"], registered=None),
-                    note="Setup cannot reach %s right now (%s). Check your connection, then press Retry."
-                         % (remote, known["detail"]))
+                    note="Setup cannot reach %s right now (%s). %s" % (remote, failure["reason"], failure["advice"]),
+                    technical=failure["technical"])
         return view
     if known["state"] == "none":
         view.update(retry=True, registered=dict(view["registered"], registered=None),
@@ -1972,16 +2758,31 @@ def team_view(server):
         if mine and row["here"] and mine.group(1) in available:
             row["resume"] = resume_command(mine.group(1), folder.as_posix(), gitdir)
         view["claimed"].append(row)
-    if not available:
-        view["note"] = ("No coding tool can start here: Claude Code: %s Codex: %s With Cursor or Gemini, claim the task "
-                        "with the command below and open the tool in its folder yourself."
-                        % tuple(next(t["reason"] for t in tools if t["id"] == i) for i in ("claude", "codex")))
-        return view
-    commands = []
     with server.lock:
         claim = CLAIM_COMMAND.match(server.state.get("next_command") or "")
+        frozen = frozen_since(server.state)
     task = claim.group(1) if claim and TEAM_TASK.fullmatch(claim.group(1)) else ""
-    if phase == "waiting":
+    if frozen:
+        # UI-023 (B-06): after the freeze nothing new is claimed; the page says frozen, not "your team is working".
+        view["note"] = FROZEN_NOTE
+        task = ""
+    if not available:
+        reasons = tuple(next(t["reason"] for t in tools if t["id"] == i) for i in ("claude", "codex"))
+        # B-09: no command is shown below this note, so the command it talks about is in the note itself.
+        if frozen:
+            pass
+        elif task and task not in known["files"] and not (wt_root / task.lower()).exists():
+            view["note"] = ("No coding tool can start here: Claude Code: %s Codex: %s With Cursor or Gemini, claim %s "
+                            "yourself with cd %s && bash .uak/bin/wt new %s and open the tool in its folder."
+                            % (reasons + (task, shell_quote(text), task)))
+        else:
+            view["note"] = ("No coding tool can start here: Claude Code: %s Codex: %s With Cursor or Gemini, press "
+                            "Check what's next to get a free task first." % reasons)
+        return view
+    commands = []
+    if frozen:
+        pass
+    elif phase == "waiting":
         view["note"] = "No task is free to start right now."
     elif not task:
         # A READY line that does not parse to a valid task: no command at all (amendment 2).
@@ -2002,7 +2803,7 @@ def team_view(server):
             folder = (wt_root / task.lower()).as_posix()
             view["task"] = task
             commands.append({"id": "implement", "harness": tool, "tool": TOOL_LABEL[tool], "identity": identity,
-                             "task": task, "terminal": "Terminal 1: a new terminal window, any folder",
+                             "task": task, "terminal": "Terminal 1: a new terminal window on your computer, any folder",
                              "command": implement_command(tool, text, folder, gitdir, task, identity, name),
                              "resume": resume_command(tool, folder, gitdir)})
         else:
@@ -2017,8 +2818,25 @@ def team_view(server):
     elif not view["registered"]["retired"]:
         tool = roles["review"]
         commands.append({"id": "review", "harness": tool, "tool": TOOL_LABEL[tool], "identity": who,
-                         "terminal": "Terminal 2: another new terminal window, any folder",
+                         "terminal": "Terminal 2: another new terminal window on your computer, any folder",
                          "command": review_command(tool, text, gitdir, who)})
+    if "claude" in (roles["implement"], roles["review"]):
+        # UI-024 (A-F6): whether Claude Code already trusts the folders its commands open (the review runs in the
+        # project, the implementer in its task worktree), from Claude Code's own config; None when unreadable.
+        worktree = str(wt_root / (task or "").lower()) if task else str(wt_root)
+        found = claude_trust((text, worktree), server)
+        view["trust"] = {"project": found[text], "worktree": found[worktree]}
+    if view["registered"]["registered"] is not True:
+        # UI-024 (D-3.2, A-F11): no launch command until a reviewer can review the agents' work; resume lines of
+        # tasks already claimed stay (they start nothing new).
+        retired = bool(view["registered"]["retired"])
+        reason = view["registered"]["message"] if retired else LOCK_REASON % who
+        view["locked"] = {"reason": reason, "target": "human-name" if retired else "team-register"}
+        view["waiting"] = [{"id": role, "harness": roles[role], "tool": TOOL_LABEL[roles[role]]}
+                           for role in ("implement", "review")]
+        if view["note"] == reason:
+            view["note"] = ""  # one place per reason (A-F15)
+        commands = []
     view["commands"] = commands
     return view
 
@@ -2086,6 +2904,7 @@ def main():
     parser.add_argument("--no-open", action="store_true", help="print the local address without opening a browser")
     args = parser.parse_args()
     server = make_server(args.target)
+    server.open_target()  # UI-019: an installed project opens where it is, not on the welcome screen
     url = "http://127.0.0.1:%d/#%s" % (server.server_port, server.token)
     print("UAK SETUP " + url, flush=True)
     print("Keep this terminal open. Configure the kit in your browser; press Ctrl+C here to stop.", flush=True)
